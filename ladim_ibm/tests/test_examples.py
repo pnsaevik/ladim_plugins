@@ -10,7 +10,10 @@ import numpy as np
 import pkg_resources
 
 
-@pytest.mark.parametrize("module_name", ["sedimentation"])
+module_names = ["egg", "sedimentation"]
+
+
+@pytest.mark.parametrize("module_name", module_names)
 def test_output_matches_snapshot(module_name):
     out = run_ladim(module_name)
     ref = xr.load_dataset(get_module_dir(module_name).joinpath('out.nc'))
