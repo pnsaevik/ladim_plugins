@@ -7,6 +7,7 @@ import yaml
 import xarray as xr
 import pytest
 import numpy as np
+import pkg_resources
 
 
 @pytest.mark.parametrize("module_name", ["sedimentation"])
@@ -40,12 +41,13 @@ def run_ladim(module_name):
 
 def get_config(module_name):
     # Load yaml config string
-    module_dir = get_module_dir(module_name)
-    with open(module_dir.joinpath('config.yaml')) as config_file:
+    package = 'ladim_ibm.' + module_name
+    with pkg_resources.resource_stream(package, 'config.yaml') as config_file:
         config_string = config_file.read()
 
     # Append module dir to file names so that ladim can find the config files
     # from a different folder
+    module_dir = get_module_dir(module_name)
     config_dict = yaml.safe_load(config_string)
     config_dict['files']['particle_release_file'] = os.path.join(
         module_dir, config_dict['files']['particle_release_file'])
