@@ -1,0 +1,71 @@
+# Configuration file for sedimentation model
+
+time_control:
+    # Start and stop of simulation
+    start_time     : 2015-09-07 01:00:00
+    stop_time      : 2015-09-07 01:05:00
+
+
+files:
+    particle_release_file : particles.rls
+    output_file           : out.nc
+
+
+gridforce:
+    # Module name is mandatory.
+    # The other items are module dependent
+    module: ladim.gridforce.ROMS
+    input_file: forcing.nc
+
+
+ibm:
+    module: ladim_ibm.sedimentation
+    variables: [sink_vel, active, age]
+    lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
+    vertical_mixing: 0.0001  # [m*2/s]
+
+particle_release:
+    variables: [active, release_time, X, Y, Z, sink_vel]
+    release_time: time   # np.datetime64[s]
+    active: int
+
+    # Mark variables as time independent
+    particle_variables: [release_time]
+
+
+output_variables:
+    # Frequency of output
+    outper: [60, s]
+    # Variables included in output
+    particle: [release_time]
+    instance: [pid, X, Y, Z, active]
+    # NetCDF arguments
+    # format string and attributes
+    release_time:
+        ncformat: f8   # 64 bit float
+        long_name: particle release time
+        # Reference_time becomes substituted with value set above
+        units: seconds since reference_time
+    pid: {ncformat: i4, long_name: particle identifier}
+    active: {
+        ncformat: i4,
+        long_name: particle active mask,
+        # flag_values: [0, 1],
+        flag_meanings: inactive active,
+    }
+    X: {ncformat: f4, long_name: particle X-coordinate}
+    Y: {ncformat: f4, long_name: particle Y-coordinate}
+    Z:
+        ncformat: f4
+        long_name: particle depth
+        standard_name: depth_below_surface
+        units: m
+        positive: down
+
+
+numerics:
+    # Model time step
+    dt: [60, s]     # Format = [value, unit]
+    # Advection method, EF, RK2, or RK4
+    advection: EF
+    diffusion: 1    # [m/s**2]
