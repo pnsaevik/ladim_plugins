@@ -9,10 +9,33 @@ import pytest
 import numpy as np
 
 
-def get_module_dir(module_name):
-    this_dir = pathlib.Path(__file__).parent
-    package_dir = this_dir.parent
-    return package_dir.joinpath(module_name)
+@pytest.mark.parametrize("module_name", ["sedimentation"])
+def test_output_matches_snapshot(module_name):
+    out = run_ladim(module_name)
+    ref = xr.load_dataset(get_module_dir(module_name).joinpath('out.nc'))
+    check_equal(out, ref)
+
+
+def check_equal(new, ref):
+    dt = {'date': ''}
+    assert {**new.attrs, **dt} == {**ref.attrs, **dt}
+    assert new.variables.keys() == ref.variables.keys()
+    assert new.coords.keys() == ref.coords.keys()
+    assert new.data_vars.keys() == ref.data_vars.keys()
+    assert new.dims.items() == ref.dims.items()
+
+    for k in new.variables.keys():
+        assert new.variables[k].values.tolist() == ref.variables[k].values.tolist()
+
+
+def run_ladim(module_name):
+    # Change into a temporary folder `test_dir`
+    with chdir_temp() as test_dir:
+        np.random.seed(0)  # To ensure consistent results
+        ladim.main(get_config(module_name))
+
+        # Read and return output data
+        return xr.load_dataset(test_dir.joinpath('out.nc'))
 
 
 def get_config(module_name):
@@ -37,6 +60,12 @@ def get_config(module_name):
     return buf.read()
 
 
+def get_module_dir(module_name):
+    this_dir = pathlib.Path(__file__).parent
+    package_dir = this_dir.parent
+    return package_dir.joinpath(module_name)
+
+
 @contextlib.contextmanager
 def chdir_temp():
     tempdir = None
@@ -51,32 +80,3 @@ def chdir_temp():
             for fname in tempdir.glob('*'):
                 fname.unlink()
             tempdir.rmdir()
-
-
-def run_ladim(module_name):
-    # Change into a temporary folder `test_dir`
-    with chdir_temp() as test_dir:
-        np.random.seed(0)  # To ensure consistent results
-        ladim.main(get_config(module_name))
-
-        # Read and return output data
-        return xr.load_dataset(test_dir.joinpath('out.nc'))
-
-
-def check_equal(new, ref):
-    dt = {'date': ''}
-    assert {**new.attrs, **dt} == {**ref.attrs, **dt}
-    assert new.variables.keys() == ref.variables.keys()
-    assert new.coords.keys() == ref.coords.keys()
-    assert new.data_vars.keys() == ref.data_vars.keys()
-    assert new.dims.items() == ref.dims.items()
-
-    for k in new.variables.keys():
-        assert new.variables[k].values.tolist() == ref.variables[k].values.tolist()
-
-
-@pytest.mark.parametrize("module_name", ["sedimentation"])
-def test_output_matches_snapshot(module_name):
-    out = run_ladim(module_name)
-    ref = xr.load_dataset(get_module_dir(module_name).joinpath('out.nc'))
-    check_equal(out, ref)
