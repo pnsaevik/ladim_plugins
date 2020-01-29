@@ -42,7 +42,7 @@ def run_ladim(module_name):
 def get_config(module_name):
     # Load yaml config string
     package = 'ladim_ibm.' + module_name
-    with pkg_resources.resource_stream(package, 'config.yaml') as config_file:
+    with pkg_resources.resource_stream(package, 'ladim.yaml') as config_file:
         config_string = config_file.read()
 
     # Append module dir to file names so that ladim can find the config files
