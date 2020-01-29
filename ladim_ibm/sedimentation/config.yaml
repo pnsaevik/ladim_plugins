@@ -1,40 +1,48 @@
-# Configuration file for ladim
-#
-# Line source example
-#
-
+# Configuration file for sedimentation model
 
 time_control:
     # Start and stop of simulation
-    start_time: 2000-01-01 00:00:00
-    stop_time:  2000-01-02 00:00:00
+    start_time     : 2015-09-07 01:00:00
+    stop_time      : 2015-09-07 01:03:00
+
 
 files:
-    particle_release_file : obstacle.rls
-    output_file           : obstacle.nc
+    particle_release_file : particles.rls
+    output_file           : out.nc
+
+
+gridforce:
+    # Module name is mandatory.
+    # The other items are module dependent
+    module: ladim.gridforce.ROMS
+    input_file: forcing.nc
+
+
+ibm:
+    module: ladim_ibm.sedimentation
+
 
 particle_release:
     variables: [release_time, X, Y, Z]
-    # Converters (if not float)
-    release_time: time
+    release_time: time   # np.datetime64[s]
+
+    # Mark variables as time independent
     particle_variables: [release_time]
 
-gridforce:
-    module: gridforce_analytic
-    #module: gridforce_discrete
 
 output_variables:
-    # Output period, format [value, unit], unit = s, m, h, or d
-    outper: [300, s]
-    # Variable names
+    # Frequency of output
+    outper: [60, s]
+    # Variables included in output
     particle: [release_time]
-    instance: [pid, X, Y]
+    instance: [pid, X, Y, Z]
     # NetCDF arguments
+    # format string and attributes
     release_time:
-        ncformat: f8
+        ncformat: f8   # 64 bit float
         long_name: particle release time
+        # Reference_time becomes substituted with value set above
         units: seconds since reference_time
-    # Få til template over
     pid: {ncformat: i4, long_name: particle identifier}
     X: {ncformat: f4, long_name: particle X-coordinate}
     Y: {ncformat: f4, long_name: particle Y-coordinate}
@@ -45,13 +53,10 @@ output_variables:
         units: m
         positive: down
 
+
 numerics:
-    # Model time step, [value, unit]
-    dt: [300, s]
-    # Advection method: options =
-    #        EF = Euler-Forward,
-    #        RK2, RK4 = Runge-Kutta 2nd or 4th order
-    advection: RK4
-    # Horizontal diffusion coefficient [m2.s-1]
-    #         zero = no diffusion
-    diffusion: 0.0
+    # Model time step
+    dt: [60, s]     # Format = [value, unit]
+    # Advection method, EF, RK2, or RK4
+    advection: EF
+    diffusion: 1    # [m/s**2]
