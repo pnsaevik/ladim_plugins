@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='ladim_ibm',
     version='0.1',
-    packages=[''],
+    packages=find_packages(),
     url='https://git.imr.no/a5606/ladim_ibm',
     license='MIT Licence',
     author='Pål Næverlid Sævik',
