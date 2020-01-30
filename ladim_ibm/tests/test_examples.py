@@ -10,9 +10,13 @@ import numpy as np
 import pkg_resources
 
 
-@pytest.mark.parametrize("module_name", ["sedimentation"])
+module_names = ["egg", "sedimentation"]
+
+
+@pytest.mark.parametrize("module_name", module_names)
 def test_output_matches_snapshot(module_name):
     out = run_ladim(module_name)
+    # out.to_netcdf(get_module_dir(module_name).joinpath('out.nc'))
     ref = xr.load_dataset(get_module_dir(module_name).joinpath('out.nc'))
     check_equal(out, ref)
 
@@ -42,7 +46,7 @@ def run_ladim(module_name):
 def get_config(module_name):
     # Load yaml config string
     package = 'ladim_ibm.' + module_name
-    with pkg_resources.resource_stream(package, 'config.yaml') as config_file:
+    with pkg_resources.resource_stream(package, 'ladim.yaml') as config_file:
         config_string = config_file.read()
 
     # Append module dir to file names so that ladim can find the config files
