@@ -1,6 +1,8 @@
 # Boyant eggs
 
-_Brief description goes here._
+The module represents fish eggs that have a vertical migration rate due to
+buoyancy and vertical turbulence. Advection due to upwelling/downwelling is
+not included.
 
 The theoretical foundation for the module is documented by 
 [Myksvoll et al. (2011)](http://dx.doi.org/10.1080/19425120.2011.595258).
@@ -27,30 +29,15 @@ within `ladim.yaml`.
 Finally, copy `ladim.yaml` and `particles.rls` to a separate directory and
 run `ladim` here.
 
+
+## Output
+
+The simulation result is stored in a file specified by the `files.output_file`
+entry in `ladim.yaml`. The output variables are specified by the
+`output_variables` entries. 
+
 ## SVIM example
 
 An example of configuration file and release file used in a real scenario is
 provided by `svim_ladim.yaml` and `svim_particles.rls`. The code used to make
 the release file is provided by `svim_make_release.m`.  
- 
-
-Start with make_release_egg.m
-- choose grid
-- choose release locations in grid coordinates
-- choose release depth
-- choose egg buoyancy
-- choose release time
-
-Output is release_svim_egg.rls
-
-Check ibm_egg.py
-- choose egg diameter (cod=0.0014, saithe=0.0011)
-- specify maximum depth of particles
-
-Check ladim.yaml
-- choose start and stop time
-- add path to grid and input file
-- add name of release file
-- ibm_module: 'ibm_egg'
-- choose output frequency and multiple files
-- choose proper time step and diffusion depending on horizontal resoultion

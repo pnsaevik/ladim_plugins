@@ -15,12 +15,15 @@ gridforce:
     # Module name is mandatory.
     # The other items are module dependent
     module: ladim.gridforce.ROMS
-    input_file: forcing.nc
+    input_file: forcing.nc  # Use wildcards (*) to select a range of files
 
 
 ibm:
     module: ladim_ibm.sedimentation
-    variables: [sink_vel, active, age]
+    variables:
+    - sink_vel  # Sinking velocity [m/s]
+    - active    # 1 if mobile, 0 if immobile
+    - age       # Particle age in seconds
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
     vertical_mixing: 0.0001  # [m*2/s]
 
@@ -36,31 +39,49 @@ particle_release:
 output_variables:
     # Frequency of output
     outper: [60, s]
+
     # Variables included in output
     particle: [release_time]
     instance: [pid, X, Y, Z, active]
-    # NetCDF arguments
-    # format string and attributes
+
+
+    # --- Output format for standard variables ---
+
+    # Output format for the particle release time
     release_time:
-        ncformat: f8   # 64 bit float
+        ncformat: f8
         long_name: particle release time
-        # Reference_time becomes substituted with value set above
         units: seconds since reference_time
-    pid: {ncformat: i4, long_name: particle identifier}
-    active: {
-        ncformat: i4,
-        long_name: particle active mask,
-        # flag_values: [0, 1],
-        flag_meanings: inactive active,
-    }
-    X: {ncformat: f4, long_name: particle X-coordinate}
-    Y: {ncformat: f4, long_name: particle Y-coordinate}
+
+    # Output format for the particle identifier
+    pid:
+        ncformat: i4
+        long_name: particle identifier
+
+    # Output format for the X coordinate
+    X:
+        ncformat: f4
+        long_name: particle X-coordinate
+
+    # Output format for the Y coordinate
+    Y:
+        ncformat: f4
+        long_name: particle Y-coordinate
+
+    # Output format for the particle depth
     Z:
         ncformat: f4
         long_name: particle depth
         standard_name: depth_below_surface
         units: m
         positive: down
+
+    # Output format for the particle active indicator
+    active:
+        ncformat: i4,
+        long_name: particle active mask,
+        # flag_values: [0, 1],
+        flag_meanings: inactive active,
 
 
 numerics:
