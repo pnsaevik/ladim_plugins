@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_ibm',
-    version='0.1',
+    version='0.1.0',
     packages=find_packages(),
-    package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml']},
+    package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml', '*.m']},
     url='https://git.imr.no/a5606/ladim_ibm',
     license='MIT Licence',
     author='Pål Næverlid Sævik',

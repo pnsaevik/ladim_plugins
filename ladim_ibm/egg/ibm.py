@@ -1,20 +1,16 @@
 import numpy as np
-from ladim.ibms import light
 
 
 class IBM:
     def __init__(self, config):
-        self.k = 0.2             # Light extinction coefficient
-        # self.swim_vel = 5e-4     # m/s
-        self.vertical_diffusion = True
-        self.D = 5e-5            # Vertical mixing [m*2/s]
-
+        self.D = config['ibm']['vertical_mixing']  # [m*2/s]
+        self.vertical_diffusion = (self.D > 0)
+        self.egg_diam = config['ibm']['egg_diam']
         self.dt = config['dt']
 
     def update_ibm(self, grid, state, forcing):
-        egg_diam = 0.0011
+        egg_diam = self.egg_diam
 
-        # for n in range(len(state.X)):
         # Update forcing
         state.temp = forcing.field(state.X, state.Y, state.Z, 'temp')
         state.salt = forcing.field(state.X, state.Y, state.Z, 'salt')
@@ -32,32 +28,27 @@ class IBM:
         # Calculate vertical velocity
 
         W = np.zeros_like(state.X)
-        W = np.where(egg_diam <= dmax, (1/18)*(1/my_w)*9.81*(egg_diam**2)*np.abs(dens_water - dens_egg), 0.08825*(egg_diam-0.4*dmax)*(np.abs(dens_water - dens_egg))**(2/3)*my_w**(-1/3))
+        W = np.where(
+            egg_diam <= dmax,
+            (1/18)*(1/my_w)*9.81*(egg_diam**2)*np.abs(dens_water - dens_egg),
+            0.08825*(egg_diam-0.4*dmax)*(np.abs(dens_water - dens_egg))**(2/3)*my_w**(-1/3))
 
         W = -W*np.sign(dens_water-dens_egg)
 
+        # Random diffusion velocity
         if self.vertical_diffusion:
-            rand = np.random.normal(1)
-            W += rand * (2*self.D/self.dt)**0.5
+            rand = np.random.normal(size=len(W))
+            W += rand * (2 * self.D / self.dt) ** 0.5
+
+        # Update vertical position, using reflexive boundary condition at the top
+        state.Z += W * self.dt
+        state.Z[state.Z < 0] *= -1
 
         # Age in degree-days
-        state.temp = forcing.field(state.X, state.Y, state.Z, 'temp')
         state.age += state.temp * state.dt / 86400
-
-        # Light at depth
-        lon, lat = grid.lonlat(state.X, state.Y)
-        light0 = light.surface_light(state.timestamp, lon, lat)
-        Eb = light0 * np.exp(-self.k*state.Z)
-
-        # Update vertical position, using reflexive boundary condition
-        state.Z += W * self.dt
-        # print(state.Z)
 
         # For z-version, do not go below 100 m
         state.Z[state.Z >= 200.0] = 199.0
-
-        # Mark particles older than 200 degree days as dead
-        # state.alive = state.alive & (state.age < 200)
 
 
 def calc_density(temp, salt):
