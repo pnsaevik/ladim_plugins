@@ -56,24 +56,48 @@ output_variables:
     # Variable names
     particle: [release_time, group_id]
     instance: [pid, X, Y, Z, age, super, egg_buoy ]
-    # NetCDF arguments
+
+    # --- Output format for standard variables ---
+
+    # Output format for the particle release time
     release_time:
         ncformat: f8
         long_name: particle release time
         units: seconds since reference_time
 
-    temp: {ncformat: f4, long_name: temperature}
-    egg_buoy: {ncformat: f4, long_name: egg buoyancy, units: '1'}
-    group_id: {ncformat: i4, long_name: particle group id}
-    pid: {ncformat: i4, long_name: particle identifier}
-    X: {ncformat: f4, long_name: particle X-coordinate}
-    Y: {ncformat: f4, long_name: particle Y-coordinate}
+    # Output format for the particle identifier
+    pid:
+        ncformat: i4
+        long_name: particle identifier
+
+    # Output format for the X coordinate
+    X:
+        ncformat: f4
+        long_name: particle X-coordinate
+
+    # Output format for the Y coordinate
+    Y:
+        ncformat: f4
+        long_name: particle Y-coordinate
+
+    # Output format for the particle depth
     Z:
         ncformat: f4
         long_name: particle depth
         standard_name: depth_below_surface
         units: m
         positive: down
+
+    # --- Output format for IBM-specific variables ---
+
+    # Output format for the temperature
+    temp:
+        ncformat: f4
+        long_name: temperature
+
+    # Output format for the egg buouy
+    egg_buoy: {ncformat: f4, long_name: egg buoyancy, units: '1'}
+    group_id: {ncformat: i4, long_name: particle group id}
     age:
         ncformat: f4
         long_name: particle age in degree-days
