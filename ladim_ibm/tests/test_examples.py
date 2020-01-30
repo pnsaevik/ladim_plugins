@@ -10,7 +10,10 @@ import numpy as np
 import pkg_resources
 
 
-module_names = ["egg", "sedimentation"]
+module_names = [
+    d for d in next(os.walk(os.path.dirname(os.path.dirname(__file__))))[1]
+    if d not in ['tests', '__pycache__']
+]
 
 
 @pytest.mark.parametrize("module_name", module_names)
