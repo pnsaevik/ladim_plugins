@@ -21,6 +21,7 @@ class IBM:
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
 
     def update_ibm(self, grid, state, forcing):
+        new_salinity_model = True
 
         # Mortality
         state.super *= self.mortality_factor
@@ -31,9 +32,10 @@ class IBM:
 
         # Age in degree-days
         state.age += state.temp * state.dt / 86400
+        state.days += 1.0*(state.dt/86400)
 
         # Light at depth
-        lon, lat = grid.lonlat(state.X, state.Y, method="nearest")
+        lon, lat = grid.lonlat(state.X, state.Y)
         light0 = light.surface_light(state.timestamp, lon, lat)
         Eb = light0 * np.exp(-self.k * state.Z)
 
@@ -41,8 +43,15 @@ class IBM:
         W = np.zeros_like(state.X)
         # Upwards if light enough (decreasing depth)
         W[Eb >= 0.01] = -self.swim_vel
-        # Downwards if salinity < 20
-        W[state.salt < 20] = self.swim_vel
+
+        if new_salinity_model:
+            # Downwards if salinity < 31
+            state_rand = np.random.rand(*state.salt.shape)
+            not_enough_salt = state.salt < 31 - state_rand*8
+            W[not_enough_salt] = self.swim_vel
+        else:
+            # Downwards if salinity < 20
+            W[state.salt < 20] = self.swim_vel
 
         # Random diffusion velocity
         if self.vertical_diffusion:
