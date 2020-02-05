@@ -14,8 +14,8 @@ class IBM:
 
         self.k = 0.2  # Light extinction coefficient
         self.swim_vel = 5e-4  # m/s
-        self.vertical_diffusion = True
-        self.D = 1e-3  # Vertical mixing [m*2/s]
+        self.D = config["ibm"].get('vertical_mixing', 1e-3)  # Vertical mixing [m*2/s]
+        self.vertical_diffusion = self.D > 0
 
         self.dt = config["dt"]
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
