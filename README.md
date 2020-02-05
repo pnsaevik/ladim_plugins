@@ -41,10 +41,12 @@ subpackage folders.
 
 1. Copy `ladim.yaml` and `particle.rls` from the IBM subpackage of interest
    into the working directory. 
-2. If the `pip` installation step was skipped, the `ibm.py` module must be
+2. Make desired changes to the `yaml` and `rls` files. More detailed
+   instructions are found in the `README.md` file within the subpackage.
+3. If the `pip` installation step was skipped, the `ibm.py` module must be
    copied as well, and the `ibm.module` entry in `ladim.yaml` must be changed
    to `"ibm"`.
-3. Run `ladim` and the output is written to `out.nc`. 
+4. Run `ladim` and the output is written to `out.nc`. 
 
 
 ## Add new IBMs
