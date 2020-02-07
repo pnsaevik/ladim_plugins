@@ -274,12 +274,16 @@ class Forcing:
             stepdiff = self.stepdiff[steps.index(prestep)]
             nextstep = prestep + stepdiff
             self.U, self.V = self._read_velocity(prestep)
+            self.W = self.compute_w(self.U, self.V)
             self.Unew, self.Vnew = self._read_velocity(nextstep)
+            self.Wnew = self.compute_w(self.Unew, self.Vnew)
             self.dU = (self.Unew - self.U) / stepdiff
             self.dV = (self.Vnew - self.V) / stepdiff
+            self.dW = (self.Wnew - self.W) / stepdiff
             # Interpolate to time step = -1
             self.U = self.U - (prestep + 1) * self.dU
             self.V = self.V - (prestep + 1) * self.dV
+            self.W = self.W - (prestep + 1)*self.dW
             # Other forcing
             for name in self.ibm_forcing:
                 self[name] = self._read_field(name, prestep)
@@ -291,15 +295,20 @@ class Forcing:
             # Simulation start at first forcing time
             # Runge-Kutta needs dU and dV in this case as well
             self.U, self.V = self._read_velocity(0)
+            self.W = self.compute_w(self.U, self.V)
             self.Unew, self.Vnew = self._read_velocity(steps[1])
+            self.Wnew = self.compute_w(self.Unew, self.Vnew)
             self.dU = (self.Unew - self.U) / steps[1]
             self.dV = (self.Vnew - self.V) / steps[1]
+            self.dW = (self.Wnew - self.W) / steps[1]
             # Synchronize with start time
             self.Unew = self.U
             self.Vnew = self.V
+            self.Wnew = self.W
             # Extrapolate to time step = -1
             self.U = self.U - self.dU
             self.V = self.V - self.dV
+            self.W = self.W - self.dW
             # Other forcing:
             for name in self.ibm_forcing:
                 self[name] = self._read_field(name, 0)
@@ -411,6 +420,7 @@ class Forcing:
         if t in self.steps:  # No time interpolation
             self.U = self.Unew
             self.V = self.Vnew
+            self.W = self.Wnew
             for name in self.ibm_forcing:
                 self[name] = self[name + "new"]
         else:
@@ -418,11 +428,13 @@ class Forcing:
                 stepdiff = self.stepdiff[self.steps.index(t - 1)]
                 nextstep = t - 1 + stepdiff
                 self.Unew, self.Vnew = self._read_velocity(nextstep)
+                self.Wnew = self.compute_w(self.Unew, self.Vnew)
                 for name in self.ibm_forcing:
                     self[name + "new"] = self._read_field(name, nextstep)
                 if interpolate_velocity_in_time:
                     self.dU = (self.Unew - self.U) / stepdiff
                     self.dV = (self.Vnew - self.V) / stepdiff
+                    self.dW = (self.Wnew - self.W) / stepdiff
                 if interpolate_ibm_forcing_in_time:
                     for name in self.ibm_forcing:
                         self["d" + name] = (self[name + "new"] - self[name]) / stepdiff
@@ -431,6 +443,7 @@ class Forcing:
             if interpolate_velocity_in_time:
                 self.U += self.dU
                 self.V += self.dV
+                self.W += self.dW
             if interpolate_ibm_forcing_in_time:
                 for name in self.ibm_forcing:
                     self[name] += self["d" + name]
@@ -538,6 +551,25 @@ class Forcing:
         F = self[name]
         return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
 
+    def compute_w(self, u_in, v_in):
+        z_r = np.pad(self._grid.z_r[np.newaxis, :, :, :], ((0, 0), (0, 0), (1, 1), (1, 1)), 'edge')
+        z_w = np.pad(self._grid.z_w[np.newaxis, :, :, :], ((0, 0), (0, 0), (1, 1), (1, 1)), 'edge')
+        u = np.pad(u_in[np.newaxis, :, :, :], ((0, 0), (0, 0), (1, 1), (0, 0)), 'constant')
+        v = np.pad(v_in[np.newaxis, :, :, :], ((0, 0), (0, 0), (0, 0), (1, 1)), 'constant')
+        pm = np.pad(1 / self._grid.dx, ((1, 1), (1, 1)), 'edge')
+        pn = np.pad(1 / self._grid.dy, ((1, 1), (1, 1)), 'edge')
+
+        w = compute_w(pn, pm, u, v, z_w, z_r)
+        return w[0, :, :, :]
+
+    def wvel(self, X, Y, Z, tstep=0.0, method='bilinear'):
+        i0 = self._grid.i0
+        j0 = self._grid.j0
+        K, A = z2s(self._grid.z_r, X-i0, Y-j0, Z)
+        F = self['W']
+        if tstep >= 0.001:
+            F += tstep*self['dW']
+        return sample3D(F, np.round(X-i0), np.round(Y-j0), K, A, method=method)
 
 # ---------------------------------------------
 #      Low-level vertical functions
@@ -757,3 +789,88 @@ def sample3DUV(U, V, X, Y, K, A, method="bilinear"):
         sample3D(U, X + 0.5, np.round(Y), K, A, method=method),
         sample3D(V, np.round(X), Y + 0.5, K, A, method=method),
     )
+
+
+def compute_w(pn, pm, u, v, z_w, z_r):
+    # Precalculated factors
+    Hz_r = z_w[:, 1:, :, :] - z_w[:, :-1, :, :]
+    Hz_u = 0.5 * (Hz_r[:, :, :, :-1] + Hz_r[:, :, :, 1:])
+    Hz_v = 0.5 * (Hz_r[:, :, :-1, :] + Hz_r[:, :, 1:, :])
+    slope_bot = ((z_r[:, 0, 1:-1, 1:-1] - z_w[:, 0, 1:-1, 1:-1]) /
+                 (z_r[:, 1, 1:-1, 1:-1] - z_r[:, 0, 1:-1, 1:-1]))
+    slope_top = ((z_w[:, -1, 1:-1, 1:-1] - z_r[:, -1, 1:-1, 1:-1]) /
+                 (z_r[:, -1, 1:-1, 1:-1] - z_r[:, -2, 1:-1, 1:-1]))
+    on_u = 2 / (pn[:, :-1] + pn[:, 1:])
+    om_v = 2 / (pm[:-1, :] + pm[1:, :])
+
+    # horizontal flux
+    Huon = Hz_u * u * on_u
+    Hvom = Hz_v * v * om_v
+
+    # vertical flux
+    dW = (Huon[:, :, 1:-1, :-1] - Huon[:, :, 1:-1, 1:]
+          + Hvom[:, :, :-1, 1:-1] - Hvom[:, :, 1:, 1:-1])
+    W_0 = 0 * dW[:, 0:1, :, :]
+    W = np.concatenate((W_0, dW.cumsum(axis=1)), axis=1)
+
+    # remove contribution from moving ocean surface
+    wrk = W[:, -1:, :, :] / (z_w[:, -1:, 1:-1, 1:-1] - z_w[:, 0:1, 1:-1, 1:-1])
+    W2 = W - wrk * (z_w[:, :, 1:-1, 1:-1] - z_w[:, 0:1, 1:-1, 1:-1])
+
+    # scale the flux
+    Wscl = W2 * (pm[1:-1, 1:-1] * pn[1:-1, 1:-1])
+
+    # find contribution of horizontal movement to vertical flux
+    wrk_u = u * (z_r[:, :, :, 1:] - z_r[:, :, :, :-1]) * (pm[:, :-1] + pm[:, 1:])
+    vert_u = 0.25 * (wrk_u[:, :, :, :-1] + wrk_u[:, :, :, 1:])
+    wrk_v = v * (z_r[:, :, 1:, :] - z_r[:, :, :-1, :]) * (pn[:-1, :] + pn[1:, :])
+    vert_v = 0.25 * (wrk_v[:, :, :-1, :] + wrk_v[:, :, 1:, :])
+    vert = vert_u[:, :, 1:-1, :] + vert_v[:, :, :, 1:-1]
+
+    # --- Cubic interpolation to move vert from rho-points to w-points ---
+
+    cff1 = 3 / 8
+    cff2 = 3 / 4
+    cff3 = 1 / 8
+    cff4 = 9 / 16
+    cff5 = 1 / 16
+
+    # Bottom layers
+
+    vert_b0 = (cff1 * (vert[:, 0, :, :]
+                       - slope_bot * (vert[:, 1, :, :] - vert[:, 0, :, :]))
+               + cff2 * vert[:, 0, :, :] - cff3 * vert[:, 1, :, :])
+    vert_b1 = (cff1 * vert[:, 0, :, :]
+               + cff2 * vert[:, 1, :, :] - cff3 * vert[:, 2, :, :])
+
+    # Middle layers
+
+    vert_m = (cff4 * (vert[:, 1:-2, :, :] + vert[:, 2:-1, :, :])
+              - cff5 * (vert[:, 0:-3, :, :] + vert[:, 3:, :, :]))
+
+    # Top layers
+
+    vert_t0 = ((cff1 * (vert[:, -1, :, :]
+                        + slope_top * (
+                                    vert[:, -1, :, :] - vert[:, -2, :, :]))
+                + cff2 * vert[:, -1, :, :] - cff3 * vert[:, -2, :, :]))
+    vert_t1 = (cff1 * vert[:, -1, :, :]
+               + cff2 * vert[:, -2, :, :] - cff3 * vert[:, -3, :, :])
+
+    # Bundle together
+
+    vert_w = np.concatenate((vert_b0[:, np.newaxis, :, :],
+                             vert_b1[:, np.newaxis, :, :],
+                             vert_m,
+                             vert_t1[:, np.newaxis, :, :],
+                             vert_t0[:, np.newaxis, :, :]), axis=1)
+
+    vert = Wscl + vert_w
+
+    # --- End cubic interpolation ---
+
+    # Add zeros as boundary values
+    wvel_pad = np.pad(vert, ((0, 0), (0, 0), (1, 1), (1, 1)), 'constant')
+
+    return wvel_pad[:]
+
