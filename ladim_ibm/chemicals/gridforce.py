@@ -753,6 +753,7 @@ def sample3D(F, X, Y, K, A, method="bilinear"):
     """
 
     if method == "bilinear":
+      try:
         # Find rho-point as lower left corner
         I = X.astype("int")
         J = Y.astype("int")
@@ -777,6 +778,8 @@ def sample3D(F, X, Y, K, A, method="bilinear"):
             + W101 * F[K - 1, J, I + 1]
             + W111 * F[K - 1, J + 1, I + 1]
         )
+      except IndexError:
+        return np.zeros(len(X), dtype=F.dtype)
 
     # else:  method == 'nearest'
     I = X.round().astype("int")
