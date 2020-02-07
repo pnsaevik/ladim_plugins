@@ -13,9 +13,9 @@ Common changes applied to `ladim.yaml`:
 - Stop date of simulation (`time_control.stop_time`)
 - Forcing input file (`gridforce.input_file`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
+- Vertical diffusion parameter (`ibm.vertical_mixing`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
 
 The file `particles.rls` is a tab-delimited text file containing particle
 release time and location, as well as particle attributes at the release time.
