@@ -3,7 +3,7 @@ import numpy as np
 
 class IBM:
     def __init__(self, config):
-        self.D = config["ibm"].get('vertical_mixing', 1e-3)  # Vertical mixing [m*2/s]
+        self.D = config["ibm"].get('vertical_mixing', 0)  # Vertical mixing [m*2/s]
         self.dt = config['dt']
 
     def update_ibm(self, grid, state, _):
