@@ -181,10 +181,10 @@ class Grid:
         """Return the longitude and latitude from grid coordinates"""
         if method == "bilinear":  # More accurate
             return self.xy2ll(X, Y)
-        # else: containing grid cell, less accurate
-        I = X.round().astype("int") - self.i0
-        J = Y.round().astype("int") - self.j0
-        return self.lon[J, I], self.lat[J, I]
+        else:  # containing grid cell, less accurate
+            I = X.round().astype("int") - self.i0
+            J = Y.round().astype("int") - self.j0
+            return self.lon[J, I], self.lat[J, I]
 
     def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Returns True for points inside the subgrid"""
