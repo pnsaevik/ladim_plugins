@@ -6,10 +6,13 @@ class IBM:
         self.D = config["ibm"].get('vertical_mixing', 0)  # Vertical mixing [m*2/s]
         self.dt = config['dt']
 
-    def update_ibm(self, grid, state, _):
+    def update_ibm(self, grid, state, forcing):
+        # Vertical advection velocity
+        W = forcing.forcing.wvel(state.X, state.Y, state.Z)
+
         # Vertical diffusion velocity
         rand = np.random.normal(size=len(state.X))
-        W = rand * (2 * self.D / self.dt) ** 0.5
+        W += rand * (2 * self.D / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at top
         state.Z += W * self.dt
