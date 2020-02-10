@@ -890,11 +890,11 @@ def nearest_unmasked(mask, i, j):
     j_neigh = np.clip(j_neigh_raw, 0, mask.shape[0] - 1)
 
     # Compute distance to origin
-    dist = np.abs(i_neigh - i) + np.abs(j_neigh - j)
-    dist_mask = np.ma.masked_array(dist, mask[j_neigh, i_neigh])
+    dist2 = (i_neigh - i)**2 + (j_neigh - j)**2
+    dist2_mask = np.ma.masked_array(dist2, mask[j_neigh, i_neigh])
 
     # Find coordinates of closest unmasked cell
-    idx = dist_mask.argmin(axis=0)
+    idx = dist2_mask.argmin(axis=0)
     i_close = i_neigh[idx, np.arange(len(idx))]
     j_close = j_neigh[idx, np.arange(len(idx))]
     
