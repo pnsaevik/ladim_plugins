@@ -21,6 +21,7 @@ gridforce:
 ibm:
     module: ladim_ibm.chemicals
     vertical_mixing: 0.0001  # [m*2/s]
+    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze'
 
 particle_release:
     variables: [release_time, X, Y, Z]

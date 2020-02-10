@@ -1,7 +1,9 @@
 # Chemicals
 
 The module represents passive particles that have a vertical migration rate due
-to upwelling/downwelling and vertical turbulence.
+to upwelling/downwelling and vertical turbulence. Also, the module contains
+improved land collision treatment to prevent artificial tracer concentration
+buildup near shores.
 
 
 ## Usage
@@ -16,6 +18,7 @@ Common changes applied to `ladim.yaml`:
 - Vertical diffusion parameter (`ibm.vertical_mixing`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
+- Land collision treatment (`ibm.land_collision`)
 
 The file `particles.rls` is a tab-delimited text file containing particle
 release time and location, as well as particle attributes at the release time.
@@ -24,6 +27,18 @@ within `ladim.yaml`.
 
 Finally, copy `ladim.yaml` and `particles.rls` to a separate directory and
 run `ladim` here.
+
+
+## Land collision treatment
+
+The standard behaviour of Ladim is that particles crossing the land boundary
+are rewinded to the position they had at the beginning of the time step. This
+IBM checks if particles have not moved since the previous time step, in which
+case they are assumed to have collided with land. Collided particles are
+repositioned randomly within the cell where the particles originated.
+
+To use the default Ladim land collision treatment instead, set the config entry
+`ibm.land_collisions` to `"freeze"`.
 
 
 ## Output
