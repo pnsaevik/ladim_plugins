@@ -218,6 +218,13 @@ class Grid:
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
         return X + self.i0, Y + self.j0
 
+    def nearest_sea(self, X, Y):
+        I = X - self.i0
+        J = Y - self.j0
+        i_new, j_new = nearest_unmasked(np.logical_not(self.M), I, J)
+        return i_new, j_new
+
+
 
 # -----------------------------------------------
 # The Forcing class from the old forcing module
