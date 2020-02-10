@@ -5,6 +5,10 @@ class IBM:
     def __init__(self, config):
         self.D = config["ibm"].get('vertical_mixing', 0)  # Vertical mixing [m*2/s]
         self.dt = config['dt']
+        self.x = np.array([])
+        self.y = np.array([])
+        self.pid = np.array([])
+        self.land_collision = config["ibm"].get('land_collision', 'reposition')
 
     def update_ibm(self, grid, state, forcing):
         # Vertical advection velocity
@@ -22,3 +26,20 @@ class IBM:
         H = grid.sample_depth(state.X, state.Y)  # Water depth
         below_seabed = state.Z > H
         state.Z[below_seabed] = 2*H[below_seabed] - state.Z[below_seabed]
+
+        if self.land_collision == "reposition":
+            # If particles have not moved: Assume they ended up on land.
+            # If that is the case, reposition them within the cell.
+            pid, pidx_old, pidx_new = np.intersect1d(self.pid, state.pid, return_indices=True)
+            onland = ((self.x[pidx_old] == state.X[pidx_new]) &
+                      (self.y[pidx_old] == state.Y[pidx_new]))
+            num_onland = np.count_nonzero(onland)
+            pidx_new_onland = pidx_new[onland]
+            x_new = np.round(state.X[pidx_new_onland]) - 0.5 + np.random.rand(num_onland)
+            y_new = np.round(state.Y[pidx_new_onland]) - 0.5 + np.random.rand(num_onland)
+            state.X[pidx_new_onland] = x_new
+            state.Y[pidx_new_onland] = y_new
+
+            self.x = state.X
+            self.y = state.Y
+            self.pid = state.pid
