@@ -879,4 +879,23 @@ def compute_w(pn, pm, u, v, z_w, z_r):
 
 
 def nearest_unmasked(mask, i, j):
-    return i, j
+    # All neighbours
+    i_center = np.int32(np.round(i))
+    j_center = np.int32(np.round(j))
+    i_neigh_raw = i_center + np.array([0, 1, 1, 0, -1, -1, -1, 0, 1])[:, np.newaxis]
+    j_neigh_raw = j_center + np.array([0, 0, 1, 1, 1, 0, -1, -1, -1])[:, np.newaxis]
+
+    # Handle neighbours outside the domain
+    i_neigh = np.clip(i_neigh_raw, 0, mask.shape[1] - 1)
+    j_neigh = np.clip(j_neigh_raw, 0, mask.shape[0] - 1)
+
+    # Compute distance to origin
+    dist = np.abs(i_neigh - i) + np.abs(j_neigh - j)
+    dist_mask = np.ma.masked_array(dist, mask[j_neigh, i_neigh])
+
+    # Find coordinates of closest unmasked cell
+    idx = dist_mask.argmin(axis=0)
+    i_close = i_neigh[idx, np.arange(len(idx))]
+    j_close = j_neigh[idx, np.arange(len(idx))]
+    
+    return i_close, j_close
