@@ -877,3 +877,6 @@ def compute_w(pn, pm, u, v, z_w, z_r):
 
     return wvel_pad[:]
 
+
+def nearest_unmasked(mask, i, j):
+    return i, j
