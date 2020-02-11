@@ -35,3 +35,8 @@ run `ladim` here.
 The simulation result is stored in a file specified by the `files.output_file`
 entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
+
+
+## History
+
+Created by Marcos Carvajalino Fernandez and Pål Næverlid Sævik (2019).
