@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import pkg_resources
 from ladim_ibm.chemicals import gridforce, IBM
 
 
@@ -33,10 +32,9 @@ class Test_nearest_unmasked:
 class Test_ibm_land_collision:
     @pytest.fixture()
     def config(self):
+        from ladim_ibm.tests.test_examples import get_config
         from ladim.configuration import configure
-        pkg = 'ladim_ibm.chemicals'
-        with pkg_resources.resource_stream(pkg, 'ladim.yaml') as config_file:
-            return configure(config_file)
+        return configure(get_config('chemicals'))
 
     @pytest.fixture()
     def grid(self, config):
