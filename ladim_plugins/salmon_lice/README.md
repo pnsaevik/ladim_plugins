@@ -1,7 +1,8 @@
 # Salmon lice
 
 The module represents salmon lice having a vertical swimming behaviour due to
-ambient light and salt conditions.
+ambient light and salt conditions. The module is used by IMR in operational
+simulations of salmon lice distribution within Norwegian fjords.
 
 The model is based on a number of scientific works on salmon lice behaviour, including
 - [Author et al. (2011)](http://dx.doi.org/doicode_here)
@@ -40,3 +41,11 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 An example of configuration file and release file used in a real scenario is
 provided by `anne2019_ladim.yaml` and `anne2019_particles.rls`.
+
+
+## History
+
+Created by Bjørn Ådlandsvik (2018).
+
+Refined by Anne Dagrun Sandvik and Pål Næverlid Sævik (2019) to account for
+improved understanding of salmon lice freshwater avoidance behaviour.

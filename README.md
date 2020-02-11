@@ -1,16 +1,20 @@
-# IBMs for LADiM
-This repository contains individual-based models created at the Institute of
-Marine Research (IMR) for use in the in-house particle tracking software
-_Lagrangian Advection and Diffusion Model_ (LADiM).
+# Plugins for LADiM
+This repository contains plugins for the _Lagrangian Advection and Diffusion
+Model_ (LADiM), which is the particle tracking software used at the Institute
+of Marine Research (IMR).
+([https://github.com/bjornaa/ladim](https://github.com/bjornaa/ladim)) 
 
 Documentation and examples are provided for each model.
 
-## List of available IBMs
+## List of available plugins
 
-Name | Description | Original author
----- | ----------- | ---------------
-sedimentation | Sinking particles | Fernandez, Marcos Carvajalino
-egg           | Buoyant fish eggs | Myksvoll, Mari Skuggedal
+Name                                                   | Description       
+------------------------------------------------------ | ------------------
+[chemicals](ladim_plugins/chemicals/README.md)         | Passive tracer    
+[egg](ladim_plugins/egg/README.md)                     | Buoyant fish eggs 
+[salmon_lice](ladim_plugins/salmon_lice/README.md)     | Salmon lice larvae
+[sedimentation](ladim_plugins/sedimentation/README.md) | Sinking particles 
+ 
 
 ## Installation
 
@@ -20,8 +24,8 @@ git clone https://github.com/pnsaevik/ladim_plugins.git <ladim_plugins_local_dir
 ```
 
 Then use `pip` to install the package. This step is optional, but it
-registers the IBMs into the `ladim_plugins` namespace which makes them easier to
-access. It also allows automated tests.
+registers the plugin into the `ladim_plugins` namespace, which makes them
+easier to access. It also allows automated tests.
 ```
 pip install -e <ladim_plugins_local_dir>
 ```
@@ -30,7 +34,7 @@ The installation can be tested with the command
 ```
 pytest -Wignore --pyargs ladim_plugins
 ``` 
-This command will run ladim on each of the IBMs, using the sample `ladim.yaml`
+This command will run ladim on each of the plugins, using the sample `ladim.yaml`
 and `particle.rls` files found in the subpackage folders. The tests succeed if
 `ladim` is present on the system, `ladim_plugins` is installed correctly, and the
 output from the ladim runs matches exactly with the `out.nc` files found in the
@@ -43,15 +47,12 @@ subpackage folders.
    into the working directory. 
 2. Make desired changes to the `yaml` and `rls` files. More detailed
    instructions are found in the `README.md` file within the subpackage.
-3. If the `pip` installation step was skipped, the `ibm.py` module must be
-   copied as well, and the `ibm.module` entry in `ladim.yaml` must be changed
-   to `"ibm"`.
-4. Run `ladim` and the output is written to `out.nc`. 
+3. Run `ladim` and the output is written to `out.nc`. 
 
 
-## Add new IBMs
+## Contribute
 
-To add new IBMs, contact the maintainer of the `ladim_plugins` repository. A
+To add new plugins, contact the maintainer of the `ladim_plugins` repository. A
 properly structured IBM subpackage has the following ingredients:
 
 1. A file `__init__.py` containing the statement `from .ibm import IBM`

@@ -41,3 +41,9 @@ entry in `ladim.yaml`. The output variables are specified by the
 An example of configuration file and release file used in a real scenario is
 provided by `svim_ladim.yaml` and `svim_particles.rls`. The code used to make
 the release file is provided by `svim_make_release.m`.  
+
+## History
+
+Created by Mari Myksvoll (2011).
+
+Refined by Pål Næverlid Sævik (2020).

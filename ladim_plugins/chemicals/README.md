@@ -46,3 +46,8 @@ To use the default Ladim land collision treatment instead, set the config entry
 The simulation result is stored in a file specified by the `files.output_file`
 entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
+
+
+## History
+
+Created 2020-02-07 by Pål Næverlid Sævik.
