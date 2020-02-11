@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ladim_ibm.chemicals import gridforce, IBM
+from ladim_plugins.chemicals import gridforce, IBM
 
 
 class Test_nearest_unmasked:
@@ -32,7 +32,7 @@ class Test_nearest_unmasked:
 class Test_ibm_land_collision:
     @pytest.fixture()
     def config(self):
-        from ladim_ibm.tests.test_examples import get_config
+        from ladim_plugins.tests.test_examples import get_config
         from ladim.configuration import configure
         return configure(get_config('chemicals'))
 
