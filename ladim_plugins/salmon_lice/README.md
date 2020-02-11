@@ -40,7 +40,7 @@ entry in `ladim.yaml`. The output variables are specified by the
 ## Real-world example 
 
 An example of configuration file and release file used in a real scenario is
-provided by `anne2019_ladim.yaml` and `anne2019_particles.rls`.
+provided by `sandvik2019_ladim.yaml` and `sandvik2019_particles.rls`.
 
 
 ## History

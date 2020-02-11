@@ -13,7 +13,7 @@ time_control:
 files:
     grid_file             : /gpfs/gpfs0/osea/jonal/NorKyst-800m_Lus/his/2019/norkyst_800m_his.nc4_2019052301-2019052400
     input_file            : /gpfs/gpfs0/osea/jonal/NorKyst-800m_Lus/his/2019/norkyst_800m_his.nc4_*
-    particle_release_file : ./lice_2019.rls
+    particle_release_file : ./sandvik2019_particles.rls
     output_file           : /gpfs/gpfs0/osea/Arkiv_V2/Raw2019/raw_0000.nc
 
 gridforce:
