@@ -1,18 +1,19 @@
 # Plugins for LADiM
 This repository contains plugins for the _Lagrangian Advection and Diffusion
 Model_ (LADiM), which is the particle tracking software used at the Institute
-of Marine Research (IMR). 
+of Marine Research (IMR).
+([https://github.com/bjornaa/ladim](https://github.com/bjornaa/ladim)) 
 
 Documentation and examples are provided for each model.
 
 ## List of available plugins
 
-Name          | Description        | Author(s)
-------------- | ------------------ | ---------------
-chemicals     | Passive tracer     | Pål Næverlid Sævik
-egg           | Buoyant fish eggs  | Mari Skuggedal Myksvoll
-salmon_lice   | Salmon lice larvae | Anne Dagrun Sandvik
-sedimentation | Sinking particles  | Marcos Carvajalino Fernandez, Pål Næverlid Sævik
+Name                                     | Description       
+---------------------------------------- | ------------------
+[chemicals](chemicals/README.md)         | Passive tracer    
+[egg](egg/README.md)                     | Buoyant fish eggs 
+[salmon_lice](salmon_lice/README.md)     | Salmon lice larvae
+[sedimentation](sedimentation/README.md) | Sinking particles 
  
 
 ## Installation
