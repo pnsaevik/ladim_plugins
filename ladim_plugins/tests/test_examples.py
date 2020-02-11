@@ -48,7 +48,7 @@ def run_ladim(module_name):
 
 def get_config(module_name):
     # Load yaml config string
-    package = 'ladim_ibm.' + module_name
+    package = 'ladim_plugins.' + module_name
     with pkg_resources.resource_stream(package, 'ladim.yaml') as config_file:
         config_string = config_file.read()
 
@@ -79,7 +79,7 @@ def get_module_dir(module_name):
 def chdir_temp():
     tempdir = None
     try:
-        tempdir = pathlib.Path(tempfile.mkdtemp(prefix='ladim_ibm_test_dir_'))
+        tempdir = pathlib.Path(tempfile.mkdtemp(prefix='ladim_plugins_test_dir_'))
         curdir = os.getcwd()
         os.chdir(tempdir)
         yield tempdir

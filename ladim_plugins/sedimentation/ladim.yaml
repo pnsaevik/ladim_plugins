@@ -14,18 +14,23 @@ files:
 gridforce:
     # Module name is mandatory.
     # The other items are module dependent
-    module: ladim_ibm.chemicals
+    module: ladim.gridforce.ROMS
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
 
 
 ibm:
-    module: ladim_ibm.chemicals
+    module: ladim_plugins.sedimentation
+    variables:
+    - sink_vel  # Sinking velocity [m/s]
+    - active    # 1 if mobile, 0 if immobile
+    - age       # Particle age in seconds
+    lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
     vertical_mixing: 0.0001  # [m*2/s]
-    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze'
 
 particle_release:
-    variables: [release_time, X, Y, Z]
+    variables: [active, release_time, X, Y, Z, sink_vel]
     release_time: time   # np.datetime64[s]
+    active: int
 
     # Mark variables as time independent
     particle_variables: [release_time]
@@ -37,7 +42,7 @@ output_variables:
 
     # Variables included in output
     particle: [release_time]
-    instance: [pid, X, Y, Z]
+    instance: [pid, X, Y, Z, active]
 
 
     # --- Output format for standard variables ---
@@ -71,10 +76,17 @@ output_variables:
         units: m
         positive: down
 
+    # Output format for the particle active indicator
+    active:
+        ncformat: i4,
+        long_name: particle active mask,
+        # flag_values: [0, 1],
+        flag_meanings: inactive active,
+
 
 numerics:
     # Model time step
     dt: [60, s]     # Format = [value, unit]
     # Advection method, EF, RK2, or RK4
-    advection: RK4
+    advection: EF
     diffusion: 1    # [m/s**2]

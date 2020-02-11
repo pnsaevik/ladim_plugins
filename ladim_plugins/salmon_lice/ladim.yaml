@@ -17,7 +17,7 @@ gridforce:
 
 
 ibm:
-    module: ladim_ibm.salmon_lice
+    module: ladim_plugins.salmon_lice
     variables:
     - super       # Number of actual salmon lice per simulation particle
     - age         # Age of particle [degree*days]
