@@ -16,7 +16,7 @@ egg           | Buoyant fish eggs | Myksvoll, Mari Skuggedal
 
 Use `git` to download the repository into a local folder
 ```
-git clone https://git.imr.no/a5606/ladim_ibm.git <ladim_plugins_local_dir>
+git clone https://github.com/pnsaevik/ladim_plugins.git <ladim_plugins_local_dir>
 ```
 
 Then use `pip` to install the package. This step is optional, but it

@@ -5,7 +5,7 @@ setup(
     version='0.1.0',
     packages=find_packages(),
     package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml', '*.m']},
-    url='https://git.imr.no/a5606/ladim_ibm',
+    url='https://github.com/pnsaevik/ladim_plugins',
     license='MIT Licence',
     author='Pål Næverlid Sævik',
     author_email='a5606@hi.no',
