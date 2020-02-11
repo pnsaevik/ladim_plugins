@@ -8,12 +8,12 @@ Documentation and examples are provided for each model.
 
 ## List of available plugins
 
-Name                                     | Description       
----------------------------------------- | ------------------
-[chemicals](chemicals/README.md)         | Passive tracer    
-[egg](egg/README.md)                     | Buoyant fish eggs 
-[salmon_lice](salmon_lice/README.md)     | Salmon lice larvae
-[sedimentation](sedimentation/README.md) | Sinking particles 
+Name                                                   | Description       
+------------------------------------------------------ | ------------------
+[chemicals](ladim_plugins/chemicals/README.md)         | Passive tracer    
+[egg](ladim_plugins/egg/README.md)                     | Buoyant fish eggs 
+[salmon_lice](ladim_plugins/salmon_lice/README.md)     | Salmon lice larvae
+[sedimentation](ladim_plugins/sedimentation/README.md) | Sinking particles 
  
 
 ## Installation
