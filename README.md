@@ -27,7 +27,7 @@ Then use `pip` to install the package. This step is optional, but it
 registers the plugin into the `ladim_plugins` namespace, which makes them
 easier to access. It also allows automated tests.
 ```
-pip install -e <ladim_plugins_local_dir>
+pip install <ladim_plugins_local_dir>
 ```
 
 The installation can be tested with the command

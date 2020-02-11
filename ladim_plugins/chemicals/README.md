@@ -50,4 +50,4 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
-Created 2020-02-07 by Pål Næverlid Sævik.
+Created by Pål Næverlid Sævik (2020).

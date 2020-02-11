@@ -45,7 +45,7 @@ provided by `sandvik2019_ladim.yaml` and `sandvik2019_particles.rls`.
 
 ## History
 
-Created by Bjørn Ådlandsvik (2018).
+Created by Ingrid Askeland Johnsen (2014).
 
 Refined by Anne Dagrun Sandvik and Pål Næverlid Sævik (2019) to account for
 improved understanding of salmon lice freshwater avoidance behaviour.

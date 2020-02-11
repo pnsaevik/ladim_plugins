@@ -45,5 +45,3 @@ the release file is provided by `svim_make_release.m`.
 ## History
 
 Created by Mari Myksvoll (2011).
-
-Refined by Pål Næverlid Sævik (2020).
