@@ -3,3 +3,8 @@
 
 # IDE configuration
 .idea/*
+
+# Build files
+/build/*
+/dist/*
+*.egg-info/*
