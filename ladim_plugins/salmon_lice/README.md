@@ -6,7 +6,7 @@ simulations of salmon lice distribution within Norwegian fjords.
 
 The model is based on a number of scientific works on salmon lice behaviour, including
 - [Author et al. (2011)](http://dx.doi.org/doicode_here)
-- New salinity model: [Author et al. (2011)](http://dx.doi.org/doicode_here)
+- New salinity model: [Sandvik et al. (2020)](https://doi.org/10.1093/icesjms/fsz256)
 
 ## Usage
 
