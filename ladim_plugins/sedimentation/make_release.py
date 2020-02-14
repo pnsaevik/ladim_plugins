@@ -1,9 +1,13 @@
 import numpy as np
 
 
-def main(
+def main(config):
+    return single_config(**config)
+
+
+def single_config(
     location=None, depth=0, start_time='2000-01-01', stop_time='2000-01-01',
-    num_particles=0,
+    num_particles=0, group_id=0,
 ):
     # noinspection PyPackageRequirements
     import pandas as pd
@@ -21,7 +25,7 @@ def main(
     release['lat'], release['lon'] = latlon(location, num_particles)
     release['Z'] = depth
     release['sink_vel'] = sinkvel(num_particles)
-    release['group_id'] = 0
+    release['group_id'] = group_id
 
     return release
 

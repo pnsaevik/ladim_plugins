@@ -7,17 +7,17 @@ import pandas as pd
 class Test_main:
     def test_returns_dataframe_when_empty_config(self):
         config = dict()
-        result = make_release.main(**config)
+        result = make_release.main(config)
         assert isinstance(result, pd.DataFrame)
 
     def test_returns_correct_number_of_particles(self):
         config = dict(num_particles=10)
-        result = make_release.main(**config)
+        result = make_release.main(config)
         assert len(result) == 10
 
     def test_correct_latlon_when_given(self):
         config = dict(num_particles=5, location=dict(lat=1, lon=2))
-        result = make_release.main(**config)
+        result = make_release.main(config)
         assert result['lat'].values.tolist() == [1, 1, 1, 1, 1]
         assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
 
@@ -27,14 +27,14 @@ class Test_main:
                 lat="1° 30.0'", lon="1° 12.0' 36.0''",
             ),
         )
-        result = make_release.main(**config)
+        result = make_release.main(config)
         assert result['lat'].values.tolist() == [1.5] * 5
         assert result['lon'].values.tolist() == [1.21] * 5
 
     def test_correct_time_when_given(self):
         config = dict(
             num_particles=5, start_time='2000-01-01', stop_time='2000-01-02')
-        result = make_release.main(**config)
+        result = make_release.main(config)
         assert result['release_time'].values.astype(str).tolist() == [
             '2000-01-01T00:00:00.000000000',
             '2000-01-01T06:00:00.000000000',
@@ -47,7 +47,7 @@ class Test_main:
         config = dict(num_particles=5, location=dict(
             lat=[0, 0, 1], lon=[0, 1, 1],
         ))
-        result = make_release.main(**config)
+        result = make_release.main(config)
         assert result['lat'].values.tolist() == [
             0.2082749619173354,
             0.5288949197529045,
