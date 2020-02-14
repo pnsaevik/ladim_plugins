@@ -1,9 +1,19 @@
 import numpy as np
 # noinspection PyPackageRequirements
 import pandas as pd
+import yaml
 
 
 def main(config):
+    # Check if input argument is yaml file
+    try:
+        with open(config) as config_file:
+            config = yaml.safe_load(config_file)
+    except TypeError:
+        pass
+    except OSError:
+        pass
+
     if isinstance(config, dict):
         return single_config(**config)
     else:
