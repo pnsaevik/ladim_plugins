@@ -39,7 +39,7 @@ def single_config(
         location = dict(lat=0., lon=0.)
 
     # Set parameters
-    release['active'] = 1
+    release['active'] = np.ones(num_particles)
     release['release_time'] = linspace_time(start_time, stop_time, num_particles)
     release['lat'], release['lon'] = latlon(location, num_particles)
     release['Z'] = depth
