@@ -43,6 +43,27 @@ class Test_main:
             '2000-01-02T00:00:00.000000000',
         ]
 
+    def test_location_when_polygon(self):
+        config = dict(num_particles=5, location=dict(
+            lat=[0, 0, 1], lon=[0, 1, 1],
+        ))
+        result = make_release.main(**config)
+        assert result['lat'].values.tolist() == [
+            0.2082749619173354,
+            0.5288949197529045,
+            0.4319554389060677,
+            0.07440336170733897,
+            0.07103605819788694,
+        ]
+        assert result['lon'].values.tolist() == [
+            0.6458941130666561,
+            0.5624127887373075,
+            0.8917730007820798,
+            0.9636627605010293,
+            0.6165584811742223,
+        ]
+        assert np.all(result['lon'].values >= result['lat'].values)
+
 
 class Test_to_numeric_latlon:
     def test_correct_if_float(self):
@@ -59,46 +80,6 @@ class Test_to_numeric_latlon:
 
     def test_correct_if_min_and_sec(self):
         assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0''")
-
-
-class Test_get_release_data:
-    def test_is_homogeneous_table_when_point_input(self):
-        data = make_release.get_release_data(
-            date='2019-01-02T03:04:05', lat=60, lon=5, z=1,
-            distribution='POINT (0 0)', num_particles=10)
-
-        assert list(data.variables) == ['release_time', 'lat', 'lon', 'Z']
-        assert list(data.dims) == ['particle']
-        assert data.dims['particle'] == 10
-        assert data.lat.values.tolist() == [60] * 10
-        assert data.lon.values.tolist() == [5] * 10
-        assert data.Z.values.tolist() == [1] * 10
-        assert data.release_time.values.astype(str).tolist() == \
-            ['2019-01-02T03:04:05.000000000'] * 10
-
-    def test_varying_zcoord_when_tuple_z_input(self):
-        data = make_release.get_release_data(
-            date='2019-01-02T03:04:05', lat=60, lon=5, z=(1, 5),
-            distribution='POINT (0 0)', num_particles=10)
-
-        z = data.Z.values
-
-        assert z.min() > 1
-        assert z.max() < 5
-        assert len(np.unique(z)) == len(z)
-
-    def test_horizontal_distribution_when_polygon_input(self):
-        data = make_release.get_release_data(
-            date='2019-01-02T03:04:05', lat=60, lon=0, z=0, num_particles=1000,
-            distribution='POLYGON ((-1 -1, 1 -1, 1 1, -1 1, -1 -1))')
-
-        lat_m = (data.lat.values - 60) * 60 * 1852
-        lon_m = data.lon.values * 60 * 1852 * 0.5
-
-        assert -1 < lat_m.min() < -0.9
-        assert 0.9 < lat_m.max() < 1
-        assert -1 < lon_m.min() < -0.9
-        assert 0.9 < lon_m.max() < 1
 
 
 class Test_get_polygon_sample:

@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 
 
 def main(
@@ -53,6 +52,12 @@ def latlon(loc, n):
         # If singular point
         if len(lat.shape) == 0 and len(lon.shape) == 0:
             return np.ones(n)*lat, np.ones(n)*lon
+        # If polygon
+        else:
+            return get_polygon_sample(np.array((lat, lon)).T, n)
+
+    else:
+        raise NotImplementedError("Database lookup not implemented")
 
 
 def to_numeric_latlon(lat_or_lon):
@@ -72,55 +77,6 @@ def to_numeric_latlon(lat_or_lon):
         else:
             return float(lat_or_lon)
     return lat_or_lon
-
-
-# noinspection PyPackageRequirements
-def get_release_data(date, lat, lon, z, distribution, num_particles):
-    np.random.seed(0)
-
-    from shapely.wkt import loads as load_wkt
-
-    distribution_shape = load_wkt(distribution)
-    if distribution_shape.wkt == 'POINT (0 0)':
-        lat_arr = np.repeat(lat, num_particles)
-        lon_arr = np.repeat(lon, num_particles)
-    elif distribution_shape.wkt.startswith('POLYGON'):
-        from oceanviz.crs import transform as crs_transform
-        coords = np.array(distribution_shape.exterior.xy).T
-        x, y = get_polygon_sample(coords, num_particles)
-        lat_arr, lon_arr = crs_transform(x, y, ('local', lat, lon), 'ETRS89')
-    else:
-        raise ValueError(f'Distribution "{distribution_shape.wkt}" is unknown')
-
-    try:
-        zmin = z[0]
-        zmax = z[1]
-        z_arr = zmin + np.random.rand(num_particles) * (zmax - zmin)
-    except TypeError:
-        z_arr = np.repeat(z, num_particles)
-
-    date_arr = np.repeat(np.datetime64(date), num_particles)
-
-    return xr.Dataset(
-        data_vars=dict(
-            release_time=xr.Variable(
-                dims='particle',
-                data=date_arr,
-            ),
-            lat=xr.Variable(
-                dims='particle',
-                data=lat_arr,
-            ),
-            lon=xr.Variable(
-                dims='particle',
-                data=lon_arr,
-            ),
-            Z=xr.Variable(
-                dims='particle',
-                data=z_arr,
-            ),
-        )
-    )
 
 
 def _unit_triangle_sample(num):
