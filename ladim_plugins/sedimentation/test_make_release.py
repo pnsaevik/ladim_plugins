@@ -21,6 +21,18 @@ class Test_main:
         assert result['lat'].values.tolist() == [1, 1, 1, 1, 1]
         assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
 
+    def test_correct_time_when_given(self):
+        config = dict(
+            num_particles=5, start_time='2000-01-01', stop_time='2000-01-02')
+        result = make_release.main(**config)
+        assert result['release_time'].values.astype(str).tolist() == [
+            '2000-01-01T00:00:00.000000000',
+            '2000-01-01T06:00:00.000000000',
+            '2000-01-01T12:00:00.000000000',
+            '2000-01-01T18:00:00.000000000',
+            '2000-01-02T00:00:00.000000000',
+        ]
+
 
 class Test_get_release_data:
     def test_is_homogeneous_table_when_point_input(self):

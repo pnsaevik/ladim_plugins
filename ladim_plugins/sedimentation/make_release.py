@@ -16,14 +16,23 @@ def main(
     if location is None:
         location = dict(lat=0., lon=0.)
 
-    # Add sink velocity
-    release['sink_vel'] = sinkvel(num_particles)
-
-    # Add location
-    release['Z'] = depth
+    # Set parameters
+    release['active'] = 1
+    release['release_time'] = linspace_time(start_time, stop_time, num_particles)
     release['lat'], release['lon'] = latlon(location, num_particles)
+    release['Z'] = depth
+    release['sink_vel'] = sinkvel(num_particles)
+    release['group_id'] = 0
 
     return release
+
+
+def linspace_time(start, stop, num, granularity='ms'):
+    start_t = np.datetime64(start)
+    stop_t = np.datetime64(stop)
+    timediff = (stop_t - start_t) / np.timedelta64(1, granularity)
+    dt = np.linspace(0, 1, num) * timediff
+    return start_t + dt.astype(f'timedelta64[{granularity}]')
 
 
 # noinspection PyPackageRequirements
