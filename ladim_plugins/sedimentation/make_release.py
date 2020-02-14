@@ -4,7 +4,7 @@ import pandas as pd
 import yaml
 
 
-def main(config):
+def main(config, fname=None):
     # Check if input argument is yaml file
     try:
         with open(config) as config_file:
@@ -15,10 +15,15 @@ def main(config):
         pass
 
     if isinstance(config, dict):
-        return single_config(**config)
+        frame = single_config(**config)
     else:
         frames = [single_config(**c) for c in config]
-        return pd.concat(frames)
+        frame = pd.concat(frames)
+
+    if fname is not None:
+        frame.to_csv(fname, sep="\t", header=False)
+
+    return frame
 
 
 def single_config(
