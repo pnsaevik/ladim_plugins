@@ -1,16 +1,20 @@
 import numpy as np
+# noinspection PyPackageRequirements
+import pandas as pd
 
 
 def main(config):
-    return single_config(**config)
+    if isinstance(config, dict):
+        return single_config(**config)
+    else:
+        frames = [single_config(**c) for c in config]
+        return pd.concat(frames)
 
 
 def single_config(
     location=None, depth=0, start_time='2000-01-01', stop_time='2000-01-01',
     num_particles=0, group_id=0,
 ):
-    # noinspection PyPackageRequirements
-    import pandas as pd
 
     release = pd.DataFrame(
         columns=['active', 'release_time', 'lat', 'lon', 'Z', 'sink_vel', 'group_id'])

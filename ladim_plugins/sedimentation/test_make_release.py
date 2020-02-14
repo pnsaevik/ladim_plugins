@@ -64,6 +64,14 @@ class Test_main:
         ]
         assert np.all(result['lon'].values >= result['lat'].values)
 
+    def test_multiple_groups(self):
+        config = [
+            dict(num_particles=2, group_id=1),
+            dict(num_particles=3, group_id=2),
+        ]
+        result = make_release.main(config)
+        assert result['group_id'].values.tolist() == [1, 1, 2, 2, 2]
+
 
 class Test_to_numeric_latlon:
     def test_correct_if_float(self):
