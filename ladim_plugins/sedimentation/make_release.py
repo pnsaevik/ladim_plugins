@@ -21,7 +21,7 @@ def main(config, fname=None):
         frame = pd.concat(frames)
 
     if fname is not None:
-        frame.to_csv(fname, sep="\t", header=False)
+        frame.to_csv(fname, sep="\t", header=False, index=False)
 
     return frame
 
