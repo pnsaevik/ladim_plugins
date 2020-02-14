@@ -47,12 +47,31 @@ def sinkvel(n):
 def latlon(loc, n):
     # If lat/lon is given directly
     if isinstance(loc, dict):
-        lat = np.array(loc['lat'])
-        lon = np.array(loc['lon'])
+        lat = np.vectorize(to_numeric_latlon)(loc['lat'])
+        lon = np.vectorize(to_numeric_latlon)(loc['lon'])
 
         # If singular point
         if len(lat.shape) == 0 and len(lon.shape) == 0:
             return np.ones(n)*lat, np.ones(n)*lon
+
+
+def to_numeric_latlon(lat_or_lon):
+    if isinstance(lat_or_lon, str):
+        if '°' in lat_or_lon:
+            deg_str, rest = lat_or_lon.split('°')
+            mn = 0
+            sec = 0
+            if "''" in rest:
+                rest = rest.replace("''", "")
+                mn_str, sec_str = rest.split("'")
+                mn = float(mn_str)
+                sec = float(sec_str)
+            elif "'" in rest:
+                mn = float(rest.replace("'", ""))
+            return float(deg_str) + mn/60 + sec/3600
+        else:
+            return float(lat_or_lon)
+    return lat_or_lon
 
 
 # noinspection PyPackageRequirements

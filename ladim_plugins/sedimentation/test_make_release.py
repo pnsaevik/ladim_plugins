@@ -21,6 +21,16 @@ class Test_main:
         assert result['lat'].values.tolist() == [1, 1, 1, 1, 1]
         assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
 
+    def test_correct_latlon_when_given_string_loc(self):
+        config = dict(
+            num_particles=5, location=dict(
+                lat="1° 30.0'", lon="1° 12.0' 36.0''",
+            ),
+        )
+        result = make_release.main(**config)
+        assert result['lat'].values.tolist() == [1.5] * 5
+        assert result['lon'].values.tolist() == [1.21] * 5
+
     def test_correct_time_when_given(self):
         config = dict(
             num_particles=5, start_time='2000-01-01', stop_time='2000-01-02')
@@ -32,6 +42,23 @@ class Test_main:
             '2000-01-01T18:00:00.000000000',
             '2000-01-02T00:00:00.000000000',
         ]
+
+
+class Test_to_numeric_latlon:
+    def test_correct_if_float(self):
+        assert 1.23 == make_release.to_numeric_latlon(1.23)
+
+    def test_correct_if_simple_string(self):
+        assert 1.23 == make_release.to_numeric_latlon("1.23")
+
+    def test_correct_if_minutes(self):
+        assert 1.5 == make_release.to_numeric_latlon("1° 30.0'")
+        assert 1.5 == make_release.to_numeric_latlon("1°30.0'")
+        assert 1.5 == make_release.to_numeric_latlon(" 1 ° 30.0 ' ")
+        assert 1.5 == make_release.to_numeric_latlon("  1 °30.0  '")
+
+    def test_correct_if_min_and_sec(self):
+        assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0''")
 
 
 class Test_get_release_data:
