@@ -3,7 +3,7 @@ import xarray as xr
 
 
 def main(
-    location=None, start_time='2000-01-01', stop_time='2000-01-01',
+    location=None, depth=0, start_time='2000-01-01', stop_time='2000-01-01',
     num_particles=0,
 ):
     # noinspection PyPackageRequirements
@@ -14,24 +14,36 @@ def main(
 
     # Handle default arguments
     if location is None:
-        location = dict(lat=[0], lon=[0])
+        location = dict(lat=0., lon=0.)
 
-    sinkvel_fn = get_sinkvel_fn()
-    sinkvel = sinkvel_fn(num_particles)
-    release['sink_vel'] = sinkvel
+    # Add sink velocity
+    release['sink_vel'] = sinkvel(num_particles)
+
+    # Add location
+    release['Z'] = depth
+    release['lat'], release['lon'] = latlon(location, num_particles)
 
     return release
 
 
 # noinspection PyPackageRequirements
-def get_sinkvel_fn():
+def sinkvel(n):
     from scipy.interpolate import InterpolatedUnivariateSpline
+    sinkvel_tab = np.array([.100, .050, .025, .015, .010, .005, 0])
+    cumprob_tab = np.array([.000, .662, .851, .883, .909, .937, 1])
+    fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
+    return fn(np.random.rand(n))
 
-    sinkvel = np.array([.100, .050, .025, .015, .010, .005, 0])
-    cumprob = np.array([.000, .662, .851, .883, .909, .937, 1])
-    fn = InterpolatedUnivariateSpline(cumprob, sinkvel, k=2)
 
-    return lambda n: fn(np.random.rand(n))
+def latlon(loc, n):
+    # If lat/lon is given directly
+    if isinstance(loc, dict):
+        lat = np.array(loc['lat'])
+        lon = np.array(loc['lon'])
+
+        # If singular point
+        if len(lat.shape) == 0 and len(lon.shape) == 0:
+            return np.ones(n)*lat, np.ones(n)*lon
 
 
 # noinspection PyPackageRequirements

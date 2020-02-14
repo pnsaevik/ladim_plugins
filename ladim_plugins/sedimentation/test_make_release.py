@@ -10,21 +10,16 @@ class Test_main:
         result = make_release.main(**config)
         assert isinstance(result, pd.DataFrame)
 
-    def test_accepts_singular_location(self):
-        config = dict(
-            location=dict(
-                lat=[0],
-                lon=[0],
-            ),
-            num_particles=1,
-        )
-        result = make_release.main(**config)
-        assert isinstance(result, pd.DataFrame)
-
     def test_returns_correct_number_of_particles(self):
         config = dict(num_particles=10)
         result = make_release.main(**config)
         assert len(result) == 10
+
+    def test_correct_latlon_when_given(self):
+        config = dict(num_particles=5, location=dict(lat=1, lon=2))
+        result = make_release.main(**config)
+        assert result['lat'].values.tolist() == [1, 1, 1, 1, 1]
+        assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
 
 
 class Test_get_release_data:
