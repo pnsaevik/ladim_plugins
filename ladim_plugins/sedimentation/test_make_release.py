@@ -1,22 +1,30 @@
 import numpy as np
 from ladim_plugins.sedimentation import make_release
+# noinspection PyPackageRequirements
+import pandas as pd
 
 
 class Test_main:
-    def test_returns_string_when_empty_config(self):
+    def test_returns_dataframe_when_empty_config(self):
         config = dict()
         result = make_release.main(**config)
-        assert isinstance(result, str)
+        assert isinstance(result, pd.DataFrame)
 
-    def test_accepts_params(self):
+    def test_accepts_singular_location(self):
         config = dict(
             location=dict(
                 lat=[0],
                 lon=[0],
-            )
+            ),
+            num_particles=1,
         )
         result = make_release.main(**config)
-        assert isinstance(result, str)
+        assert isinstance(result, pd.DataFrame)
+
+    def test_returns_correct_number_of_particles(self):
+        config = dict(num_particles=10)
+        result = make_release.main(**config)
+        assert len(result) == 10
 
 
 class Test_get_release_data:

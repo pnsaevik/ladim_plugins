@@ -14,9 +14,24 @@ def main(
 
     # Handle default arguments
     if location is None:
-        location = dict(lat=[0, 0, 0], lon=[0, 0, 0])
+        location = dict(lat=[0], lon=[0])
 
-    return ""
+    sinkvel_fn = get_sinkvel_fn()
+    sinkvel = sinkvel_fn(num_particles)
+    release['sink_vel'] = sinkvel
+
+    return release
+
+
+# noinspection PyPackageRequirements
+def get_sinkvel_fn():
+    from scipy.interpolate import InterpolatedUnivariateSpline
+
+    sinkvel = np.array([.100, .050, .025, .015, .010, .005, 0])
+    cumprob = np.array([.000, .662, .851, .883, .909, .937, 1])
+    fn = InterpolatedUnivariateSpline(cumprob, sinkvel, k=2)
+
+    return lambda n: fn(np.random.rand(n))
 
 
 # noinspection PyPackageRequirements
