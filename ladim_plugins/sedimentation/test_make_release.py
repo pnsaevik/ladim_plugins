@@ -89,6 +89,9 @@ class Test_to_numeric_latlon:
     def test_correct_if_min_and_sec(self):
         assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0''")
 
+    def test_correct_if_min_and_sec_doublequote(self):
+        assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0\"")
+
 
 class Test_get_polygon_sample:
     def test_all_inside_when_triangle(self):

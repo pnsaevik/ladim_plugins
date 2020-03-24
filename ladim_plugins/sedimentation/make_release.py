@@ -87,7 +87,7 @@ def latlon(loc, n):
 def to_numeric_latlon(lat_or_lon):
     if isinstance(lat_or_lon, str):
         if '°' in lat_or_lon:
-            deg_str, rest = lat_or_lon.split('°')
+            deg_str, rest = lat_or_lon.replace('"', "''").split('°')
             mn = 0
             sec = 0
             if "''" in rest:
