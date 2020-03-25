@@ -7,7 +7,7 @@ import yaml
 def main(config, fname=None):
     # Check if input argument is yaml file
     try:
-        with open(config) as config_file:
+        with open(config, encoding='utf8') as config_file:
             config = yaml.safe_load(config_file)
     except TypeError:
         pass
