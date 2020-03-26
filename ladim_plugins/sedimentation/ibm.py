@@ -72,7 +72,7 @@ class IBM:
         state.alive = state.alive & (state.age <= self.lifespan)
 
 
-def sde_solver(x0, t0, advect_fn, diffuse_fn, dt, method='euler'):
+def sde_solver(x0, t0, advect_fn, diffuse_fn, dt, method):
     """
     Solve a stochastic differential equation.
 
