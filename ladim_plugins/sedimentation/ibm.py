@@ -72,7 +72,7 @@ class IBM:
         state.alive = state.alive & (state.age <= self.lifespan)
 
 
-def sde_solver(x0, t0, advect_fn, diffuse_fn, dt):
+def sde_solver(x0, t0, advect_fn, diffuse_fn, dt, method='euler'):
     """
     Solve a stochastic differential equation.
 
@@ -85,16 +85,29 @@ def sde_solver(x0, t0, advect_fn, diffuse_fn, dt):
     assumed that the main axes of the diffusion tensor are aligned with the
     coordinate axes.
 
+    Algorithms:
+
+    Euler: The naive Euler–Maruyama method. Works only for homogeneous
+    diffusion.
+
     :param x0: An N x M vector of initial values, where M is the number of coordinates.
     :param t0: The initial time.
     :param advect_fn: A function (x, t) --> x-like, representing the advective term.
     :param diffuse_fn: A function (x, t) --> x-like, representing the diffusive term.
     :param dt: The time step length.
+    :param method: Chosen algorithm. Alternatives are 'euler'.
     :return: An x0-like array of the integrated values.
     """
+    method_fns = dict(
+        euler=_euler_maruyama,
+    )
+
+    method_fn = method_fns[method]
+    return method_fn(x0, t0, advect_fn, diffuse_fn, dt)
+
+
+def _euler_maruyama(x0, t0, advect_fn, diffuse_fn, dt):
     a = advect_fn(x0, t0)
     b = diffuse_fn(x0, t0)
-
     dw = np.random.randn(x0.size).reshape(x0.shape) * np.sqrt(dt)
-
     return x0 + a * dt + b * dw
