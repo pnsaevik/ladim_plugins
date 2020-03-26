@@ -70,3 +70,10 @@ class IBM:
         state = self.state
         state.age += state.dt
         state.alive = state.alive & (state.age <= self.lifespan)
+
+
+def sde_solver(x0, t0, advect_fn, diffuse_fn, dt):
+    a = advect_fn(x0, t0)
+    d = diffuse_fn(x0, t0)
+
+    return x0 + a * dt
