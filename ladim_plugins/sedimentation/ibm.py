@@ -73,7 +73,28 @@ class IBM:
 
 
 def sde_solver(x0, t0, advect_fn, diffuse_fn, dt):
-    a = advect_fn(x0, t0)
-    d = diffuse_fn(x0, t0)
+    """
+    Solve a stochastic differential equation.
 
-    return x0 + a * dt
+    The equation needs to be an Itö SDE of the form
+
+    dx = a(x, t) * dt + b(x, t) * dw,
+
+    where a(x, t) is the advective term, and the diffusive term b(x, t) is
+    related to the physical diffusion coefficient D by b = sqrt(2D). It is
+    assumed that the main axes of the diffusion tensor are aligned with the
+    coordinate axes.
+
+    :param x0: An N x M vector of initial values, where M is the number of coordinates.
+    :param t0: The initial time.
+    :param advect_fn: A function (x, t) --> x-like, representing the advective term.
+    :param diffuse_fn: A function (x, t) --> x-like, representing the diffusive term.
+    :param dt: The time step length.
+    :return: An x0-like array of the integrated values.
+    """
+    a = advect_fn(x0, t0)
+    b = diffuse_fn(x0, t0)
+
+    dw = np.random.randn(x0.size).reshape(x0.shape) * np.sqrt(dt)
+
+    return x0 + a * dt + b * dw
