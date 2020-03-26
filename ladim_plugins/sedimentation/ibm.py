@@ -23,11 +23,15 @@ class IBM:
         self.forcing = forcing
         self.state = state
 
-        self.sink_particles()
-        self.bury_particles()
-        self.kill_old_particles()
+        self.resuspend()
+        self.sink()
+        self.bury()
+        self.kill_old()
 
-    def bury_particles(self):
+    def resuspend(self):
+        pass
+
+    def bury(self):
         grid = self.grid
         a = self.state.active != 0
         X, Y, Z = self.state.X[a], self.state.Y[a], self.state.Z[a]
@@ -41,7 +45,7 @@ class IBM:
         self.state.Z[a] = Z
         self.state.active[a] = ~at_seabed
 
-    def sink_particles(self):
+    def sink(self):
         state = self.state
 
         a = state.active != 0
@@ -62,7 +66,7 @@ class IBM:
         # Store new vertical position
         state.Z[a] = Z
 
-    def kill_old_particles(self):
+    def kill_old(self):
         state = self.state
         state.age += state.dt
         state.alive = state.alive & (state.age <= self.lifespan)
