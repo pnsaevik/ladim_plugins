@@ -72,66 +72,59 @@ class IBM:
         state.alive = state.alive & (state.age <= self.lifespan)
 
 
-def sde_solver(x0, t0, advect_fn, diffuse_fn, dt, method, **kwargs):
+def ladis(x0, t0, t1, v, K):
     """
-    Solve a stochastic differential equation.
+    Lagrangian Advection and DIffusion Solver.
 
-    The equation needs to be an Itö SDE of the form
+    Solve the diffusion equation in a Lagrangian framework. The equation is
 
-    dx = a(x, t) * dt + b(x, t) * dw,
+    dc/dt = - grad (vc) + div (K grad c),
 
-    where a(x, t) is the advective term, and the diffusive term b(x, t) is
-    related to the physical diffusion coefficient D by b = sqrt(2D). It is
-    assumed that the main axes of the diffusion tensor are aligned with the
-    coordinate axes.
+    where c is concentration, v is 3-dimensional velocity, K is a diagonal
+    tensor (i.e. main axes oriented along coordinate axes) of diffusion.
 
-    Algorithms:
+    This is translated to a stochastic differential equation of the form
 
-    Euler: The naive Euler–Maruyama method. Works only for homogeneous
-    diffusion.
+    dx = (v_x + d/dx K_xx) * dt + sqrt(2*K_xx) * dw_x,
+    dy = (v_y + d/dy K_yy) * dt + sqrt(2*K_yy) * dw_y,
+    dz = (v_z + d/dz K_zz) * dt + sqrt(2*K_zz) * dw_z,
 
-    Visser: The scheme according to Visser (1997, doi:10.3354/meps158275).
-    Requires an additional parameter 'diffuse_fn_ddx', which is a function
-    (x, t) --> x-like, representing the partial derivative of the diffusive term
-    along the coordinate axes (i.e., the diagonal of the Jacobian).
+    where x, y, z is the spatial position, K_xx, K_yy, K_zz are the diagonal
+    elements of K, and dw_x, dw_y, dw_z are Wiener process differential elements
+    with zero mean and stdev = sqrt(dt).
 
-    :param x0: An N x M vector of initial values, where M is the number of coordinates.
+    Algorithm:
+
+    Operator splitting: Diffusion first, then advection. Diffusion is solved
+    using the gradient-free backwards Itô scheme, according to LaBolle
+    (2000, 10.1029/1999WR900224).
+
+    :param x0: An N x M vector of initial values, where N is the number of
+               particles and M is the number of coordinates.
     :param t0: The initial time.
-    :param advect_fn: A function (x, t) --> x-like, representing the advective term.
-    :param diffuse_fn: A function (x, t) --> x-like, representing the diffusive term.
-    :param dt: The time step length.
-    :param method: Chosen algorithm. Alternatives are 'euler', 'visser'.
-    :return: An x0-like array of the integrated values.
+    :param t1: The end time.
+    :param v:  The velocity. A function (x, t) --> x-like.
+    :param K:  The diagonal elements of the diffusion tensor.
+               A function (x, t) --> x-like.
+    :return:   An x0-like array of the new particle positions.
     """
-    method_fns = dict(
-        euler=_euler_maruyama,
-        visser=_visser,
-    )
 
-    method_fn = method_fns[method]
-    return method_fn(x0, t0, advect_fn, diffuse_fn, dt, **kwargs)
+    dt = t1 - t0
 
+    # --- Diffusion, LaBolle scheme ---
 
-def _euler_maruyama(x0, t0, advect_fn, diffuse_fn, dt):
-    a = advect_fn(x0, t0)
-    b = diffuse_fn(x0, t0)
+    # First diffusion step (predictor)
+    b0 = np.sqrt(2 * K(x0, t0))
     dw = np.random.randn(x0.size).reshape(x0.shape) * np.sqrt(dt)
-    return x0 + a * dt + b * dw
+    x1 = x0 + b0 * dw
 
+    # Second diffusion step (corrector)
+    b1 = np.sqrt(2 * K(x1, t0))
+    x2 = x0 + b1 * dw
 
-def _visser(x0, t0, advect_fn, diffuse_fn, dt, diffuse_fn_ddx):
-    a = advect_fn(x0, t0)
-    b = diffuse_fn(x0, t0)
-    db_dx = diffuse_fn_ddx(x0, t0)
-    dw = np.random.randn(x0.size).reshape(x0.shape) * np.sqrt(dt)
+    # --- Advection, forward Euler ---
 
-    # Compute pseudovelocity
-    a1 = a + b * db_dx
+    a3 = v(x2, t0)
+    x3 = x2 + a3 * dt
 
-    # Intermediate step
-    dt1 = 0.5 * dt
-    t1 = t0 + dt1
-    x1 = x0 + a1 * dt1
-    b1 = diffuse_fn(x1, t1)
-
-    return x0 + a1 * dt + b1 * dw
+    return x3
