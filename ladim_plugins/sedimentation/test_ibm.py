@@ -21,16 +21,39 @@ class Test_update:
         w = 0
 
         zr = np.zeros(num)
-        grid = Stub(sample_depth=lambda x, y: zr + 10)
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zr + vel] * 2)
+        zrl = np.zeros_like
+        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
-            X=zr, Y=zr, Z=zr + 10, active=zr + 1, alive=zr == 0, age=zr,
+            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
             sink_vel=zr + w, dt=config['dt'],
         )
 
         my_ibm.update_ibm(grid, state, forcing)
 
         assert np.all(state.Z == 10)
+
+    def test_does_resuspend_when_high_velocity(self):
+        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        config = dict(dt=1, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        num = 5
+        vel = 1
+        w = 0
+
+        zr = np.zeros(num)
+        zrl = np.zeros_like
+        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
+        state = Stub(
+            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            sink_vel=zr + w, dt=config['dt'],
+        )
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.Z < 10)
 
 
 class Test_ladis:
