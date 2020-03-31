@@ -7,7 +7,8 @@ class IBM:
         self.lifespan = config['ibm']['lifespan']
 
         # Vertical mixing [m*2/s]
-        self.D = config['ibm']['vertical_mixing']
+        self.D = config['ibm']['vertical_mixing']  # 0.001 m2/s -- 0.01 m2/s (?)
+        self.taucrit = config['ibm'].get('taucrit', 0.12)
         self.vertical_diffusion = self.D > 0
 
         # Store time step value to calculate age
@@ -29,7 +30,10 @@ class IBM:
         self.kill_old()
 
     def resuspend(self):
-        pass
+        ustar = self.shear_velocity_btm()
+        tau = shear_stress_btm(ustar)
+        resusp = tau > self.taucrit
+        self.state.active[resusp] = True
 
     def bury(self):
         grid = self.grid
@@ -46,30 +50,51 @@ class IBM:
         self.state.active[a] = ~at_seabed
 
     def sink(self):
-        state = self.state
+        """Diffuse first (reflective boundaries), then sink (no boundaries)."""
 
-        a = state.active != 0
-        Z = state.Z[a]
+        # Get parameters
+        a = self.state.active != 0
+        x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
 
-        # Read sinking velocity for settling particles
-        W = state.sink_vel[a]
+        # Diffusion
+        b0 = np.sqrt(2 * self.D)
+        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(self.dt)
+        z1 = z + b0 * dw
 
-        # Random diffusion velocity
-        if self.vertical_diffusion:
-            rand = np.random.normal(size=len(W))
-            W += rand * (2 * self.D / self.dt) ** 0.5
+        # Reflexive boundary conditions
+        z1[z1 < 0] *= -1  # Surface
+        h = self.grid.sample_depth(x, y)
+        below_seabed = z1 > h
+        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
 
-        # Update vertical position, using reflexive boundary condition at the surface
-        Z += W * self.dt
-        Z[Z < 0] *= -1
+        # Advection
+        z2 = z1 + self.dt * self.state.sink_vel[a]  # Sink velocity
 
         # Store new vertical position
-        state.Z[a] = Z
+        self.state.Z[a] = z2
 
     def kill_old(self):
         state = self.state
         state.age += state.dt
         state.alive = state.alive & (state.age <= self.lifespan)
+
+    def shear_velocity_btm(self):
+        # Calculates bottom shear velocity from last computational layer
+        # velocity
+        # returns: Ustar at bottom cell
+        x = self.state.X
+        y = self.state.Y
+        h = self.grid.sample_depth(x, y)
+
+        u_btm, v_btm = self.forcing.velocity(x, y, h, tstep=0)
+        U2 = u_btm*u_btm + v_btm*v_btm
+        c = 0.003
+        return np.sqrt(c * U2)
+
+
+def shear_stress_btm(ustar):
+    rho = 1000
+    return ustar * ustar * rho
 
 
 def ladis(x0, t0, t1, v, K):
