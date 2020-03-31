@@ -3,7 +3,7 @@ import numpy as np
 
 class IBM:
     def __init__(self, config):
-        # Time before a particle is taken out of the simulation [days]
+        # Time before a particle is taken out of the simulation [seconds]
         self.lifespan = config['ibm']['lifespan']
 
         # Vertical mixing [m*2/s]
