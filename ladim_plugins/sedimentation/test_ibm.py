@@ -2,6 +2,37 @@ import numpy as np
 from ladim_plugins.sedimentation import ibm
 
 
+class Stub:
+    def __init__(self, **kwargs):
+        self._dic = kwargs
+
+    def __getattr__(self, item):
+        return self._dic[item]
+
+
+class Test_update:
+    def test_does_not_resuspend_when_zero_velocity(self):
+        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        config = dict(dt=1, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        num = 5
+        vel = 0
+        w = 0
+
+        zr = np.zeros(num)
+        grid = Stub(sample_depth=lambda x, y: zr + 10)
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zr + vel] * 2)
+        state = Stub(
+            X=zr, Y=zr, Z=zr + 10, active=zr + 1, alive=zr == 0, age=zr,
+            sink_vel=zr + w, dt=config['dt'],
+        )
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.Z == 10)
+
+
 class Test_ladis:
     def test_exact_when_trivial(self):
         x0 = np.array([[1, 2, 3], [4, 5, 6]])
