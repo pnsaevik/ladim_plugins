@@ -25,6 +25,7 @@ class IBM:
         self.state = state
 
         self.resuspend()
+        self.diffuse()
         self.sink()
         self.bury()
         self.kill_old()
@@ -49,12 +50,11 @@ class IBM:
         self.state.Z[a] = Z
         self.state.active[a] = ~at_seabed
 
-    def sink(self):
-        """Diffuse first (reflective boundaries), then sink (no boundaries)."""
-
+    def diffuse(self):
         # Get parameters
         a = self.state.active != 0
         x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
+        h = self.grid.sample_depth(x, y)
 
         # Diffusion
         b0 = np.sqrt(2 * self.D)
@@ -63,15 +63,20 @@ class IBM:
 
         # Reflexive boundary conditions
         z1[z1 < 0] *= -1  # Surface
-        h = self.grid.sample_depth(x, y)
         below_seabed = z1 > h
         z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
 
-        # Advection
-        z2 = z1 + self.dt * self.state.sink_vel[a]  # Sink velocity
-
         # Store new vertical position
-        self.state.Z[a] = z2
+        self.state.Z[a] = z1
+
+    def sink(self):
+        # Get parameters
+        a = self.state.active != 0
+        z = self.state.Z[a]
+        w = self.state.sink_vel[a]  # Sink velocity
+
+        # Euler scheme, no boundary conditions
+        self.state.Z[a] = z + self.dt * w
 
     def kill_old(self):
         state = self.state
