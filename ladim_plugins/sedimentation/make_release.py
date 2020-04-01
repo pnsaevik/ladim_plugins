@@ -182,3 +182,14 @@ def get_polygon_sample_nonconvex(coords, num):
     x = (x2 - x1) * s + (x3 - x1) * t + x1
     y = (y2 - y1) * s + (y3 - y1) * t + y1
     return x, y
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print('Usage: make_release <config.yaml> <out.rls>')
+    elif len(sys.argv) == 2:
+        out = main(sys.argv[1])
+        print(out)
+    else:
+        main(sys.argv[1], sys.argv[2])
