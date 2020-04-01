@@ -93,10 +93,10 @@ class Test_to_numeric_latlon:
         assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0\"")
 
 
-class Test_get_polygon_sample:
+class Test_get_polygon_sample_convex:
     def test_all_inside_when_triangle(self):
         coords = np.array([[5, 3], [5, 1], [6, 3]])
-        x, y = make_release.get_polygon_sample(coords, 100)
+        x, y = make_release.get_polygon_sample_convex(coords, 100)
 
         assert np.all(x >= 5)
         assert np.all(y <= 3)
@@ -104,7 +104,7 @@ class Test_get_polygon_sample:
 
     def test_all_inside_when_rectangle(self):
         coords = np.array([[1, 10], [2, 10], [2, 12], [1, 12]])
-        x, y = make_release.get_polygon_sample(coords, 100)
+        x, y = make_release.get_polygon_sample_convex(coords, 100)
 
         assert np.all(x >= 1)
         assert np.all(x <= 2)
@@ -113,15 +113,15 @@ class Test_get_polygon_sample:
 
     def test_does_not_work_when_nonconvex_polygon(self):
         coords = np.array([[0, 0], [10, 0], [10, 10], [9, 1]])
-        x, y = make_release.get_polygon_sample(coords, 100)
+        x, y = make_release.get_polygon_sample_convex(coords, 100)
         is_inside_forbidden_area = (x < 9) & (y > 1)
         assert np.count_nonzero(is_inside_forbidden_area) > 0
 
 
-class Test_get_concave_polygon_sample:
+class Test_get_polygon_sample_nonconvex:
     def test_all_inside_when_triangle(self):
         coords = np.array([[5, 3], [5, 1], [6, 3]])
-        x, y = make_release.get_concave_polygon_sample(coords, 100)
+        x, y = make_release.get_polygon_sample_nonconvex(coords, 100)
 
         assert np.all(x >= 5)
         assert np.all(y <= 3)
@@ -129,7 +129,7 @@ class Test_get_concave_polygon_sample:
 
     def test_all_inside_when_rectangle(self):
         coords = np.array([[1, 10], [2, 10], [2, 12], [1, 12]])
-        x, y = make_release.get_concave_polygon_sample(coords, 100)
+        x, y = make_release.get_polygon_sample_nonconvex(coords, 100)
 
         assert np.all(x >= 1)
         assert np.all(x <= 2)
@@ -138,7 +138,7 @@ class Test_get_concave_polygon_sample:
 
     def test_works_when_nonconvex_polygon(self):
         coords = np.array([[0, 0], [10, 0], [10, 10], [9, 1]])
-        x, y = make_release.get_concave_polygon_sample(coords, 100)
+        x, y = make_release.get_polygon_sample_nonconvex(coords, 100)
         is_inside_forbidden_area = (x < 9) & (y > 1)
         assert np.count_nonzero(is_inside_forbidden_area) == 0
 

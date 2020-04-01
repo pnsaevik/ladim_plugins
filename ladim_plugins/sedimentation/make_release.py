@@ -78,7 +78,7 @@ def latlon(loc, n):
             return np.ones(n)*lat, np.ones(n)*lon
         # If polygon
         else:
-            return get_polygon_sample(np.array((lat, lon)).T, n)
+            return get_polygon_sample_convex(np.array((lat, lon)).T, n)
 
     else:
         raise NotImplementedError("Database lookup not implemented")
@@ -110,8 +110,15 @@ def _unit_triangle_sample(num):
     return xy
 
 
-# noinspection PyPackageRequirements
 def get_polygon_sample(coords, num):
+    if is_convex(coords):
+        return get_polygon_sample_convex(coords, num)
+    else:
+        return get_polygon_sample_nonconvex(coords, num)
+
+
+# noinspection PyPackageRequirements
+def get_polygon_sample_convex(coords, num):
     from shapely.geometry import Polygon
     from shapely.ops import triangulate
     np.random.seed(0)
@@ -148,7 +155,7 @@ def is_convex(coords):
 
 
 # noinspection PyPackageRequirements
-def get_concave_polygon_sample(coords, num):
+def get_polygon_sample_nonconvex(coords, num):
     import triangle as tr
     from shapely.geometry import Polygon
     np.random.seed(0)
