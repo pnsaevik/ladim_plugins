@@ -26,6 +26,7 @@ ibm:
     - age       # Particle age in seconds
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
     vertical_mixing: 0.0001  # [m*2/s]
+    taucrit: 0.12  # Critical shear stress for resuspension (sand = 0.12 kg / m s2)
 
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]
