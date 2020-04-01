@@ -136,6 +136,17 @@ def get_polygon_sample(coords, num):
     return x, y
 
 
+def is_convex(coords):
+    # Compute coord differences
+    c = np.concatenate([coords, coords[0:2]])
+    v = c[:-1, :] - c[1:, :]
+
+    # Compute sign of the cross product
+    sgn = v[:-1, 0] * v[1:, 1] > v[:-1, 1] * v[1:, 0]
+    # noinspection PyUnresolvedReferences
+    return np.all(sgn == sgn[0])
+
+
 # noinspection PyPackageRequirements
 def get_concave_polygon_sample(coords, num):
     import triangle as tr

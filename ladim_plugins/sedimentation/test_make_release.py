@@ -141,3 +141,17 @@ class Test_get_concave_polygon_sample:
         x, y = make_release.get_concave_polygon_sample(coords, 100)
         is_inside_forbidden_area = (x < 9) & (y > 1)
         assert np.count_nonzero(is_inside_forbidden_area) == 0
+
+
+class Test_is_convex:
+    def test_returns_true_if_clockwise_square(self):
+        coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
+        assert make_release.is_convex(coords)
+
+    def test_returns_true_if_counterclockwise_square(self):
+        coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+        assert make_release.is_convex(coords)
+
+    def test_returns_false_if_nonconvex_quadrilateral(self):
+        coords = np.array([[0, 0], [1, 0], [.1, .1], [0, 1]])
+        assert not make_release.is_convex(coords)
