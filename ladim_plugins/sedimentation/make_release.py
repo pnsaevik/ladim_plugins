@@ -7,7 +7,7 @@ import yaml
 def main(config, fname=None):
     # Check if input argument is yaml file
     try:
-        with open(config) as config_file:
+        with open(config, encoding='utf8') as config_file:
             config = yaml.safe_load(config_file)
     except TypeError:
         pass
@@ -78,7 +78,7 @@ def latlon(loc, n):
             return np.ones(n)*lat, np.ones(n)*lon
         # If polygon
         else:
-            return get_polygon_sample(np.array((lat, lon)).T, n)
+            return get_polygon_sample_convex(np.array((lat, lon)).T, n)
 
     else:
         raise NotImplementedError("Database lookup not implemented")
@@ -87,7 +87,7 @@ def latlon(loc, n):
 def to_numeric_latlon(lat_or_lon):
     if isinstance(lat_or_lon, str):
         if '°' in lat_or_lon:
-            deg_str, rest = lat_or_lon.split('°')
+            deg_str, rest = lat_or_lon.replace('"', "''").split('°')
             mn = 0
             sec = 0
             if "''" in rest:
@@ -110,8 +110,15 @@ def _unit_triangle_sample(num):
     return xy
 
 
-# noinspection PyPackageRequirements
 def get_polygon_sample(coords, num):
+    if is_convex(coords):
+        return get_polygon_sample_convex(coords, num)
+    else:
+        return get_polygon_sample_nonconvex(coords, num)
+
+
+# noinspection PyPackageRequirements
+def get_polygon_sample_convex(coords, num):
     from shapely.geometry import Polygon
     from shapely.ops import triangulate
     np.random.seed(0)
@@ -136,8 +143,19 @@ def get_polygon_sample(coords, num):
     return x, y
 
 
+def is_convex(coords):
+    # Compute coord differences
+    c = np.concatenate([coords, coords[0:2]])
+    v = c[:-1, :] - c[1:, :]
+
+    # Compute sign of the cross product
+    sgn = v[:-1, 0] * v[1:, 1] > v[:-1, 1] * v[1:, 0]
+    # noinspection PyUnresolvedReferences
+    return np.all(sgn == sgn[0])
+
+
 # noinspection PyPackageRequirements
-def get_concave_polygon_sample(coords, num):
+def get_polygon_sample_nonconvex(coords, num):
     import triangle as tr
     from shapely.geometry import Polygon
     np.random.seed(0)
@@ -164,3 +182,14 @@ def get_concave_polygon_sample(coords, num):
     x = (x2 - x1) * s + (x3 - x1) * t + x1
     y = (y2 - y1) * s + (y3 - y1) * t + y1
     return x, y
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print('Usage: make_release <config.yaml> <out.rls>')
+    elif len(sys.argv) == 2:
+        out = main(sys.argv[1])
+        print(out)
+    else:
+        main(sys.argv[1], sys.argv[2])

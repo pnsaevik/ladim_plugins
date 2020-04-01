@@ -3,7 +3,7 @@
 time_control:
     # Start and stop of simulation
     start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:05:00
+    stop_time      : 2015-09-07 01:10:00
 
 
 files:
@@ -26,6 +26,7 @@ ibm:
     - age       # Particle age in seconds
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
     vertical_mixing: 0.0001  # [m*2/s]
+    taucrit: 0  # Critical shear stress for resuspension (sand = 0.12 kg / m s2)
 
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]
