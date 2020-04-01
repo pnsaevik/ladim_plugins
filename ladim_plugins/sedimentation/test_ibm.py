@@ -55,6 +55,53 @@ class Test_update:
 
         assert np.all(state.Z < 10)
 
+    def test_does_not_resuspend_when_zero_diffusion(self):
+        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0)
+        config = dict(dt=1, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        num = 5
+        vel = 1
+        w = 0
+
+        zr = np.zeros(num)
+        zrl = np.zeros_like
+        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
+        state = Stub(
+            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            sink_vel=zr + w, dt=config['dt'],
+        )
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.Z == 10)
+
+    def test_does_not_resuspend_when_large_sinkvel(self):
+        # On rare occasions, vertical mixing can overcome the sinking velocity
+        np.random.seed(0)
+
+        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        config = dict(dt=1, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        num = 5
+        vel = 1
+        w = 1
+
+        zr = np.zeros(num)
+        zrl = np.zeros_like
+        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
+        state = Stub(
+            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            sink_vel=zr + w, dt=config['dt'],
+        )
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.Z == 10)
+
 
 class Test_ladis:
     def test_exact_when_trivial(self):
