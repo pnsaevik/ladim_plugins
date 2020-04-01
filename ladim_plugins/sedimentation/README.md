@@ -4,7 +4,31 @@ The module represents passive particles that have a vertical migration rate due
 to sinking and vertical turbulence. Advection due to upwelling/downwelling is
 not included.
 
-Particles that reach the sea floor are immobilized. They are not resuspended.
+
+## Algorithm
+
+The IBM processes applies four different processes to the particles, in
+sequence. The processes are:
+
+1.  *Resuspension*. Settled particles where the bottom shear stress is greater
+    than `ibm.taucrit` are resuspended, meaning that they are free to move.
+
+2.  *Vertical diffusion*. Active particles are diffused according to
+    `ibm.vertical_mixing`. Reflective boundary conditions are employed at the
+    bottom and top.
+    
+    At the moment, variable vertical diffusion is not implemented.
+    *Therefore, the `ibm.vertical_mixing` parameter should reflect the
+    typical vertical diffusion observed by a particle on the bottom under
+    resuspension conditions.*
+    
+3.  *Sinking*. Active particles sink according to their sinking velocity, as
+    specified in `particles.rls`. Particles that sink to the sea floor are
+    marked as settled and inactive. They might be resuspended in the next
+    timestep.
+    
+4.  *Ageing*. Particles whose age exceed `ibm.lifespan` are taken out of the
+    simulation.
 
 
 ## Usage
@@ -20,6 +44,7 @@ Common changes applied to `ladim.yaml`:
 - Output frequency (`output_variables.outper`)
 - Vertical diffusion parameter (`ibm.vertical_mixing`)
 - Particle life span (`ibm.lifespan`)
+- Critical shear stress for resuspension (`ibm.taucrit`)
 
 The file `particles.rls` is a tab-delimited text file containing particle
 release time and location, as well as particle attributes at the release time.
@@ -28,6 +53,18 @@ within `ladim.yaml`.
 
 Finally, copy `ladim.yaml` and `particles.rls` to a separate directory and
 run `ladim` here.
+
+
+## Creating particles
+
+The module comes with a utility function for creating particle files.
+To create a release file, use the command
+
+`python -m ladim_plugins.sedimentation.make_release release.yaml out.rls`
+
+where `release.yaml` is the release config file, and `out.rls` is the output
+particle release file. For details about the config file, see the attached
+example `release.yaml` in the sedimentation module directory.
 
 
 ## Output
