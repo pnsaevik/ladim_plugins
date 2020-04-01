@@ -33,7 +33,7 @@ class IBM:
     def resuspend(self):
         if self.taucrit is None:
             return
-        
+
         ustar = self.shear_velocity_btm()
         tau = shear_stress_btm(ustar)
         resusp = tau > self.taucrit
