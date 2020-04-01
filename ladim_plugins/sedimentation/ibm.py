@@ -8,7 +8,7 @@ class IBM:
 
         # Vertical mixing [m*2/s]
         self.D = config['ibm']['vertical_mixing']  # 0.001 m2/s -- 0.01 m2/s (?)
-        self.taucrit = config['ibm'].get('taucrit', 0.12)
+        self.taucrit = config['ibm'].get('taucrit', None)
         self.vertical_diffusion = self.D > 0
 
         # Store time step value to calculate age
@@ -31,6 +31,9 @@ class IBM:
         self.kill_old()
 
     def resuspend(self):
+        if self.taucrit is None:
+            return
+        
         ustar = self.shear_velocity_btm()
         tau = shear_stress_btm(ustar)
         resusp = tau > self.taucrit
