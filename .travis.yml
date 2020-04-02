@@ -5,6 +5,11 @@ python:
 install:
   - python --version
   - pip --version
+  
+  - pwd
+  - git clone --depth=50 --branch=master https://github.com/bjornaa/ladim.git ../ladim
+  - pip install ../ladim
+  
   - pip install .
 
 script:
