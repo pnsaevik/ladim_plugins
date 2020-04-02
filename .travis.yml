@@ -1,0 +1,16 @@
+language: python
+python:
+- "3.6"
+
+install:
+  - python --version
+  - pip --version
+  
+  - pwd
+  - git clone --depth=50 --branch=master https://github.com/bjornaa/ladim.git ../ladim
+  - pip install ../ladim
+  
+  - pip install .
+
+script:
+  - pytest -Wignore --pyargs ladim_plugins
