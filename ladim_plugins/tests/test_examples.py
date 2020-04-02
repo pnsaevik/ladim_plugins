@@ -80,10 +80,19 @@ def chdir_temp():
     tempdir = None
     try:
         tempdir = pathlib.Path(tempfile.mkdtemp(prefix='ladim_plugins_test_dir_'))
-        curdir = os.getcwd()
+        curdir = None
+        try:
+            curdir = os.getcwd()
+        except FileNotFoundError:
+            # If current working dir does not exist (may happen in some test environments)
+            pass
+        
         os.chdir(tempdir)
         yield tempdir
-        os.chdir(curdir)
+        
+        if curdir and os.path.isdir(curdir):  # curdir may be None or non-existent
+            os.chdir(curdir)
+            
     finally:
         if tempdir is not None:
             for fname in tempdir.glob('*'):
