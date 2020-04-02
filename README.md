@@ -1,3 +1,5 @@
+![travis](https://travis-ci.com/pnsaevik/ladim_plugins.svg?branch=master)
+
 # Plugins for LADiM
 This repository contains plugins for the _Lagrangian Advection and Diffusion
 Model_ (LADiM), which is the particle tracking software used at the Institute
