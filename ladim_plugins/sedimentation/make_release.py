@@ -117,19 +117,26 @@ def get_polygon_sample(coords, num):
         return get_polygon_sample_nonconvex(coords, num)
 
 
-# noinspection PyPackageRequirements
+def triangulate(coords):
+    triangles = []
+    for i in range(len(coords) - 2):
+        idx = [0, i + 1, i + 2]
+        triangles.append(coords[idx])
+    return np.array(triangles)
+
+
+def triangle_areas(triangles):
+    a = triangles[..., 1, :] - triangles[..., 0, :]
+    b = triangles[..., 2, :] - triangles[..., 0, :]
+    return 0.5 * np.abs(a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0])
+
+
 def get_polygon_sample_convex(coords, num):
-    from shapely.geometry import Polygon
-    from shapely.ops import triangulate
     np.random.seed(0)
 
     # Triangulate the polygon
-    poly = Polygon(coords)
-    areas = []
-    subcoords = []
-    for t in triangulate(poly):
-        areas.append(t.area)
-        subcoords.append(t.exterior.coords.xy)
+    triangles = triangulate(coords)
+    areas = triangle_areas(triangles)
 
     # Distribute the points proportionally among the different triangles
     cumarea = np.cumsum(areas)
@@ -137,7 +144,7 @@ def get_polygon_sample_convex(coords, num):
 
     # Sample within the triangles
     s, t = _unit_triangle_sample(num)
-    (x1, y1), (x2, y2), (x3, y3), _ = np.array(subcoords)[triangle_num].T
+    (x1, x2, x3), (y1, y2, y3) = triangles[triangle_num].T
     x = (x2 - x1) * s + (x3 - x1) * t + x1
     y = (y2 - y1) * s + (y3 - y1) * t + y1
     return x, y
