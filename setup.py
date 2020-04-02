@@ -11,7 +11,7 @@ setup(
     author_email='a5606@hi.no',
     description='IBMs for LADiM', 
     install_requires=[
-        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'shapely', 'triangle',
-        'scipy',
+        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4<=1.4', 'shapely',
+        'triangle', 'scipy',
     ],
 )
