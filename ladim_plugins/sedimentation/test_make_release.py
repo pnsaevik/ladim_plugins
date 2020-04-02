@@ -44,9 +44,10 @@ class Test_main:
         ]
 
     def test_location_when_polygon(self):
-        config = dict(num_particles=5, location=dict(
-            lat=[0, 0, 1], lon=[0, 1, 1],
-        ))
+        config = dict(
+            num_particles=5,
+            location=dict(lat=[0, 0, 1], lon=[1, 0, 1]),
+        )
         result = make_release.main(config)
         assert result['lat'].values.tolist() == [
             0.2082749619173354,
@@ -91,6 +92,44 @@ class Test_to_numeric_latlon:
 
     def test_correct_if_min_and_sec_doublequote(self):
         assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0\"")
+
+
+class Test_triangulate:
+    def test_if_triangle(self):
+        coords = np.array([[0, 0], [0, 1], [1, 0]])
+        triangles = make_release.triangulate(coords)
+        assert triangles.tolist() == [[[0, 0], [0, 1], [1, 0]]]
+
+    def test_if_clockwise_square(self):
+        coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
+        triangles = make_release.triangulate(coords)
+        assert triangles.tolist() == [
+            [[0, 0], [0, 1], [1, 1]],
+            [[0, 0], [1, 1], [1, 0]],
+        ]
+
+    def test_if_counterclockwise_square(self):
+        coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+        triangles = make_release.triangulate(coords)
+        assert triangles.tolist() == [
+            [[0, 0], [1, 0], [1, 1]],
+            [[0, 0], [1, 1], [0, 1]],
+        ]
+
+
+class Test_triangle_areas:
+    def test_if_single_triangle(self):
+        coords = np.array([[0, 0], [0, 1], [1, 0]])
+        area = make_release.triangle_areas(coords)
+        assert area.tolist() == 0.5
+
+    def test_if_multiple_triangles(self):
+        coords = np.array([
+            [[0, 0], [0, 1], [1, 0]],
+            [[0, 0], [0, 2], [1, 0]],
+        ])
+        area = make_release.triangle_areas(coords)
+        assert area.tolist() == [0.5, 1]
 
 
 class Test_get_polygon_sample_convex:

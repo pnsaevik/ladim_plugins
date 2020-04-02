@@ -9,9 +9,9 @@ setup(
     license='MIT Licence',
     author='Pål Næverlid Sævik',
     author_email='a5606@hi.no',
-    description='IBMs for LADiM', 
+    description='IBMs for LADiM',
     install_requires=[
-        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'shapely',
-        'triangle', 'scipy', 'cftime<=1.0',
+        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4',
+        'triangle', 'scipy', 'cftime<1.1',
     ],
 )

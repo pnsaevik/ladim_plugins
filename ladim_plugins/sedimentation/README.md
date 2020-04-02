@@ -66,6 +66,8 @@ where `release.yaml` is the release config file, and `out.rls` is the output
 particle release file. For details about the config file, see the attached
 example `release.yaml` in the sedimentation module directory.
 
+The utility automatically assumes the particle sinking velocity distribution
+from Bannister et al. (2016, doi: 10.1093/icesjms/fsw027).
 
 ## Output
 
