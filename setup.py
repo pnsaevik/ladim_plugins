@@ -12,6 +12,6 @@ setup(
     description='IBMs for LADiM',
     install_requires=[
         'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'shapely',
-        'triangle', 'scipy', 'cftime<=1.0',
+        'triangle', 'scipy', 'cftime<1.1',
     ],
 )
