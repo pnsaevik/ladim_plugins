@@ -58,6 +58,9 @@ run `ladim` here.
 ## Creating particles
 
 The module comes with a utility function for creating particle files.
+The utility can create particles from an area, with realistic sinking
+velocities, over a specified time period.
+
 To create a release file, use the command
 
 `python -m ladim_plugins.sedimentation.make_release release.yaml out.rls`
