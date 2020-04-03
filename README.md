@@ -73,3 +73,11 @@ to demonstrate certain features.
 The test is ran using the command `pytest -Wignore --pyargs ladim_plugins`. The
 test succeeds if ladim is able to run the example, and the output matches the
 contents of `out.nc`.
+
+
+## History
+
+**Version 1.1** (Apr 2020): Resuspension added to `sedimentation` module.
+
+**Version 1.0** (Dec 2019): Initial version, including the modules `chemicals`, `egg`,
+`salmon_lice` and `sedimentation`.
