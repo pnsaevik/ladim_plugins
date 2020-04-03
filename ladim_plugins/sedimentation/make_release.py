@@ -125,6 +125,18 @@ def triangulate(coords):
     return np.array(triangles)
 
 
+def triangulate_nonconvex(coords):
+    import triangle as tr
+
+    # Triangulate the polygon
+    sequence = list(range(len(coords)))
+    trpoly = dict(vertices=coords,
+                  segments=np.array((sequence, sequence[1:] + [0])).T)
+    trdata = tr.triangulate(trpoly, 'p')
+    coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
+    return np.array(coords)
+
+
 def triangle_areas(triangles):
     a = triangles[..., 1, :] - triangles[..., 0, :]
     b = triangles[..., 2, :] - triangles[..., 0, :]
@@ -132,10 +144,19 @@ def triangle_areas(triangles):
 
 
 def get_polygon_sample_convex(coords, num):
+    triangles = triangulate(coords)
+    return get_polygon_sample_triangles(triangles, num)
+
+
+def get_polygon_sample_nonconvex(coords, num):
+    triangles = triangulate_nonconvex(coords)
+    return get_polygon_sample_triangles(triangles, num)
+
+
+def get_polygon_sample_triangles(triangles, num):
     np.random.seed(0)
 
     # Triangulate the polygon
-    triangles = triangulate(coords)
     areas = triangle_areas(triangles)
 
     # Distribute the points proportionally among the different triangles
@@ -159,36 +180,6 @@ def is_convex(coords):
     sgn = v[:-1, 0] * v[1:, 1] > v[:-1, 1] * v[1:, 0]
     # noinspection PyUnresolvedReferences
     return np.all(sgn == sgn[0])
-
-
-# noinspection PyPackageRequirements
-def get_polygon_sample_nonconvex(coords, num):
-    import triangle as tr
-    from shapely.geometry import Polygon
-    np.random.seed(0)
-
-    # Triangulate the polygon
-    sequence = list(range(len(coords)))
-    trpoly = dict(vertices=coords,
-                  segments=np.array((sequence, sequence[1:] + [0])).T)
-    trdata = tr.triangulate(trpoly, 'p')
-    subcoords = []
-    areas = []
-    for tidx in trdata['triangles']:
-        t = Polygon(trdata['vertices'][tidx])
-        subcoords.append(t.exterior.coords.xy)
-        areas.append(t.area)
-
-    # Distribute the points proportionally among the different triangles
-    cumarea = np.cumsum(areas)
-    triangle_num = np.searchsorted(cumarea / cumarea[-1], np.random.rand(num))
-
-    # Sample within the triangles
-    s, t = _unit_triangle_sample(num)
-    (x1, y1), (x2, y2), (x3, y3), _ = np.array(subcoords)[triangle_num].T
-    x = (x2 - x1) * s + (x3 - x1) * t + x1
-    y = (y2 - y1) * s + (y3 - y1) * t + y1
-    return x, y
 
 
 if __name__ == '__main__':
