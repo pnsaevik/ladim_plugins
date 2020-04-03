@@ -20,16 +20,12 @@ Name                                                   | Description
 
 ## Installation
 
-Use `git` to download the repository into a local folder
-```
-git clone https://github.com/pnsaevik/ladim_plugins.git <ladim_plugins_local_dir>
-```
+Install using the following commands (the first command can be skipped if
+LADiM is already present on your system):
 
-Then use `pip` to install the package. This step is optional, but it
-registers the plugin into the `ladim_plugins` namespace, which makes them
-easier to access. It also allows automated tests.
 ```
-pip install <ladim_plugins_local_dir>
+pip install git+https://github.com/bjornaa/ladim.git
+pip install git+https://github.com/pnsaevik/ladim_plugins.git
 ```
 
 The installation can be tested with the command
