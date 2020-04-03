@@ -2,7 +2,7 @@
 
 The module represents passive particles that have a vertical migration rate due
 to sinking and vertical turbulence. Advection due to upwelling/downwelling is
-not included.
+not included. Constant vertical turbulence is assumed.
 
 
 ## Algorithm
@@ -58,8 +58,11 @@ run `ladim` here.
 ## Creating particles
 
 The module comes with a utility function for creating particle files.
-The utility can create particles from an area, with realistic sinking
-velocities, over a specified time period.
+The utility can create particles from an area, with sinking velocities taken
+from Bannister et al. (2016,
+[doi: 10.1093/icesjms/fsw027](http://dx.doi.org/10.1093/icesjms/fsw027)). To
+release particles from an area rather than a point, the `triangle` library is
+needed (automatically installed on unix when using `pip`).
 
 To create a release file, use the command
 
@@ -69,8 +72,6 @@ where `release.yaml` is the release config file, and `out.rls` is the output
 particle release file. For details about the config file, see the attached
 example `release.yaml` in the sedimentation module directory.
 
-The utility automatically assumes the particle sinking velocity distribution
-from Bannister et al. (2016, doi: 10.1093/icesjms/fsw027).
 
 ## Output
 
@@ -81,4 +82,4 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
-Created by Marcos Carvajalino Fernandez and Pål Næverlid Sævik (2019).
+Created by Marcos Carvajalino Fernandez and Pål Næverlid Sævik (2020).
