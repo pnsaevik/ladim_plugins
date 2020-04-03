@@ -7,6 +7,7 @@ python:
 install:
   - python --version
   - pip --version
+  - pip install --upgrade setuptools
   
   - pwd
   - git clone --depth=50 --branch=master https://github.com/bjornaa/ladim.git ../ladim
