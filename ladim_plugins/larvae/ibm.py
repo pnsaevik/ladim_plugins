@@ -12,6 +12,7 @@ class IBM:
         self.mortality = config['ibm']['mortality']
         self.light_coeff = config['ibm']['light_coeff']
         self.max_depth = config['ibm']['max_depth']
+        self.swim_speed = config['ibm']['swim_speed']
 
         self.dt = config['dt']
 
@@ -50,7 +51,7 @@ class IBM:
 
         # Light-induced vertical migration
         # Natt ca 5m, og dag ca 10m Ellertsen 1979
-        swim_speed = 0.1 * length * mm2m
+        swim_speed = self.swim_speed * length * mm2m
         swim_up = (Eb < 1)
         swim_speed[swim_up] *= -1
         swim_speed[~is_larvae] = 0
