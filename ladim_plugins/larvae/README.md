@@ -1,11 +1,12 @@
-# Boyant eggs
+# Fish larvae
 
-The module represents fish eggs that have a vertical migration rate due to
-buoyancy and vertical turbulence. Advection due to upwelling/downwelling is
-not included.
+The module represents fish larvae.
 
 The theoretical foundation for the module is documented by 
-[Myksvoll et al. (2011)](http://dx.doi.org/10.1080/19425120.2011.595258).
+[Vikebø et al. (2007)](https://doi.org/10.3354/meps06979), where the module is
+used to predict the dispersal of cod eggs and larvae. The module is also used
+by [Vikebø et al. (2010)](https://doi.org/10.1093/icesjms/fsq084) to predict
+dispersal of herring eggs and larvae.
 
 ## Usage
 
@@ -36,12 +37,9 @@ The simulation result is stored in a file specified by the `files.output_file`
 entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
 
-## SVIM example
-
-An example of configuration file and release file used in a real scenario is
-provided by `svim_ladim.yaml` and `svim_particles.rls`. The code used to make
-the release file is provided by `svim_make_release.m`.  
-
 ## History
 
-Created by Mari Myksvoll (2011).
+Created by Frode Vikebø (2007)
+Added new set of parameters for herring (Frode Vikebø, 2010)
+Ported from Fortran to Python (Mari Myksvoll, 2019)
+Modified to match the new Ladim plugin format (Pål Næverlid Sævik, 2020) 
