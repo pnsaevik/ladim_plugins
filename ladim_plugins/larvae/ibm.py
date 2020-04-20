@@ -5,30 +5,40 @@ from ladim.ibms import light
 class IBM:
     def __init__(self, config):
         self.D = config['ibm']['vertical_mixing']  # [m*2/s]
-        self.vertical_diffusion = (self.D > 0)
-
         self.egg_diam = config['ibm']['egg_diam']
-        self.hatchday = config['ibm']['hatchday']
+        self.hatch_age = config['ibm']['hatch_age']
         self.mortality = config['ibm']['mortality']
         self.light_coeff = config['ibm']['light_coeff']
         self.max_depth = config['ibm']['max_depth']
         self.swim_speed = config['ibm']['swim_speed']
+        self.hatch_weight = config['ibm']['hatch_weight']
 
         self.dt = config['dt']
+        self.state = None
+        self.grid = None
+        self.forcing = None
 
     def update_ibm(self, grid, state, forcing):
+        self.state = state
+        self.grid = grid
+        self.forcing = forcing
+
+        self.update_forcing()
+        self.vertical_migration()
+        self.growth_and_ageing()
+
+    def update_forcing(self):
+        state = self.state
+        state.temp = self.forcing.field(state.X, state.Y, state.Z, 'temp')
+        state.salt = self.forcing.field(state.X, state.Y, state.Z, 'salt')
+
+    def vertical_migration(self):
+        state = self.state
+        grid = self.grid
         egg_diam = self.egg_diam
-        hatchday = self.hatchday
-        mm2m = 0.001
-        sec2day = 1/86400
-        log_weight = np.log(state.weight)
-        is_larvae = (state.age > hatchday)
+        is_larvae = (state.age > self.hatch_age)
 
-        # Update forcing
-        state.temp = forcing.field(state.X, state.Y, state.Z, 'temp')
-        state.salt = forcing.field(state.X, state.Y, state.Z, 'salt')
-
-        # Calculating density and viscosity
+        # Calculate density and viscosity
         dens_water = calc_density(state.temp, state.salt)
         dens_egg = calc_density(state.temp, state.egg_buoy)
         mu_w = calc_viscosity(state.temp, state.salt)
@@ -41,9 +51,6 @@ class IBM:
         rand = np.random.normal(size=len(state.X))
         wvel_diff = rand * (2 * self.D / self.dt) ** 0.5
 
-        # Individual length [mm]
-        length = np.exp(2.296 + log_weight * (0.277 + log_weight * -0.005128))
-
         # Light at depth
         lon, lat = grid.lonlat(state.X, state.Y)
         light0 = light.surface_light(state.timestamp, lon, lat)
@@ -51,32 +58,45 @@ class IBM:
 
         # Light-induced vertical migration
         # Natt ca 5m, og dag ca 10m Ellertsen 1979
+        log_weight = np.log(state.weight)
+        mm2m = 0.001
+        length = np.exp(2.296 + log_weight * (0.277 + log_weight * -0.005128))
         swim_speed = self.swim_speed * length * mm2m
         swim_up = (Eb < 1)
         swim_speed[swim_up] *= -1
         swim_speed[~is_larvae] = 0
 
-        # Update vertical position. Reflexive boundary condition at the top,
-        # clip to max depth.
+        # Update vertical position.
         W = wvel_egg + swim_speed + wvel_diff
         state.Z += W * self.dt
+
+        # Reflexive boundary condition at the top and at max depth
         state.Z[state.Z < 0] *= -1
-        state.Z[state.Z > self.max_depth] = self.max_depth
+        is_deep = state.Z > self.max_depth
+        state.Z[is_deep] = 2*self.max_depth - state.Z[is_deep]
+
+    def growth_and_ageing(self):
+        state = self.state
+        sec2day = 1/86400
+        log_weight = np.log(state.weight)
+        is_larvae = (state.age > self.hatch_age)
 
         # Growth rate
         GF = 1.08 + state.temp * (1.79 + log_weight * (-0.074 + log_weight * (
                 -0.0965 + log_weight * 0.0112)))
         GR = sec2day * state.dt * np.log(1 + 0.001 * GF)
         GR_gram = (np.exp(GR) - 1) * state.weight
-        state.weight[~is_larvae] = 0.093
+        state.weight[~is_larvae] = self.hatch_weight
         state.weight[is_larvae] += GR_gram[is_larvae]
 
+        # Mortality
+        state.super *= np.exp(-self.mortality * self.dt * sec2day)
+
         # Age in degree-days
-        state.age += state.temp * state.dt / 86400
+        state.age += state.temp * state.dt * sec2day
 
 
 def calc_density(temp, salt):
-    # print(temp,salt)
     T68 = temp * 1.00024
 
     a0 = 999.842594

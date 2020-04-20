@@ -17,15 +17,26 @@ gridforce:
 
 ibm:
     ibm_module: ladim_plugins.egg
-    vertical_mixing: 0.00005  # [m*2/s]
+    vertical_mixing: 0.00005  # [m^2/s]
     egg_diam: 0.0011  # [m]  cod=0.0014, saithe=0.0011
+    hatch_age: 93.7   # [degree-days] cod=93.7, saithe=60
+    mortality: 0.0    # [days^-1] Mortality rate
+                      # count = count_0 * exp(-mortality * time)
+    light_coeff: 0.2  # [m^-1] Light extinction coefficient
+                      # light = light_0 * exp(-light_coeff * depth)
+    max_depth: 50     # [m] Maximal depth for eggs and larvae
+    swim_speed: 0.1   # [larva lengths per second] Larvae vertical swim speed
+    hatch_weight: 0.093     # [grams] larva weight when hatched
+    egg_buo: [32.41, 0.69]  # [mean, stdev] Egg buoyancy
 
 state:
     # pid, X, Y, Z are mandatory and should not be given
     ibm_variables:
     - super       # Number of actual particles per simulation particle
-    - age         # Age of particle [degree-days]
-    - egg_buoy    # Boyancy of particle [salinity equivalent]
+    - age         # [degree-days] Age of particle
+    - egg_buoy    # [salinity equivalent] Boyancy of eggs, or zero if it should
+                  # be computed automatically using the ibm.egg_buo parameter
+    - weight      # [grams] Weight of larvae. Ignored if age < hatchday.
 
 
 particle_release:
@@ -39,6 +50,7 @@ particle_release:
     - group_id       # Custom id used to group particles in post processing
     - super          # Number of actual eggs per simulation particle
     - egg_buoy       # Egg buoyancy, in salinity equivalents
+    - age            # Larvae/egg age at release time
     
     # Converters (if not float)
     mult: int
@@ -106,6 +118,6 @@ output_variables:
 
 numerics:
     # Model time step, [value, unit]
-    dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
+    dt: [60, s]     # usually 120 on NorFjords (160m), 600 NorKyst (800m), 1800 SVIM (4km)
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 0    # [m*2/s]
