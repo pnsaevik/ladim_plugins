@@ -90,7 +90,7 @@ class IBM:
         state.weight[is_larvae] += GR_gram[is_larvae]
 
         # Mortality
-        state.super *= np.exp(-self.mortality * self.dt * sec2day)
+        state.super[is_larvae] *= np.exp(-self.mortality * self.dt * sec2day)
 
         # Age in degree-days
         state.age += state.temp * state.dt * sec2day
