@@ -33,7 +33,7 @@ def check_equal(new, ref):
     assert new.dims.items() == ref.dims.items()
 
     for k in new.variables.keys():
-        assert new.variables[k].values.tolist() == ref.variables[k].values.tolist()
+        assert ref.variables[k].values.tolist() == new.variables[k].values.tolist()
 
 
 def run_ladim(module_name):
@@ -94,7 +94,11 @@ def chdir_temp():
             os.chdir(curdir)
             
     finally:
-        if tempdir is not None:
-            for fname in tempdir.glob('*'):
-                fname.unlink()
-            tempdir.rmdir()
+        try:
+            if tempdir is not None:
+                for fname in tempdir.glob('*'):
+                    fname.unlink()
+                tempdir.rmdir()
+
+        except PermissionError:
+            pass

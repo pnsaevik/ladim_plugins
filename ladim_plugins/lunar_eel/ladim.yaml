@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:05:00
+    start_time     : 2015-09-01 01:00:00
+    stop_time      : 2015-09-01 01:05:00
 
 
 files:
@@ -16,35 +16,26 @@ gridforce:
 
 
 ibm:
-    ibm_module: ladim_plugins.egg
+    ibm_module: ladim_plugins.lunar_eel
     vertical_mixing: 0.00005  # [m*2/s]
-    egg_diam: 0.0011  # [m]  cod=0.0014, saithe=0.0011
-
-state:
-    # pid, X, Y, Z are mandatory and should not be given
-    ibm_variables:
-    - super       # Number of actual particles per simulation particle
-    - age         # Age of particle [degree-days]
-    - egg_buoy    # Boyancy of particle [salinity equivalent]
+    lunar_latlon: [60, 0]     # [deg] lat, lon position for computing lunar phase and altitude
+    vertical_limits: [0, 20]  # [m] Keep larvae within these vertical bounds
+    speed: 0.12               # [m/s] Larva swim speed when oriented
 
 
 particle_release:
     release_type: discrete
     variables: 
-    - mult           # Number of particles released
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
     - X              # X coordinate of release location
     - Y              # Y coordinate of release location
     - Z              # Depth of release location
-    - group_id       # Custom id used to group particles in post processing
-    - super          # Number of actual eggs per simulation particle
-    - egg_buoy       # Egg buoyancy, in salinity equivalents
-    
+
     # Converters (if not float)
-    mult: int
     release_time: time
-    group_id: int
-    particle_variables: [release_time, group_id]
+
+    # Time-independent variables
+    particle_variables: [release_time]
 
 
 output_variables:
@@ -52,8 +43,8 @@ output_variables:
     outper: [60, s]
 
     # Variable names
-    particle: [release_time, group_id]
-    instance: [pid, X, Y, Z, age, super, egg_buoy ]
+    particle: [release_time]
+    instance: [pid, lat, lon, Z]
 
     # --- Output format for standard variables ---
 
@@ -68,15 +59,15 @@ output_variables:
         ncformat: i4
         long_name: particle identifier
 
-    # Output format for the X coordinate
-    X:
+    # Output format for the latitude
+    lat:
         ncformat: f4
-        long_name: particle X-coordinate
+        long_name: particle latitude
 
-    # Output format for the Y coordinate
-    Y:
+    # Output format for the longitude
+    lon:
         ncformat: f4
-        long_name: particle Y-coordinate
+        long_name: particle longitude
 
     # Output format for the particle depth
     Z:
@@ -85,23 +76,6 @@ output_variables:
         standard_name: depth_below_surface
         units: m
         positive: down
-
-    # --- Output format for IBM-specific variables ---
-
-    # Output format for the temperature
-    temp:
-        ncformat: f4
-        long_name: temperature
-
-    # Output format for the egg buouy
-    egg_buoy: {ncformat: f4, long_name: egg buoyancy, units: '1'}
-    group_id: {ncformat: i4, long_name: particle group id}
-    age:
-        ncformat: f4
-        long_name: particle age in degree-days
-        units: Celcius days
-        standard_name: integral_of_sea_water_temperature_wrt_time
-    super: {ncformat: f4, long_name: number of individuals in instance}
 
 
 numerics:
