@@ -16,6 +16,7 @@ Name                                                   | Description
 [egg](ladim_plugins/egg/README.md)                     | Buoyant fish eggs 
 [salmon_lice](ladim_plugins/salmon_lice/README.md)     | Salmon lice larvae
 [sedimentation](ladim_plugins/sedimentation/README.md) | Sinking particles 
+[lunar_eel](ladim_plugins/lunar_eel/README.md)         | Glass eels with lunar compass
  
 
 ## Installation
