@@ -95,7 +95,8 @@ def _load_ephemeris():
 
 def get_moon_function(lat, lon):
     from skyfield.api import load, Topos
-    from datetime import datetime
+    import datetime
+    from skyfield.timelib import utc
 
     # Load ephemeris
     ts = load.timescale(builtin=True)
@@ -104,8 +105,8 @@ def get_moon_function(lat, lon):
     obs = earth + Topos(latitude_degrees=lat, longitude_degrees=lon)
 
     def moonfunc(npdate):
-        tstr = str(npdate)
-        t = ts.utc(datetime.fromisoformat(tstr + '+00:00'))
+        pydate = npdate.astype(datetime.datetime).astimezone(utc)
+        t = ts.utc(pydate)
         e = earth.at(t)
 
         _, slon, _ = e.observe(sun).apparent().ecliptic_latlon()
