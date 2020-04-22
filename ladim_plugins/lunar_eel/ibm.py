@@ -77,12 +77,14 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
 
 
 def get_moon_function(lat, lon):
-    from skyfield.api import Loader, Topos
+    from skyfield.api import load, load_file, Topos
     from datetime import datetime
-    from tempfile import gettempdir
-    load = Loader(gettempdir())
+    from importlib import resources
+
+    # Load ephemeris
     ts = load.timescale(builtin=True)
-    eph = load('de421.bsp')
+    with resources.path('ladim_plugins.lunar_eel', 'de421.bsp') as fname:
+        eph = load_file(fname)
     sun, moon, earth = eph['sun'], eph['moon'], eph['earth']
     obs = earth + Topos(latitude_degrees=lat, longitude_degrees=lon)
 
