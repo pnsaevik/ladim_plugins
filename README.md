@@ -12,11 +12,11 @@ Documentation and examples are provided for each model.
 
 Name                                                   | Description       
 ------------------------------------------------------ | ------------------
-[chemicals](ladim_plugins/chemicals/README.md)         | Passive tracer    
-[egg](ladim_plugins/egg/README.md)                     | Buoyant fish eggs 
-[salmon_lice](ladim_plugins/salmon_lice/README.md)     | Salmon lice larvae
-[sedimentation](ladim_plugins/sedimentation/README.md) | Sinking particles 
-[lunar_eel](ladim_plugins/lunar_eel/README.md)         | Glass eels with lunar compass
+[chemicals](ladim_plugins/chemicals)         | Passive tracer    
+[egg](ladim_plugins/egg)                     | Buoyant fish eggs 
+[salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
+[sedimentation](ladim_plugins/sedimentation) | Sinking particles 
+[lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
  
 
 ## Installation
