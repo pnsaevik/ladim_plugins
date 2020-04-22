@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_plugins',
-    version='1.1.0',
+    version='1.2.0',
     packages=find_packages(),
     package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp']},
     url='https://github.com/pnsaevik/ladim_plugins',
