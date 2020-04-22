@@ -76,15 +76,30 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
     return np.clip(r, rmin, rmax)
 
 
+def _load_ephemeris():
+    from skyfield.api import load_file
+    pkname = 'ladim_plugins.lunar_eel'
+
+    try:
+        from importlib import resources
+        with resources.path(pkname, 'de421.bsp') as fname:
+            return load_file(fname)
+    except ImportError:
+        import pkg_resources
+        try:
+            fname = pkg_resources.resource_filename(pkname, 'de421.bsp')
+            return load_file(fname)
+        finally:
+            pkg_resources.cleanup_resources()
+
+
 def get_moon_function(lat, lon):
-    from skyfield.api import load, load_file, Topos
+    from skyfield.api import load, Topos
     from datetime import datetime
-    from importlib import resources
 
     # Load ephemeris
     ts = load.timescale(builtin=True)
-    with resources.path('ladim_plugins.lunar_eel', 'de421.bsp') as fname:
-        eph = load_file(fname)
+    eph = _load_ephemeris()
     sun, moon, earth = eph['sun'], eph['moon'], eph['earth']
     obs = earth + Topos(latitude_degrees=lat, longitude_degrees=lon)
 
