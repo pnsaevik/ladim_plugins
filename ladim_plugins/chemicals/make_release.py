@@ -37,27 +37,9 @@ def single_config(location, depth, release_time, num_particles, group_id):
     release['release_time'] = release_time
     release['lat'], release['lon'] = latlon(location, num_particles)
     release['Z'] = np.linspace(depth[0], depth[1], num_particles)
-    release['sink_vel'] = sinkvel(num_particles)
     release['group_id'] = group_id
 
     return release
-
-
-def linspace_time(start, stop, num, granularity='ms'):
-    start_t = np.datetime64(start)
-    stop_t = np.datetime64(stop)
-    timediff = (stop_t - start_t) / np.timedelta64(1, granularity)
-    dt = np.linspace(0, 1, num) * timediff
-    return start_t + dt.astype(f'timedelta64[{granularity}]')
-
-
-# noinspection PyPackageRequirements
-def sinkvel(n):
-    from scipy.interpolate import InterpolatedUnivariateSpline
-    sinkvel_tab = np.array([.100, .050, .025, .015, .010, .005, 0])
-    cumprob_tab = np.array([.000, .662, .851, .883, .909, .937, 1])
-    fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
-    return fn(np.random.rand(n))
 
 
 def latlon(loc, n):
