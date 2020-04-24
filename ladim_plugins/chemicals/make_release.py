@@ -103,13 +103,6 @@ def _unit_triangle_sample(num):
     return xy
 
 
-def get_polygon_sample(coords, num):
-    if is_convex(coords):
-        return get_polygon_sample_convex(coords, num)
-    else:
-        return get_polygon_sample_nonconvex(coords, num)
-
-
 def triangulate(coords):
     triangles = []
     for i in range(len(coords) - 2):
@@ -141,11 +134,6 @@ def get_polygon_sample_convex(coords, num):
     return get_polygon_sample_triangles(triangles, num)
 
 
-def get_polygon_sample_nonconvex(coords, num):
-    triangles = triangulate_nonconvex(coords)
-    return get_polygon_sample_triangles(triangles, num)
-
-
 def get_polygon_sample_triangles(triangles, num):
     np.random.seed(0)
 
@@ -162,17 +150,6 @@ def get_polygon_sample_triangles(triangles, num):
     x = (x2 - x1) * s + (x3 - x1) * t + x1
     y = (y2 - y1) * s + (y3 - y1) * t + y1
     return x, y
-
-
-def is_convex(coords):
-    # Compute coord differences
-    c = np.concatenate([coords, coords[0:2]])
-    v = c[:-1, :] - c[1:, :]
-
-    # Compute sign of the cross product
-    sgn = v[:-1, 0] * v[1:, 1] > v[:-1, 1] * v[1:, 0]
-    # noinspection PyUnresolvedReferences
-    return np.all(sgn == sgn[0])
 
 
 if __name__ == '__main__':
