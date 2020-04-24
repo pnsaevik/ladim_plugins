@@ -29,10 +29,9 @@ def main(config, fname=None):
 def single_config(location, depth, release_time, width, num_particles, group_id):
 
     release = pd.DataFrame(
-        columns=['active', 'release_time', 'lat', 'lon', 'Z', 'sink_vel', 'group_id'])
+        columns=['release_time', 'lat', 'lon', 'Z', 'group_id'])
 
     # Set parameters
-    release['active'] = np.ones(num_particles)
     release['release_time'] = release_time
     release['lat'], release['lon'] = latlon(location, width, num_particles)
     release['Z'] = np.linspace(depth[0], depth[1], num_particles)
