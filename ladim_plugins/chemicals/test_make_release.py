@@ -10,6 +10,7 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
+            width=0,
             num_particles=5,
             group_id=0,
         )
@@ -21,6 +22,7 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
+            width=0,
             num_particles=5,
             group_id=0,
         )
@@ -32,6 +34,7 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
+            width=0,
             num_particles=5,
             group_id=0,
         )
@@ -47,6 +50,7 @@ class Test_main:
             ),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
+            width=0,
             num_particles=5,
             group_id=0,
         )
@@ -59,36 +63,37 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
+            width=0,
             num_particles=5,
             group_id=0,
         )
         result = make_release.main(config)
         assert result['Z'].values.tolist() == [0, 2.5, 5, 7.5, 10]
 
-    def test_location_when_polygon(self):
+    def test_location_when_width(self):
         config = dict(
-            location=dict(lat=[0, 0, 1], lon=[1, 0, 1]),
-            depth=[0, 10],
+            location=dict(lat=60, lon=0),
+            depth=[0, 0],
             release_time='2000-01-01T00:00',
+            width=100000,
             num_particles=5,
             group_id=0,
         )
         result = make_release.main(config)
         assert result['lat'].values.tolist() == [
-            0.2082749619173354,
-            0.5288949197529045,
-            0.4319554389060677,
-            0.07440336170733897,
-            0.07103605819788694,
+            59.86883128075036,
+            59.94388666278995,
+            59.64776945642973,
+            59.58313567847057,
+            59.95907224908919,
         ]
         assert result['lon'].values.tolist() == [
-            0.6458941130666561,
-            0.5624127887373075,
-            0.8917730007820798,
-            0.9636627605010293,
-            0.6165584811742223,
+            0.11207533991782959,
+            0.83809605611991130,
+            0.07219299663993050,
+            -.69935533484709590,
+            -.77068973051398990,
         ]
-        assert np.all(result['lon'].values >= result['lat'].values)
 
     def test_multiple_groups(self):
         config = [
@@ -96,6 +101,7 @@ class Test_main:
                 location=dict(lat=1, lon=2),
                 depth=[0, 10],
                 release_time='2000-01-01T00:00',
+                width=0,
                 num_particles=2,
                 group_id=1,
             ),
@@ -103,6 +109,7 @@ class Test_main:
                 location=dict(lat=1, lon=2),
                 depth=[0, 10],
                 release_time='2000-01-01T00:00',
+                width=0,
                 num_particles=3,
                 group_id=2,
             ),
