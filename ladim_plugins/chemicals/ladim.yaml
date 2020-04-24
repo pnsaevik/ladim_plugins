@@ -71,6 +71,20 @@ output_variables:
         units: m
         positive: down
 
+    # Output format for the latitude
+    lat:
+        ncformat: f4
+        long_name: particle latitude
+        units: degrees_north
+        standard_name: latitude
+
+    # Output format for the longitude
+    lon:
+        ncformat: f4
+        long_name: particle longitude
+        units: degrees_east
+        standard_name: longitude
+
 
 numerics:
     # Model time step
