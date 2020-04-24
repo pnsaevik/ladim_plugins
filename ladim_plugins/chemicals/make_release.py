@@ -27,23 +27,16 @@ def main(config, fname=None):
     return frame
 
 
-def single_config(
-    location=None, depth=0, start_time='2000-01-01', stop_time='2000-01-01',
-    num_particles=0, group_id=0,
-):
+def single_config(location, depth, release_time, num_particles, group_id):
 
     release = pd.DataFrame(
         columns=['active', 'release_time', 'lat', 'lon', 'Z', 'sink_vel', 'group_id'])
 
-    # Handle default arguments
-    if location is None:
-        location = dict(lat=0., lon=0.)
-
     # Set parameters
     release['active'] = np.ones(num_particles)
-    release['release_time'] = linspace_time(start_time, stop_time, num_particles)
+    release['release_time'] = release_time
     release['lat'], release['lon'] = latlon(location, num_particles)
-    release['Z'] = depth
+    release['Z'] = np.linspace(depth[0], depth[1], num_particles)
     release['sink_vel'] = sinkvel(num_particles)
     release['group_id'] = group_id
 
