@@ -1,6 +1,5 @@
 import numpy as np
 from ladim_plugins.chemicals import make_release
-# noinspection PyPackageRequirements
 import pandas as pd
 
 
