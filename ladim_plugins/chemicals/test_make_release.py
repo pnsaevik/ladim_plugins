@@ -9,7 +9,7 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=0,
+            width=100000,
             num_particles=5,
             group_id=0,
         )
@@ -21,7 +21,7 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=0,
+            width=100000,
             num_particles=5,
             group_id=0,
         )
@@ -62,7 +62,7 @@ class Test_main:
             location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=0,
+            width=100000,
             num_particles=5,
             group_id=0,
         )
