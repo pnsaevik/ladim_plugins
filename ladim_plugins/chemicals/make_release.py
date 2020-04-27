@@ -32,10 +32,10 @@ def single_config(location, depth, release_time, width, num_particles, group_id)
         columns=['release_time', 'lat', 'lon', 'Z', 'group_id'])
 
     # Set parameters
-    release['release_time'] = release_time
     release['lat'], release['lon'] = latlon(location, width, num_particles)
     release['Z'] = np.linspace(depth[0], depth[1], num_particles)
     release['group_id'] = group_id
+    release['release_time'] = release_time
 
     return release
 

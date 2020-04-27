@@ -116,6 +116,42 @@ class Test_main:
         result = make_release.main(config)
         assert result['group_id'].values.tolist() == [1, 1, 2, 2, 2]
 
+    def test_sample_config_file(self):
+        from pkg_resources import resource_stream
+        import yaml
+        package = 'ladim_plugins.chemicals'
+        np.random.seed(0)
+
+        with resource_stream(package, 'release.yaml') as config_file:
+            config = yaml.safe_load(config_file)
+
+        result = make_release.main(config)
+        assert result.to_dict('list') == {
+            'release_time': [
+                '2000-01-01 00:00',
+                '2000-01-01 00:00',
+                '2000-01-01 00:00',
+                '2000-01-01 00:00',
+                '2000-01-01 00:00'
+            ],
+            'lat': [
+                59.99995380437174,
+                59.99997982348463,
+                61.00002017550346,
+                61.000034318039795,
+                60.99993441892962
+            ],
+            'lon': [
+                4.0004254257913106,
+                4.000277779481143,
+                5.0004469904383075,
+                5.0001709991110435,
+                4.9998984997307225
+            ],
+            'Z': [0.0, 10.0, 0.0, 5.0, 10.0],
+            'group_id': [1, 1, 2, 2, 2]
+        }
+
 
 class Test_to_numeric_latlon:
     def test_correct_if_float(self):
