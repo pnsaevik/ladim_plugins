@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_plugins',
-    version='1.2.0',
+    version='1.2.1',
     packages=find_packages(),
     package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp']},
     url='https://github.com/pnsaevik/ladim_plugins',
@@ -34,7 +34,7 @@ setup(
     description='Plugins for LADiM',
     install_requires=[
         'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4',
-        'triangle', 'scipy', 'cftime', 'ladim', 'skyfield'
+        'triangle', 'scipy', 'cftime', 'ladim', 'skyfield', 'pandas'
     ],
     python_requires='>=3.6',
 )

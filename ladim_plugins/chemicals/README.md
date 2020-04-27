@@ -48,6 +48,21 @@ entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
 
 
+## Creating particles
+
+The module comes with a utility function for creating particle files.
+The utility can create particles from a square-shaped area around specified
+lat/lon locations. To create a release file, use the command
+
+`python -m ladim_plugins.sedimentation.make_release release.yaml out.rls`
+
+where `release.yaml` is the release config file, and `out.rls` is the output
+particle release file. For details about the config file, see the attached
+example `release.yaml` in the sedimentation module directory.
+
+
 ## History
+
+April 2020: Added `make_release` module
 
 Created by Pål Næverlid Sævik (2020).
