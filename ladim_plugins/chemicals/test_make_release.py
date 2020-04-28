@@ -7,7 +7,7 @@ class Test_main:
     def test_returns_dataframe(self):
         config = dict(
             location=dict(lat=1, lon=2, width=100000),
-            depth=[0, 10],
+            depth=0,
             release_time='2000-01-01T00:00',
             num_particles=5,
             group_id=0,

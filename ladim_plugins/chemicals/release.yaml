@@ -5,7 +5,7 @@
     lat: 60
     lon: 4
     width: 50         # [m] Width of square-shaped release area
-  depth: [0, 10]    # [m] Depth range of particles
+  depth: [0, 10]    # [m] Depth of particles (single number or range)
   num_particles: 2  # Number of particles to release
 
 # Second group of particles (beware the leading hyphen "-" on group_id)
@@ -15,5 +15,5 @@
     lat: 61
     lon: 5
     width: 50         # [m] Width of square-shaped release area
-  depth: [0, 10]    # [m] Depth range of particles
+  depth: [0, 10]    # [m] Depth of particles (single number or range)
   num_particles: 3  # Number of particles to release
