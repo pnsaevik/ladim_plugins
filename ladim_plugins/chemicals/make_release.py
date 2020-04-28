@@ -26,13 +26,13 @@ def main(config, fname=None):
     return frame
 
 
-def single_config(location, depth, release_time, width, num_particles, group_id):
+def single_config(location, depth, release_time, num_particles, group_id):
 
     release = pd.DataFrame(
         columns=['release_time', 'lat', 'lon', 'Z', 'group_id'])
 
     # Set parameters
-    release['lat'], release['lon'] = latlon(location, width, num_particles)
+    release['lat'], release['lon'] = latlon(location, num_particles)
     release['Z'] = np.linspace(depth[0], depth[1], num_particles)
     release['group_id'] = group_id
     release['release_time'] = release_time
@@ -57,19 +57,32 @@ def latlon_square(lat, lon, width):
     return lat_limits, lon_limits
 
 
-def latlon(loc, width, n):
-    lat = np.vectorize(to_numeric_latlon)(loc['lat'])
-    lon = np.vectorize(to_numeric_latlon)(loc['lon'])
+def latlon(loc, n):
+    if isinstance(loc, dict):
+        if 'lat' in loc and 'lon' in loc:
+            lat = np.vectorize(to_numeric_latlon)(loc['lat'])
+            lon = np.vectorize(to_numeric_latlon)(loc['lon'])
+        elif 'file' in loc:
+            raise NotImplementedError()
+        else:
+            raise NotImplementedError()
 
-    # If singular point
-    if width == 0:
-        return np.ones(n) * lat, np.ones(n) * lon
+        # If square
+        if 'width' in loc:
+            return latlon_from_llw(lat, lon, loc['width'], n)
 
-    # If square
-    else:
-        (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
-        p = np.array([[lat1, lon1], [lat2, lon1], [lat2, lon2], [lat1, lon2]])
-        return get_polygon_sample_convex(p, n)
+        # If singular point
+        elif len(lat) == 1:
+            return np.ones(n) * lat, np.ones(n) * lon
+
+        else:
+            raise NotImplementedError()
+
+
+def latlon_from_llw(lat, lon, width, n):
+    (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
+    p = np.array([[lat1, lon1], [lat2, lon1], [lat2, lon2], [lat1, lon2]])
+    return get_polygon_sample_convex(p, n)
 
 
 def to_numeric_latlon(lat_or_lon):

@@ -6,10 +6,9 @@ import pandas as pd
 class Test_main:
     def test_returns_dataframe(self):
         config = dict(
-            location=dict(lat=1, lon=2),
+            location=dict(lat=1, lon=2, width=100000),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=100000,
             num_particles=5,
             group_id=0,
         )
@@ -18,10 +17,9 @@ class Test_main:
 
     def test_returns_correct_number_of_particles(self):
         config = dict(
-            location=dict(lat=1, lon=2),
+            location=dict(lat=1, lon=2, width=100000),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=100000,
             num_particles=5,
             group_id=0,
         )
@@ -30,10 +28,9 @@ class Test_main:
 
     def test_correct_latlon(self):
         config = dict(
-            location=dict(lat=1, lon=2),
+            location=dict(lat=1, lon=2, width=0),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=0,
             num_particles=5,
             group_id=0,
         )
@@ -46,10 +43,10 @@ class Test_main:
             location=dict(
                 lat="1° 30.0'",
                 lon="1° 12.0' 36.0''",
+                width=0,
             ),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=0,
             num_particles=5,
             group_id=0,
         )
@@ -59,10 +56,9 @@ class Test_main:
 
     def test_correct_depth(self):
         config = dict(
-            location=dict(lat=1, lon=2),
+            location=dict(lat=1, lon=2, width=100000),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
-            width=100000,
             num_particles=5,
             group_id=0,
         )
@@ -71,10 +67,9 @@ class Test_main:
 
     def test_location_when_width(self):
         config = dict(
-            location=dict(lat=60, lon=0),
+            location=dict(lat=60, lon=0, width=100000),
             depth=[0, 0],
             release_time='2000-01-01T00:00',
-            width=100000,
             num_particles=5,
             group_id=0,
         )
@@ -97,18 +92,16 @@ class Test_main:
     def test_multiple_groups(self):
         config = [
             dict(
-                location=dict(lat=1, lon=2),
+                location=dict(lat=1, lon=2, width=0),
                 depth=[0, 10],
                 release_time='2000-01-01T00:00',
-                width=0,
                 num_particles=2,
                 group_id=1,
             ),
             dict(
-                location=dict(lat=1, lon=2),
+                location=dict(lat=1, lon=2, width=0),
                 depth=[0, 10],
                 release_time='2000-01-01T00:00',
-                width=0,
                 num_particles=3,
                 group_id=2,
             ),
