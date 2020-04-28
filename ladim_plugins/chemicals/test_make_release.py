@@ -28,7 +28,7 @@ class Test_main:
 
     def test_correct_latlon(self):
         config = dict(
-            location=dict(lat=1, lon=2, width=0),
+            location=dict(lat=1, lon=2),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
             num_particles=5,
@@ -42,8 +42,7 @@ class Test_main:
         config = dict(
             location=dict(
                 lat="1° 30.0'",
-                lon="1° 12.0' 36.0''",
-                width=0,
+                lon="1° 12.0' 36.0''"
             ),
             depth=[0, 10],
             release_time='2000-01-01T00:00',
@@ -92,14 +91,14 @@ class Test_main:
     def test_multiple_groups(self):
         config = [
             dict(
-                location=dict(lat=1, lon=2, width=0),
+                location=dict(lat=1, lon=2),
                 depth=[0, 10],
                 release_time='2000-01-01T00:00',
                 num_particles=2,
                 group_id=1,
             ),
             dict(
-                location=dict(lat=1, lon=2, width=0),
+                location=dict(lat=1, lon=2),
                 depth=[0, 10],
                 release_time='2000-01-01T00:00',
                 num_particles=3,

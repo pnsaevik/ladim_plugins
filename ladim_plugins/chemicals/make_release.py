@@ -72,7 +72,7 @@ def latlon(loc, n):
             return latlon_from_llw(lat, lon, loc['width'], n)
 
         # If singular point
-        elif len(lat) == 1:
+        elif np.shape(lat) == ():
             return np.ones(n) * lat, np.ones(n) * lon
 
         else:
