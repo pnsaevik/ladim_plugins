@@ -43,8 +43,8 @@ def single_config(location, depth, release_time, num_particles, group_id):
 def latlon(loc, n):
     if isinstance(loc, dict):
         if 'lat' in loc and 'lon' in loc:
-            lat = np.vectorize(to_numeric_latlon)(loc['lat'])
-            lon = np.vectorize(to_numeric_latlon)(loc['lon'])
+            lat = to_numeric_latlon_seq(loc['lat'])
+            lon = to_numeric_latlon_seq(loc['lon'])
         elif 'file' in loc:
             raise NotImplementedError()
         else:
@@ -87,9 +87,37 @@ def latlon_square(lat, lon, width):
 
 
 def latlon_from_poly(lat, lon, n):
-    coords = np.stack((lat, lon)).T
-    triangles = triangulate_nonconvex(coords)
-    return get_polygon_sample_triangles(triangles, n)
+    # Make multipolygon if given a single polygon
+    if np.shape(lat[0]) == ():
+        lat = [lat]
+        lon = [lon]
+
+    # For each subpolygon
+    triangles = []
+    for lat_element, lon_element in zip(lat, lon):
+        coords = np.stack((lat_element, lon_element)).T
+        triangles += triangulate_nonconvex(coords).tolist()
+    return get_polygon_sample_triangles(np.array(triangles), n)
+
+
+def to_numeric_latlon_seq(lat_or_lon_seq):
+    # Find nesting level
+    dims = 0
+    try:
+        if not isinstance(lat_or_lon_seq[0], str):
+            dims = 1
+        if not isinstance(lat_or_lon_seq[0][0], str):
+            dims = 2
+    except TypeError:
+        pass
+
+    if dims == 0:
+        return to_numeric_latlon(lat_or_lon_seq)
+    elif dims == 1:
+        return np.vectorize(to_numeric_latlon)(lat_or_lon_seq)
+    else:  # dims == 2
+        fn = np.vectorize(to_numeric_latlon)
+        return [fn(val) for val in lat_or_lon_seq]
 
 
 def to_numeric_latlon(lat_or_lon):
