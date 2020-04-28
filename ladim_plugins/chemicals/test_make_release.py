@@ -142,6 +142,35 @@ class Test_main:
             0.45447757702366465,
         ]
 
+    def test_location_when_file(self):
+        from pkg_resources import resource_filename, cleanup_resources
+        fname = resource_filename('ladim_plugins.chemicals', 'release_area.geojson')
+        config = dict(
+            location=dict(file=fname),
+            depth=[0, 0],
+            release_time='2000-01-01T00:00',
+            num_particles=5,
+            group_id=0,
+        )
+        result = make_release.main(config)
+
+        cleanup_resources()
+
+        assert result['lat'].values.tolist() == [
+            0.7917250380826646,
+            10.437587211262693,
+            0.5680445610939323,
+            0.925596638292661,
+            0.9289639418021131,
+        ]
+        assert result['lon'].values.tolist() == [
+            0.5623808488506793,
+            10.966482131015598,
+            0.5401824381239879,
+            0.11074060120630969,
+            0.45447757702366465,
+        ]
+
     def test_multiple_groups(self):
         config = [
             dict(

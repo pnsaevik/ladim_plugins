@@ -49,8 +49,10 @@ def latlon(loc, n):
         if 'lat' in loc and 'lon' in loc:
             lat = to_numeric_latlon_seq(loc['lat'])
             lon = to_numeric_latlon_seq(loc['lon'])
+
         elif 'file' in loc:
-            raise NotImplementedError()
+            lat, lon = latlon_from_file(loc['file'])
+
         else:
             raise NotImplementedError()
 
@@ -65,6 +67,27 @@ def latlon(loc, n):
         # If polygon
         else:
             return latlon_from_poly(lat, lon, n)
+
+
+def latlon_from_file(fname):
+    from osgeo import ogr
+    file = ogr.Open(fname)
+    shape = file.GetLayer(0)
+    feature = shape.GetFeature(0)
+    geom = feature.GetGeometryRef()
+
+    assert geom.GetGeometryName() == 'MULTIPOLYGON'
+
+    all_lat = []
+    all_lon = []
+    for i in range(geom.GetGeometryCount()):
+        poly = geom.GetGeometryRef(i)
+        ring = poly.GetGeometryRef(0)
+        points = np.array(ring.GetPoints())
+        all_lon.append(points[:, 0])
+        all_lat.append(points[:, 1])
+
+    return all_lat, all_lon
 
 
 def latlon_from_llw(lat, lon, width, n):
