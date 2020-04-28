@@ -88,6 +88,33 @@ class Test_main:
             -.77068973051398990,
         ]
 
+    def test_location_when_polygon(self):
+        config = dict(
+            location=dict(
+                lat=[0, 0, 1, 1],
+                lon=[0, 1, 1, 0],
+            ),
+            depth=[0, 0],
+            release_time='2000-01-01T00:00',
+            num_particles=5,
+            group_id=0,
+        )
+        result = make_release.main(config)
+        assert result['lat'].values.tolist() == [
+            0.7917250380826646,
+            0.4711050802470955,
+            0.5680445610939323,
+            0.925596638292661,
+            0.07103605819788694,
+         ]
+        assert result['lon'].values.tolist() == [
+            0.5623808488506793,
+            0.966482131015597,
+            0.5401824381239879,
+            0.11074060120630969,
+            0.5455224229763354,
+        ]
+
     def test_multiple_groups(self):
         config = [
             dict(

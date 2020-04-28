@@ -75,14 +75,21 @@ def latlon(loc, n):
         elif np.shape(lat) == ():
             return np.ones(n) * lat, np.ones(n) * lon
 
+        # If polygon
         else:
-            raise NotImplementedError()
+            return latlon_from_poly(lat, lon, n)
 
 
 def latlon_from_llw(lat, lon, width, n):
     (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
     p = np.array([[lat1, lon1], [lat2, lon1], [lat2, lon2], [lat1, lon2]])
     return get_polygon_sample_convex(p, n)
+
+
+def latlon_from_poly(lat, lon, n):
+    coords = np.stack((lat, lon)).T
+    triangles = triangulate_nonconvex(coords)
+    return get_polygon_sample_triangles(triangles, n)
 
 
 def to_numeric_latlon(lat_or_lon):
