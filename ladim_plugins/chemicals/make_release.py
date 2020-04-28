@@ -40,23 +40,6 @@ def single_config(location, depth, release_time, num_particles, group_id):
     return release
 
 
-def latlon_square(lat, lon, width):
-    a = 6378137.0
-    b = 6356752.314245
-
-    lat_rad = lat * np.pi / 180
-    lat_cos = np.cos(lat_rad)
-    lat_sin = np.sin(lat_rad)
-
-    lat_width = np.sqrt(width ** 2 / ((a*lat_sin)**2 + (b*lat_cos)**2))
-    lon_width = width / (a * lat_cos)
-
-    lat_limits = lat + np.array([-0.5, 0.5]) * lat_width * 180 / np.pi
-    lon_limits = lon + np.array([-0.5, 0.5]) * lon_width * 180 / np.pi
-
-    return lat_limits, lon_limits
-
-
 def latlon(loc, n):
     if isinstance(loc, dict):
         if 'lat' in loc and 'lon' in loc:
@@ -84,6 +67,23 @@ def latlon_from_llw(lat, lon, width, n):
     (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
     p = np.array([[lat1, lon1], [lat2, lon1], [lat2, lon2], [lat1, lon2]])
     return get_polygon_sample_convex(p, n)
+
+
+def latlon_square(lat, lon, width):
+    a = 6378137.0
+    b = 6356752.314245
+
+    lat_rad = lat * np.pi / 180
+    lat_cos = np.cos(lat_rad)
+    lat_sin = np.sin(lat_rad)
+
+    lat_width = np.sqrt(width ** 2 / ((a*lat_sin)**2 + (b*lat_cos)**2))
+    lon_width = width / (a * lat_cos)
+
+    lat_limits = lat + np.array([-0.5, 0.5]) * lat_width * 180 / np.pi
+    lon_limits = lon + np.array([-0.5, 0.5]) * lon_width * 180 / np.pi
+
+    return lat_limits, lon_limits
 
 
 def latlon_from_poly(lat, lon, n):
