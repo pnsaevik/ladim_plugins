@@ -123,11 +123,8 @@ def latlon_from_poly(lat, lon, n):
         lat = [lat]
         lon = [lon]
 
-    # For each subpolygon
-    triangles = []
-    for lat_element, lon_element in zip(lat, lon):
-        coords = np.stack((lat_element, lon_element)).T
-        triangles += triangulate_nonconvex(coords).tolist()
+    coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
+    triangles = triangulate_nonconvex_multi(coords)
     return get_polygon_sample_triangles(np.array(triangles), n)
 
 
@@ -185,13 +182,23 @@ def triangulate(coords):
     return np.array(triangles)
 
 
-def triangulate_nonconvex(coords):
+def triangulate_nonconvex_multi(coords):
     import triangle as tr
 
-    # Triangulate the polygon
-    sequence = list(range(len(coords)))
-    trpoly = dict(vertices=coords,
-                  segments=np.array((sequence, sequence[1:] + [0])).T)
+    # Build flat list of coordinates
+    coords_flat = np.concatenate(coords)
+
+    # Build list of segments for multipolygons
+    # Multipolygon [[0, 1, 2, 3], [4, 5, 6]] is encoded as
+    # segments = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 4]]
+    start = np.arange(len(coords_flat))
+    stop = start + 1
+    coordpos = np.cumsum([0] + [len(c) for c in coords])
+    stop[coordpos[1:] - 1] = coordpos[:-1]
+    segments = np.stack((start, stop)).T
+
+    # Triangulate and parse output
+    trpoly = dict(vertices=coords_flat, segments=segments)
     trdata = tr.triangulate(trpoly, 'p')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
     return np.array(coords)
