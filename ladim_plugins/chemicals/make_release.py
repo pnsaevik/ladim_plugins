@@ -72,22 +72,26 @@ def latlon(loc, n):
 def latlon_from_file(fname):
     from osgeo import ogr
     file = ogr.Open(fname)
-    shape = file.GetLayer(0)
-    feature = shape.GetFeature(0)
-    geom = feature.GetGeometryRef()
 
-    assert geom.GetGeometryName() == 'MULTIPOLYGON'
+    def get_points_from_layer(layer):
+        feats = [layer.GetFeature(i) for i in range(layer.GetFeatureCount())]
+        return [p for f in feats for p in get_points_from_feature(f)]
 
-    all_lat = []
-    all_lon = []
-    for i in range(geom.GetGeometryCount()):
-        poly = geom.GetGeometryRef(i)
+    def get_points_from_feature(feature):
+        geom = feature.GetGeometryRef()
+        assert geom.GetGeometryName() == 'MULTIPOLYGON'
+        polys = [geom.GetGeometryRef(i) for i in range(geom.GetGeometryCount())]
+        return [get_points_from_poly(p) for p in polys]
+
+    def get_points_from_poly(poly):
         ring = poly.GetGeometryRef(0)
-        points = np.array(ring.GetPoints())
-        all_lon.append(points[:, 0])
-        all_lat.append(points[:, 1])
+        return np.array(ring.GetPoints())
 
-    return all_lat, all_lon
+    points = get_points_from_layer(file.GetLayer(0))
+    lon = [p[:, 0] for p in points]
+    lat = [p[:, 1] for p in points]
+
+    return lat, lon
 
 
 def latlon_from_llw(lat, lon, width, n):
