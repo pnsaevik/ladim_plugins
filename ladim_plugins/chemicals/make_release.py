@@ -72,8 +72,8 @@ def latlon(loc, n):
 def latlon_from_file(fname):
     import json
 
-    with open(fname, 'r', encoding='utf8') as f:
-        data = json.load(f)
+    with open(fname, 'r', encoding='utf8') as file:
+        data = json.load(file)
     if isinstance(data, dict):
         data = [data]
 
@@ -84,12 +84,7 @@ def latlon_from_file(fname):
     def get_points_from_feature(feature):
         geom = feature['geometry']
         assert geom['type'].upper() == 'MULTIPOLYGON'
-        polys = geom['coordinates']
-        return [get_points_from_poly(p) for p in polys]
-
-    def get_points_from_poly(poly):
-        ring = poly[0]
-        return np.array(ring)
+        return [np.array(p[0]) for p in geom['coordinates']]
 
     points = get_points_from_layer(data[0])
     lon = [p[:, 0] for p in points]
