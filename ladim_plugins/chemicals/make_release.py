@@ -39,9 +39,27 @@ def single_config(location, depth, release_time, num_particles, group_id):
     release['lat'], release['lon'] = latlon(location, num_particles)
     release['Z'] = np.linspace(depth0, depth1, num_particles)
     release['group_id'] = group_id
-    release['release_time'] = release_time
+    release['release_time'] = _sample(_str2time(release_time), num_particles).astype(str)
 
     return release
+
+
+def _str2time(strtime):
+    if isinstance(strtime, str):
+        return np.datetime64(strtime)
+    else:
+        return [np.datetime64(t) for t in strtime]
+
+
+def _sample(value_or_range, n):
+    try:
+        a, b = value_or_range
+    except TypeError:
+        return np.broadcast_to(value_or_range, (n, ))
+
+    vals = a + np.arange(n) * ((b - a) / (n - 1))
+    np.random.shuffle(vals)
+    return vals
 
 
 def latlon(loc, n):

@@ -15,6 +15,18 @@ class Test_main:
         result = make_release.main(config)
         assert isinstance(result, pd.DataFrame)
 
+    def test_start_time_varies_when_range(self):
+        config = dict(
+            location=dict(lat=1, lon=2, width=100000),
+            depth=0,
+            release_time=['2000-01-01T00:00', '2000-01-02T00:00'],
+            num_particles=5,
+            group_id=0,
+        )
+        result = make_release.main(config)
+        time = result.release_time.values
+        assert len(np.unique(time)) == config['num_particles']
+
     def test_returns_correct_number_of_particles(self):
         config = dict(
             location=dict(lat=1, lon=2, width=100000),
@@ -201,11 +213,11 @@ class Test_main:
         result = make_release.main(config)
         assert result.to_dict('list') == {
             'release_time': [
-                '2000-01-01 00:00',
-                '2000-01-01 00:00',
-                '2000-01-01 00:00',
-                '2000-01-01 00:00',
-                '2000-01-01 00:00'
+                '2000-01-01T00:00',
+                '2000-01-01T00:00',
+                '2000-01-01T00:00',
+                '2000-01-01T00:00',
+                '2000-01-01T00:00'
             ],
             'lat': [
                 59.99996568023897,
