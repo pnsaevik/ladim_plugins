@@ -70,24 +70,28 @@ def latlon(loc, n):
 
 
 def latlon_from_file(fname):
-    from osgeo import ogr
-    file = ogr.Open(fname)
+    import json
+
+    with open(fname, 'r', encoding='utf8') as f:
+        data = json.load(f)
+    if isinstance(data, dict):
+        data = [data]
 
     def get_points_from_layer(layer):
-        feats = [layer.GetFeature(i) for i in range(layer.GetFeatureCount())]
+        feats = layer['features']
         return [p for f in feats for p in get_points_from_feature(f)]
 
     def get_points_from_feature(feature):
-        geom = feature.GetGeometryRef()
-        assert geom.GetGeometryName() == 'MULTIPOLYGON'
-        polys = [geom.GetGeometryRef(i) for i in range(geom.GetGeometryCount())]
+        geom = feature['geometry']
+        assert geom['type'].upper() == 'MULTIPOLYGON'
+        polys = geom['coordinates']
         return [get_points_from_poly(p) for p in polys]
 
     def get_points_from_poly(poly):
-        ring = poly.GetGeometryRef(0)
-        return np.array(ring.GetPoints())
+        ring = poly[0]
+        return np.array(ring)
 
-    points = get_points_from_layer(file.GetLayer(0))
+    points = get_points_from_layer(data[0])
     lon = [p[:, 0] for p in points]
     lat = [p[:, 1] for p in points]
 
