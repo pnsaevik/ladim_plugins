@@ -18,6 +18,16 @@
                     [ [ [ 10, 10 ], [ 11, 10 ], [ 11, 11] ] ]
                 ]
             }
+        },
+        {
+            "type": "Feature",
+            "properties": { },
+            "geometry": {
+                "type": "MultiPolygon",
+                "coordinates": [
+                    [ [ [ 2, 4 ], [ 2, 5 ], [ 3, 5 ], [ 3, 4 ] ] ],
+                ]
+            }
         }
     ]
 }
