@@ -74,7 +74,7 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        assert result['Z'].values.tolist() == [0, 2.5, 5, 7.5, 10]
+        assert result['Z'].values.tolist() == [5.0, 10.0, 7.5, 0.0, 2.5]
 
     def test_location_when_width(self):
         config = dict(
@@ -233,7 +233,7 @@ class Test_main:
                 5.0001709991110435,
                 4.9998984997307225
             ],
-            'Z': [0.0, 10.0, 0.0, 5.0, 10.0],
+            'Z': [10.0, 0.0, 0.0, 5.0, 10.0],
             'group_id': [1, 1, 2, 2, 2]
         }
 

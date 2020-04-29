@@ -1,5 +1,4 @@
 import numpy as np
-# noinspection PyPackageRequirements
 import pandas as pd
 import yaml
 
@@ -58,7 +57,6 @@ def linspace_time(start, stop, num, granularity='ms'):
     return start_t + dt.astype(f'timedelta64[{granularity}]')
 
 
-# noinspection PyPackageRequirements
 def sinkvel(n):
     from scipy.interpolate import InterpolatedUnivariateSpline
     sinkvel_tab = np.array([.100, .050, .025, .015, .010, .005, 0])

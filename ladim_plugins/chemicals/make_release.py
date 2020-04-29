@@ -27,17 +27,12 @@ def main(config, fname=None):
 
 
 def single_config(location, depth, release_time, num_particles, group_id):
-    try:
-        depth0, depth1 = depth
-    except TypeError:
-        depth0, depth1 = depth, depth
-
     release = pd.DataFrame(
         columns=['release_time', 'lat', 'lon', 'Z', 'group_id'])
 
     # Set parameters
     release['lat'], release['lon'] = latlon(location, num_particles)
-    release['Z'] = np.linspace(depth0, depth1, num_particles)
+    release['Z'] = _sample(depth, num_particles)
     release['group_id'] = group_id
     release['release_time'] = _sample(_str2time(release_time), num_particles).astype(str)
 
