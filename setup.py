@@ -4,7 +4,9 @@ setup(
     name='ladim_plugins',
     version='1.2.1',
     packages=find_packages(),
-    package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp']},
+    package_data={'': [
+        '*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp', '*.geojson',
+    ]},
     url='https://github.com/pnsaevik/ladim_plugins',
     license='MIT',
     classifiers=[

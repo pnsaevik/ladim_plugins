@@ -26,18 +26,90 @@ def main(config, fname=None):
     return frame
 
 
-def single_config(location, depth, release_time, width, num_particles, group_id):
-
+def single_config(location, depth, release_time, num_particles, group_id):
     release = pd.DataFrame(
         columns=['release_time', 'lat', 'lon', 'Z', 'group_id'])
 
     # Set parameters
-    release['lat'], release['lon'] = latlon(location, width, num_particles)
-    release['Z'] = np.linspace(depth[0], depth[1], num_particles)
+    release['lat'], release['lon'] = latlon(location, num_particles)
+    release['Z'] = _sample(depth, num_particles)
     release['group_id'] = group_id
-    release['release_time'] = release_time
+    release['release_time'] = _sample(_str2time(release_time), num_particles).astype(str)
 
     return release
+
+
+def _str2time(strtime):
+    if isinstance(strtime, str):
+        return np.datetime64(strtime)
+    else:
+        return [np.datetime64(t) for t in strtime]
+
+
+def _sample(value_or_range, n):
+    try:
+        a, b = value_or_range
+    except TypeError:
+        return np.broadcast_to(value_or_range, (n, ))
+
+    vals = a + np.arange(n) * ((b - a) / (n - 1))
+    np.random.shuffle(vals)
+    return vals
+
+
+def latlon(loc, n):
+    if isinstance(loc, dict):
+        if 'lat' in loc and 'lon' in loc:
+            lat = to_numeric_latlon_seq(loc['lat'])
+            lon = to_numeric_latlon_seq(loc['lon'])
+
+        elif 'file' in loc:
+            lat, lon = latlon_from_file(loc['file'])
+
+        else:
+            raise NotImplementedError()
+
+        # If square
+        if 'width' in loc:
+            return latlon_from_llw(lat, lon, loc['width'], n)
+
+        # If singular point
+        elif np.shape(lat) == ():
+            return np.ones(n) * lat, np.ones(n) * lon
+
+        # If polygon
+        else:
+            return latlon_from_poly(lat, lon, n)
+
+
+def latlon_from_file(fname):
+    import json
+
+    with open(fname, 'r', encoding='utf8') as file:
+        data = json.load(file)
+    if isinstance(data, dict):
+        data = [data]
+
+    def get_points_from_layer(layer):
+        feats = layer['features']
+        return [p for f in feats for p in get_points_from_feature(f)]
+
+    def get_points_from_feature(feature):
+        geom = feature['geometry']
+        assert geom['type'].upper() == 'MULTIPOLYGON'
+        return [np.array(p[0]) for p in geom['coordinates']]
+
+    points = get_points_from_layer(data[0])
+    lon = [p[:, 0] for p in points]
+    lat = [p[:, 1] for p in points]
+
+    return lat, lon
+
+
+def latlon_from_llw(lat, lon, width, n):
+    (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
+    return latlon_from_poly(
+        [lat1, lat1, lat2, lat2], [lon1, lon2, lon2, lon1], n)
 
 
 def latlon_square(lat, lon, width):
@@ -57,19 +129,35 @@ def latlon_square(lat, lon, width):
     return lat_limits, lon_limits
 
 
-def latlon(loc, width, n):
-    lat = np.vectorize(to_numeric_latlon)(loc['lat'])
-    lon = np.vectorize(to_numeric_latlon)(loc['lon'])
+def latlon_from_poly(lat, lon, n):
+    # Make multipolygon if given a single polygon
+    if np.shape(lat[0]) == ():
+        lat = [lat]
+        lon = [lon]
 
-    # If singular point
-    if width == 0:
-        return np.ones(n) * lat, np.ones(n) * lon
+    coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
+    triangles = triangulate_nonconvex_multi(coords)
+    return get_polygon_sample_triangles(np.array(triangles), n)
 
-    # If square
-    else:
-        (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
-        p = np.array([[lat1, lon1], [lat2, lon1], [lat2, lon2], [lat1, lon2]])
-        return get_polygon_sample_convex(p, n)
+
+def to_numeric_latlon_seq(lat_or_lon_seq):
+    # Find nesting level
+    dims = 0
+    try:
+        if not isinstance(lat_or_lon_seq[0], str):
+            dims = 1
+        if not isinstance(lat_or_lon_seq[0][0], str):
+            dims = 2
+    except TypeError:
+        pass
+
+    if dims == 0:
+        return to_numeric_latlon(lat_or_lon_seq)
+    elif dims == 1:
+        return np.vectorize(to_numeric_latlon)(lat_or_lon_seq)
+    else:  # dims == 2
+        fn = np.vectorize(to_numeric_latlon)
+        return [fn(val) for val in lat_or_lon_seq]
 
 
 def to_numeric_latlon(lat_or_lon):
@@ -98,21 +186,23 @@ def _unit_triangle_sample(num):
     return xy
 
 
-def triangulate(coords):
-    triangles = []
-    for i in range(len(coords) - 2):
-        idx = [0, i + 1, i + 2]
-        triangles.append(coords[idx])
-    return np.array(triangles)
-
-
-def triangulate_nonconvex(coords):
+def triangulate_nonconvex_multi(coords):
     import triangle as tr
 
-    # Triangulate the polygon
-    sequence = list(range(len(coords)))
-    trpoly = dict(vertices=coords,
-                  segments=np.array((sequence, sequence[1:] + [0])).T)
+    # Build flat list of coordinates
+    coords_flat = np.concatenate(coords)
+
+    # Build list of segments for multipolygons
+    # Multipolygon [[0, 1, 2, 3], [4, 5, 6]] is encoded as
+    # segments = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 4]]
+    start = np.arange(len(coords_flat))
+    stop = start + 1
+    coordpos = np.cumsum([0] + [len(c) for c in coords])
+    stop[coordpos[1:] - 1] = coordpos[:-1]
+    segments = np.stack((start, stop)).T
+
+    # Triangulate and parse output
+    trpoly = dict(vertices=coords_flat, segments=segments)
     trdata = tr.triangulate(trpoly, 'p')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
     return np.array(coords)
@@ -122,11 +212,6 @@ def triangle_areas(triangles):
     a = triangles[..., 1, :] - triangles[..., 0, :]
     b = triangles[..., 2, :] - triangles[..., 0, :]
     return 0.5 * np.abs(a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0])
-
-
-def get_polygon_sample_convex(coords, num):
-    triangles = triangulate(coords)
-    return get_polygon_sample_triangles(triangles, num)
 
 
 def get_polygon_sample_triangles(triangles, num):

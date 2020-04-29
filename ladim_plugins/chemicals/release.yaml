@@ -1,19 +1,26 @@
 # First group of particles (beware the leading hyphen "-" on group_id)
 - group_id: 1
-  release_time: 2000-01-01 00:00  # [yyyy-mm-dd hh:mm:ss] Time of release
+  # [yyyy-mm-dd hh:mm:ss] Time of release. Single entry or range [start, stop]
+  release_time: 2000-01-01 00:00
   location:  # Center of release location
     lat: 60
     lon: 4
-  width: 50         # [m] Width of square-shaped release area
-  depth: [0, 10]    # [m] Depth range of particles
+    width: 50         # [m] Width of square-shaped release area. Optional (default = 0).
+  depth: [0, 10]    # [m] Depth of particles (single number or range)
   num_particles: 2  # Number of particles to release
 
 # Second group of particles (beware the leading hyphen "-" on group_id)
 - group_id: 2
-  release_time: 2000-01-01 00:00  # [yyyy-mm-dd hh:mm:ss] Time of release
-  location:  # Center of release location
-    lat: 61
-    lon: 5
-  width: 50         # [m] Width of square-shaped release area
-  depth: [0, 10]    # [m] Depth range of particles
+  # [yyyy-mm-dd hh:mm:ss] Time of release. Single entry or range [start, stop]
+  release_time: [2000-01-01 00:00, 2000-01-02 00:00]
+  depth: [0, 10]    # [m] Depth of particles (single number or range [start, stop])
   num_particles: 3  # Number of particles to release
+
+  # Location can also be specified as a polygonal area, possible with multiple polygons
+  location:  # Center of release location
+    lat: [[61, 62, 62], [60, 60, 61, 61]]
+    lon: [[5, 5, 6], [6, 7, 7, 6]]
+
+  # A third option is to load polygons from a file. See attached sample file.
+  # location:
+  #   file: release_area.geojson
