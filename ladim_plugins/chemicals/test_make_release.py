@@ -74,18 +74,18 @@ class Test_main:
         )
         result = make_release.main(config)
         assert result['lat'].values.tolist() == [
-            59.86883128075036,
-            59.94388666278995,
-            59.64776945642973,
-            59.58313567847057,
-            59.95907224908919,
+            60.26228062814893,
+            59.974021504109096,
+            60.061176683164156,
+            60.382640291567434,
+            59.6143322738132,
         ]
         assert result['lon'].values.tolist() == [
             0.11207533991782959,
-            0.83809605611991130,
-            0.07219299663993050,
-            -.69935533484709590,
-            -.77068973051398990,
+            0.8380960561199113,
+            0.0721929966399305,
+            -0.6993553348470959,
+            0.08178697665959145,
         ]
 
     def test_location_when_polygon(self):
@@ -210,11 +210,11 @@ class Test_main:
                 '2000-01-01 00:00'
             ],
             'lat': [
-                59.99995380437174,
-                59.99997982348463,
-                61.00002017550346,
-                61.000034318039795,
-                60.99993441892962
+                59.99996568023897,
+                60.000065584359625,
+                61.00002805526148,
+                61.00017610643909,
+                61.000208421707285
             ],
             'lon': [
                 4.0004254257913106,
@@ -248,29 +248,6 @@ class Test_to_numeric_latlon:
         assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0\"")
 
 
-class Test_triangulate:
-    def test_if_triangle(self):
-        coords = np.array([[0, 0], [0, 1], [1, 0]])
-        triangles = make_release.triangulate(coords)
-        assert triangles.tolist() == [[[0, 0], [0, 1], [1, 0]]]
-
-    def test_if_clockwise_square(self):
-        coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
-        triangles = make_release.triangulate(coords)
-        assert triangles.tolist() == [
-            [[0, 0], [0, 1], [1, 1]],
-            [[0, 0], [1, 1], [1, 0]],
-        ]
-
-    def test_if_counterclockwise_square(self):
-        coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
-        triangles = make_release.triangulate(coords)
-        assert triangles.tolist() == [
-            [[0, 0], [1, 0], [1, 1]],
-            [[0, 0], [1, 1], [0, 1]],
-        ]
-
-
 class Test_triangle_areas:
     def test_if_single_triangle(self):
         coords = np.array([[0, 0], [0, 1], [1, 0]])
@@ -284,28 +261,3 @@ class Test_triangle_areas:
         ])
         area = make_release.triangle_areas(coords)
         assert area.tolist() == [0.5, 1]
-
-
-class Test_get_polygon_sample_convex:
-    def test_all_inside_when_triangle(self):
-        coords = np.array([[5, 3], [5, 1], [6, 3]])
-        x, y = make_release.get_polygon_sample_convex(coords, 100)
-
-        assert np.all(x >= 5)
-        assert np.all(y <= 3)
-        assert np.all(2 * (y - 1) >= (x - 5))
-
-    def test_all_inside_when_rectangle(self):
-        coords = np.array([[1, 10], [2, 10], [2, 12], [1, 12]])
-        x, y = make_release.get_polygon_sample_convex(coords, 100)
-
-        assert np.all(x >= 1)
-        assert np.all(x <= 2)
-        assert np.all(y >= 10)
-        assert np.all(y <= 12)
-
-    def test_does_not_work_when_nonconvex_polygon(self):
-        coords = np.array([[0, 0], [10, 0], [10, 10], [9, 1]])
-        x, y = make_release.get_polygon_sample_convex(coords, 100)
-        is_inside_forbidden_area = (x < 9) & (y > 1)
-        assert np.count_nonzero(is_inside_forbidden_area) > 0

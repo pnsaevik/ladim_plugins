@@ -96,8 +96,8 @@ def latlon_from_file(fname):
 
 def latlon_from_llw(lat, lon, width, n):
     (lat1, lat2), (lon1, lon2) = latlon_square(lat, lon, width)
-    p = np.array([[lat1, lon1], [lat2, lon1], [lat2, lon2], [lat1, lon2]])
-    return get_polygon_sample_convex(p, n)
+    return latlon_from_poly(
+        [lat1, lat1, lat2, lat2], [lon1, lon2, lon2, lon1], n)
 
 
 def latlon_square(lat, lon, width):
@@ -174,14 +174,6 @@ def _unit_triangle_sample(num):
     return xy
 
 
-def triangulate(coords):
-    triangles = []
-    for i in range(len(coords) - 2):
-        idx = [0, i + 1, i + 2]
-        triangles.append(coords[idx])
-    return np.array(triangles)
-
-
 def triangulate_nonconvex_multi(coords):
     import triangle as tr
 
@@ -208,11 +200,6 @@ def triangle_areas(triangles):
     a = triangles[..., 1, :] - triangles[..., 0, :]
     b = triangles[..., 2, :] - triangles[..., 0, :]
     return 0.5 * np.abs(a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0])
-
-
-def get_polygon_sample_convex(coords, num):
-    triangles = triangulate(coords)
-    return get_polygon_sample_triangles(triangles, num)
 
 
 def get_polygon_sample_triangles(triangles, num):
