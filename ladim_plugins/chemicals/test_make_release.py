@@ -271,3 +271,29 @@ class Test_triangle_areas:
         ])
         area = make_release.triangle_areas(coords)
         assert area.tolist() == [0.5, 1]
+
+
+class Test_metric_degree_conversion:
+    def test_metric_to_degrees_correct_when_lat_60(self):
+        dx = 1000
+        dy = 2000
+        lat = 60
+        dlon, dlat = make_release.metric_diff_to_degrees(dx, dy, lat)
+        assert (dlon, dlat) == (0.01796630568239042, 0.017981358739225493)
+
+    def test_degrees_to_metric_correct_when_lat_60(self):
+        dlon = 0.02
+        dlat = 0.01
+        lat = 60
+        dx, dy = make_release.degree_diff_to_metric(dlon, dlat, lat)
+        assert (dx, dy) == (1113.194907932736, 1112.2629991453834)
+
+    def test_back_and_forth_is_identity_when_lat_60(self):
+        dx = 1000
+        dy = 2000
+        lat = 60
+        dlon, dlat = make_release.metric_diff_to_degrees(dx, dy, lat)
+        dx2, dy2 = make_release.degree_diff_to_metric(dlon, dlat, lat)
+
+        assert np.isclose(dx, dx2)
+        assert np.isclose(dy, dy2)
