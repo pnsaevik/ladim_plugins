@@ -113,6 +113,28 @@ class Test_make_release:
         ]
         assert all(lon >= lat for lon, lat in zip(r['lon'], r['lat']))
 
+    def test_can_use_multipolygon_as_sampling_area(self, conf0):
+        lat = [[0, 0, 1, 1], [10, 10, 11]]
+        lon = [[0, 1, 1, 0], [10, 11, 11]]
+        conf0['location'] = [lon, lat]
+        conf0['num'] = 5
+
+        result = make_release(conf0)
+        assert result['lat'] == [
+            0.5623808488506793,
+            10.033517868984402,
+            0.5401824381239879,
+            0.11074060120630969,
+            0.45447757702366465,
+        ]
+        assert result['lon'] == [
+            0.6458941130666561,
+            10.471105080247096,
+            0.8917730007820798,
+            0.9636627605010293,
+            0.6165584811742223,
+        ]
+
     def test_can_use_offset_polygon_as_sampling_area(self, conf0):
         np.random.seed(0)
 
