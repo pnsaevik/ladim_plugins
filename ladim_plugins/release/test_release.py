@@ -20,7 +20,7 @@ class Test_make_release:
 
     def test_returns_correct_keys(self, conf0):
         r = make_release(conf0)
-        assert list(r.keys()) == ['release_time', 'lon', 'lat']
+        assert list(r.keys()) == ['release_time', 'lon', 'lat', 'Z']
 
     def test_returns_correct_number(self, conf0):
         r = make_release(conf0)

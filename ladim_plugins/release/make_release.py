@@ -10,6 +10,7 @@ def make_release(conf):
     r['release_time'] = release_time
     r['lon'] = np.repeat(lon, num).tolist()
     r['lat'] = np.repeat(lat, num).tolist()
+    r['Z'] = [0] * num
 
     return r
 
