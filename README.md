@@ -17,7 +17,8 @@ Name                                                   | Description
 [salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
 [sedimentation](ladim_plugins/sedimentation) | Sinking particles 
 [lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
- 
+[release](ladim_plugins/release)             | General module for creating release files
+
 
 ## Installation
 
@@ -77,6 +78,9 @@ contents of `out.nc`.
 
 
 ## History
+
+**Version 1.3** ():
+- Module added: `release`
 
 **Version 1.2** (Apr 2020): Module added: `lunar_eel`
 

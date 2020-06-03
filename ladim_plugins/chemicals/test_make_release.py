@@ -50,22 +50,8 @@ class Test_main:
         assert result['lat'].values.tolist() == [1, 1, 1, 1, 1]
         assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
 
-    def test_correct_latlon_when_given_string_loc(self):
-        config = dict(
-            location=dict(
-                lat="1° 30.0'",
-                lon="1° 12.0' 36.0''"
-            ),
-            depth=[0, 10],
-            release_time='2000-01-01T00:00',
-            num_particles=5,
-            group_id=0,
-        )
-        result = make_release.main(config)
-        assert result['lat'].values.tolist() == [1.5] * 5
-        assert result['lon'].values.tolist() == [1.21] * 5
-
     def test_correct_depth(self):
+        np.random.seed(0)
         config = dict(
             location=dict(lat=1, lon=2, width=100000),
             depth=[0, 10],
@@ -77,6 +63,7 @@ class Test_main:
         assert result['Z'].values.tolist() == [5.0, 10.0, 7.5, 0.0, 2.5]
 
     def test_location_when_width(self):
+        np.random.seed(0)
         config = dict(
             location=dict(lat=60, lon=0, width=100000),
             depth=[0, 0],
@@ -101,6 +88,7 @@ class Test_main:
         ]
 
     def test_location_when_polygon(self):
+        np.random.seed(0)
         config = dict(
             location=dict(
                 lat=[0, 0, 1, 1],
@@ -128,6 +116,7 @@ class Test_main:
         ]
 
     def test_location_when_multipolygon(self):
+        np.random.seed(0)
         config = dict(
             location=dict(
                 lat=[[0, 0, 1, 1], [10, 10, 11]],
@@ -155,6 +144,7 @@ class Test_main:
         ]
 
     def test_location_when_file(self):
+        np.random.seed(0)
         from pkg_resources import resource_filename, cleanup_resources
         fname = resource_filename('ladim_plugins.chemicals', 'release_area.geojson')
         config = dict(
@@ -213,87 +203,25 @@ class Test_main:
         result = make_release.main(config)
         assert result.to_dict('list') == {
             'release_time': [
-                '2000-01-01T00:00',
-                '2000-01-01T00:00',
-                '2000-01-01T00:00',
-                '2000-01-01T12:00',
-                '2000-01-02T00:00',
+                '2000-01-01T00:00:00',
+                '2000-01-01T00:00:00',
+                '2000-01-01T00:00:00',
+                '2000-01-01T12:00:00',
+                '2000-01-02T00:00:00',
             ],
             'lat': [
                 59.99996568023897,
                 60.000065584359625,
-                61.4551168170031,
-                60.89177300078208,
-                61.64589411306665
-            ],
+                60.39278479610083,
+                60.16392123646262,
+                60.33739616041727],
             'lon': [
                 4.0004254257913106,
                 4.000277779481143,
-                5.01752960574041,
-                6.684572199879016,
-                5.609556873567685
+                6.1295500865778205,
+                6.648247492312871,
+                6.182626667207674
             ],
-            'Z': [10.0, 0.0, 0.0, 5.0, 10.0],
+            'Z': [10.0, 0.0, 10.0, 5.0, 0.0],
             'group_id': [1, 1, 2, 2, 2]
         }
-
-
-class Test_to_numeric_latlon:
-    def test_correct_if_float(self):
-        assert 1.23 == make_release.to_numeric_latlon(1.23)
-
-    def test_correct_if_simple_string(self):
-        assert 1.23 == make_release.to_numeric_latlon("1.23")
-
-    def test_correct_if_minutes(self):
-        assert 1.5 == make_release.to_numeric_latlon("1° 30.0'")
-        assert 1.5 == make_release.to_numeric_latlon("1°30.0'")
-        assert 1.5 == make_release.to_numeric_latlon(" 1 ° 30.0 ' ")
-        assert 1.5 == make_release.to_numeric_latlon("  1 °30.0  '")
-
-    def test_correct_if_min_and_sec(self):
-        assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0''")
-
-    def test_correct_if_min_and_sec_doublequote(self):
-        assert 1.21 == make_release.to_numeric_latlon("1° 12.0' 36.0\"")
-
-
-class Test_triangle_areas:
-    def test_if_single_triangle(self):
-        coords = np.array([[0, 0], [0, 1], [1, 0]])
-        area = make_release.triangle_areas(coords)
-        assert area.tolist() == 0.5
-
-    def test_if_multiple_triangles(self):
-        coords = np.array([
-            [[0, 0], [0, 1], [1, 0]],
-            [[0, 0], [0, 2], [1, 0]],
-        ])
-        area = make_release.triangle_areas(coords)
-        assert area.tolist() == [0.5, 1]
-
-
-class Test_metric_degree_conversion:
-    def test_metric_to_degrees_correct_when_lat_60(self):
-        dx = 1000
-        dy = 2000
-        lat = 60
-        dlon, dlat = make_release.metric_diff_to_degrees(dx, dy, lat)
-        assert (dlon, dlat) == (0.01796630568239042, 0.017981358739225493)
-
-    def test_degrees_to_metric_correct_when_lat_60(self):
-        dlon = 0.02
-        dlat = 0.01
-        lat = 60
-        dx, dy = make_release.degree_diff_to_metric(dlon, dlat, lat)
-        assert (dx, dy) == (1113.194907932736, 1112.2629991453834)
-
-    def test_back_and_forth_is_identity_when_lat_60(self):
-        dx = 1000
-        dy = 2000
-        lat = 60
-        dlon, dlat = make_release.metric_diff_to_degrees(dx, dy, lat)
-        dx2, dy2 = make_release.degree_diff_to_metric(dlon, dlat, lat)
-
-        assert np.isclose(dx, dx2)
-        assert np.isclose(dy, dy2)
