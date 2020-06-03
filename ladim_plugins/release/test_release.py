@@ -80,8 +80,7 @@ class Test_make_release:
     def test_can_print_to_file(self, conf0):
         import io
         handle = io.StringIO()
-        conf0['file'] = handle
-        make_release(conf0)
+        make_release(conf0, handle)
 
         handle.seek(0)
         assert handle.read().replace('\r', '') == (
@@ -219,6 +218,10 @@ class Test_make_release:
             -0.6993553348470959,
             0.08178697665959145,
         ]
+
+    def test_accepts_list_of_configs(self, conf0):
+        r = make_release([conf0, conf0])
+        assert len(r['release_time']) == 4
 
 
 class Test_triangulate:

@@ -9,8 +9,11 @@ Release files are generated using the `make_release` function:
 
 ```
 from ladim_plugins.release import make_release
-release = make_release(conf)
+release = make_release(conf, file)
 ```
+
+The argument `file` is the name of the output file (or handle). Defaults to
+`None` (no file output, only return value).
 
 The argument `conf` is a dict with the following keywords: 
 
@@ -41,8 +44,6 @@ The argument `conf` is a dict with the following keywords:
     values may be single values (= all particles are equal), or one value per
     particle, or a function / function name with the number of particles as its
     sole argument.
--   *file*: Name of the output file (or handle). Defaults to `None` (no file
-    output).
 
 Alternatively, `conf` can be a list of dicts, representing the union of several
 independent release configurations. Finally, `conf` can also be the name of a

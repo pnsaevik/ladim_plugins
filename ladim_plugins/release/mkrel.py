@@ -1,7 +1,31 @@
 import numpy as np
 
 
-def make_release(conf):
+def make_release(config, fname=None):
+    # Check if input argument is yaml file
+    try:
+        with open(config, encoding='utf8') as config_file:
+            import yaml
+            config = yaml.safe_load(config_file)
+    except TypeError:
+        pass
+    except OSError:
+        pass
+
+    if isinstance(config, dict):
+        config = [config]
+
+    import pandas as pd
+    frames = [pd.DataFrame(make_single_release(c)) for c in config]
+    frame = pd.concat(frames)
+
+    if fname:
+        frame.to_csv(fname, sep="\t", header=False, index=False)
+
+    return frame.to_dict(orient='list')
+
+
+def make_single_release(conf):
     num = conf['num']
     release_time = date_range(conf['date'], num)
     lon, lat = get_location(conf['location'], num)
@@ -12,13 +36,7 @@ def make_release(conf):
     r['lon'] = lon
     r['lat'] = lat
     r['Z'] = get_depth(conf.get('depth', 0), num)
-    r = {**r, **attrs}
-
-    file = conf.get('file', None)
-    if file:
-        write_to_file(r, file)
-
-    return r
+    return {**r, **attrs}
 
 
 def get_location(loc_conf, num):
@@ -107,12 +125,6 @@ def get_depth(depth_span, num):
     if not hasattr(depth_span, '__len__'):
         depth_span = [depth_span] * 2
     return np.linspace(*depth_span, num=num).tolist()
-
-
-def write_to_file(r, file):
-    import pandas as pd
-    df = pd.DataFrame(r)
-    df.to_csv(file, header=False, sep='\t', index=False)
 
 
 # --- Triangulation procedures ---
