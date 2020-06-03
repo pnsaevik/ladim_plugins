@@ -22,6 +22,10 @@ The argument `conf` is a dict with the following keywords:
     1.  A list of the form [lon, lat], representing a point
     2.  A list of lists, of the form [[lon_1, lon_2, ...], [lat_1, lat_2, ...]],
         representing a polygon
+    3.  A dict of the form `{'center': [lon, lat], 'offset': [[lon_1, lon_2, 
+        ...], [lat_1, lat_2, ...]]}`,
+        where `offset` is a polygon, specified as a metric offset from the
+        `center` location.
 -   *depth*: Release depth in meters, defaults to zero. Two forms of the
     argument is possible:
     1.  A single number, representing a single depth

@@ -24,11 +24,23 @@ def make_release(conf):
 def get_location(loc_conf, num):
     lon, lat = loc_conf
 
-    if not hasattr(lon, '__len__'):
+    if isinstance(loc_conf, dict) and 'offset' in loc_conf:
+        return get_location_offset(loc_conf, num)
+    elif not hasattr(lon, '__len__'):
         return [lon] * num, [lat] * num
     else:
-        plat, plon = get_polygon_sample_convex(np.array((lat, lon)).T, num)
-        return plon.tolist(), plat.tolist()
+        slat, slon = latlon_from_poly(lat, lon, num)
+        return slon.tolist(), slat.tolist()
+
+
+def get_location_offset(loc_conf, num):
+    clon, clat = loc_conf['center']
+    olon, olat = loc_conf['offset']
+    dlon, dlat = metric_diff_to_degrees(olon, olat, clat)
+    plon = clon + np.array(dlon)
+    plat = clat + np.array(dlat)
+    slat, slon = latlon_from_poly(plat, plon, num)
+    return slon.tolist(), slat.tolist()
 
 
 def date_range(date_span, num):
@@ -105,6 +117,28 @@ def triangulate_nonconvex(coords):
     sequence = list(range(len(coords)))
     trpoly = dict(vertices=coords,
                   segments=np.array((sequence, sequence[1:] + [0])).T)
+    trdata = tr.triangulate(trpoly, 'p')
+    coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
+    return np.array(coords)
+
+
+def triangulate_nonconvex_multi(coords):
+    import triangle as tr
+
+    # Build flat list of coordinates
+    coords_flat = np.concatenate(coords)
+
+    # Build list of segments for multipolygons
+    # Multipolygon [[0, 1, 2, 3], [4, 5, 6]] is encoded as
+    # segments = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 4]]
+    start = np.arange(len(coords_flat))
+    stop = start + 1
+    coordpos = np.cumsum([0] + [len(c) for c in coords])
+    stop[coordpos[1:] - 1] = coordpos[:-1]
+    segments = np.stack((start, stop)).T
+
+    # Triangulate and parse output
+    trpoly = dict(vertices=coords_flat, segments=segments)
     trdata = tr.triangulate(trpoly, 'p')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
     return np.array(coords)
@@ -187,3 +221,14 @@ def degree_diff_to_metric(lon_diff, lat_diff, reference_latitude):
     dx = (a * lat_cos) * theta_diff
 
     return dx, dy
+
+
+def latlon_from_poly(lat, lon, n):
+    # Make multipolygon if given a single polygon
+    if np.shape(lat[0]) == ():
+        lat = [lat]
+        lon = [lon]
+
+    coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
+    triangles = triangulate_nonconvex_multi(coords)
+    return get_polygon_sample_triangles(np.array(triangles), n)
