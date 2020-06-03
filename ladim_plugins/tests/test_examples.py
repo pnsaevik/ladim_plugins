@@ -12,7 +12,7 @@ import pkg_resources
 
 module_names = [
     d for d in next(os.walk(os.path.dirname(os.path.dirname(__file__))))[1]
-    if d not in ['tests', '__pycache__']
+    if d not in ['tests', 'release', '__pycache__']
 ]
 
 
