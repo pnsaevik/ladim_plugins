@@ -1,5 +1,5 @@
 from ladim_plugins.release import make_release
-from ladim_plugins.release import mkrel
+from ladim_plugins.release import makrel
 import pytest
 import numpy as np
 
@@ -241,12 +241,12 @@ class Test_make_release:
 class Test_triangulate:
     def test_if_triangle(self):
         coords = np.array([[0, 0], [0, 1], [1, 0]])
-        triangles = mkrel.triangulate(coords)
+        triangles = makrel.triangulate(coords)
         assert triangles.tolist() == [[[0, 0], [0, 1], [1, 0]]]
 
     def test_if_clockwise_square(self):
         coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
-        triangles = mkrel.triangulate(coords)
+        triangles = makrel.triangulate(coords)
         assert triangles.tolist() == [
             [[0, 0], [0, 1], [1, 1]],
             [[0, 0], [1, 1], [1, 0]],
@@ -254,7 +254,7 @@ class Test_triangulate:
 
     def test_if_counterclockwise_square(self):
         coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
-        triangles = mkrel.triangulate(coords)
+        triangles = makrel.triangulate(coords)
         assert triangles.tolist() == [
             [[0, 0], [1, 0], [1, 1]],
             [[0, 0], [1, 1], [0, 1]],
@@ -264,7 +264,7 @@ class Test_triangulate:
 class Test_triangle_areas:
     def test_if_single_triangle(self):
         coords = np.array([[0, 0], [0, 1], [1, 0]])
-        area = mkrel.triangle_areas(coords)
+        area = makrel.triangle_areas(coords)
         assert area.tolist() == 0.5
 
     def test_if_multiple_triangles(self):
@@ -272,14 +272,14 @@ class Test_triangle_areas:
             [[0, 0], [0, 1], [1, 0]],
             [[0, 0], [0, 2], [1, 0]],
         ])
-        area = mkrel.triangle_areas(coords)
+        area = makrel.triangle_areas(coords)
         assert area.tolist() == [0.5, 1]
 
 
 class Test_get_polygon_sample_convex:
     def test_all_inside_when_triangle(self):
         coords = np.array([[5, 3], [5, 1], [6, 3]])
-        x, y = mkrel.get_polygon_sample_convex(coords, 100)
+        x, y = makrel.get_polygon_sample_convex(coords, 100)
 
         assert np.all(x >= 5)
         assert np.all(y <= 3)
@@ -287,7 +287,7 @@ class Test_get_polygon_sample_convex:
 
     def test_all_inside_when_rectangle(self):
         coords = np.array([[1, 10], [2, 10], [2, 12], [1, 12]])
-        x, y = mkrel.get_polygon_sample_convex(coords, 100)
+        x, y = makrel.get_polygon_sample_convex(coords, 100)
 
         assert np.all(x >= 1)
         assert np.all(x <= 2)
@@ -296,7 +296,7 @@ class Test_get_polygon_sample_convex:
 
     def test_does_not_work_when_nonconvex_polygon(self):
         coords = np.array([[0, 0], [10, 0], [10, 10], [9, 1]])
-        x, y = mkrel.get_polygon_sample_convex(coords, 100)
+        x, y = makrel.get_polygon_sample_convex(coords, 100)
         is_inside_forbidden_area = (x < 9) & (y > 1)
         assert np.count_nonzero(is_inside_forbidden_area) > 0
 
@@ -304,7 +304,7 @@ class Test_get_polygon_sample_convex:
 class Test_get_polygon_sample_nonconvex:
     def test_all_inside_when_triangle(self):
         coords = np.array([[5, 3], [5, 1], [6, 3]])
-        x, y = mkrel.get_polygon_sample_nonconvex(coords, 100)
+        x, y = makrel.get_polygon_sample_nonconvex(coords, 100)
 
         assert np.all(x >= 5)
         assert np.all(y <= 3)
@@ -312,7 +312,7 @@ class Test_get_polygon_sample_nonconvex:
 
     def test_all_inside_when_rectangle(self):
         coords = np.array([[1, 10], [2, 10], [2, 12], [1, 12]])
-        x, y = mkrel.get_polygon_sample_nonconvex(coords, 100)
+        x, y = makrel.get_polygon_sample_nonconvex(coords, 100)
 
         assert np.all(x >= 1)
         assert np.all(x <= 2)
@@ -321,7 +321,7 @@ class Test_get_polygon_sample_nonconvex:
 
     def test_works_when_nonconvex_polygon(self):
         coords = np.array([[0, 0], [10, 0], [10, 10], [9, 1]])
-        x, y = mkrel.get_polygon_sample_nonconvex(coords, 100)
+        x, y = makrel.get_polygon_sample_nonconvex(coords, 100)
         is_inside_forbidden_area = (x < 9) & (y > 1)
         assert np.count_nonzero(is_inside_forbidden_area) == 0
 
@@ -329,15 +329,15 @@ class Test_get_polygon_sample_nonconvex:
 class Test_is_convex:
     def test_returns_true_if_clockwise_square(self):
         coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
-        assert mkrel.is_convex(coords)
+        assert makrel.is_convex(coords)
 
     def test_returns_true_if_counterclockwise_square(self):
         coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
-        assert mkrel.is_convex(coords)
+        assert makrel.is_convex(coords)
 
     def test_returns_false_if_nonconvex_quadrilateral(self):
         coords = np.array([[0, 0], [1, 0], [.1, .1], [0, 1]])
-        assert not mkrel.is_convex(coords)
+        assert not makrel.is_convex(coords)
 
 
 class Test_metric_degree_conversion:
@@ -345,22 +345,22 @@ class Test_metric_degree_conversion:
         dx = 1000
         dy = 2000
         lat = 60
-        dlon, dlat = mkrel.metric_diff_to_degrees(dx, dy, lat)
+        dlon, dlat = makrel.metric_diff_to_degrees(dx, dy, lat)
         assert (dlon, dlat) == (0.01796630568239042, 0.017981358739225493)
 
     def test_degrees_to_metric_correct_when_lat_60(self):
         dlon = 0.02
         dlat = 0.01
         lat = 60
-        dx, dy = mkrel.degree_diff_to_metric(dlon, dlat, lat)
+        dx, dy = makrel.degree_diff_to_metric(dlon, dlat, lat)
         assert (dx, dy) == (1113.194907932736, 1112.2629991453834)
 
     def test_back_and_forth_is_identity_when_lat_60(self):
         dx = 1000
         dy = 2000
         lat = 60
-        dlon, dlat = mkrel.metric_diff_to_degrees(dx, dy, lat)
-        dx2, dy2 = mkrel.degree_diff_to_metric(dlon, dlat, lat)
+        dlon, dlat = makrel.metric_diff_to_degrees(dx, dy, lat)
+        dx2, dy2 = makrel.degree_diff_to_metric(dlon, dlat, lat)
 
         assert np.isclose(dx, dx2)
         assert np.isclose(dy, dy2)

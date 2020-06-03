@@ -275,3 +275,14 @@ def latlon_from_poly(lat, lon, n):
     coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
     triangles = triangulate_nonconvex_multi(coords)
     return get_polygon_sample_triangles(np.array(triangles), n)
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print('Usage: makrel <config.yaml> <out.rls>')
+    elif len(sys.argv) == 2:
+        out = make_release(sys.argv[1])
+        print(out)
+    else:
+        make_release(sys.argv[1], sys.argv[2])
