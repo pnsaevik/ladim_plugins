@@ -51,6 +51,7 @@ class Test_main:
         assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
 
     def test_correct_depth(self):
+        np.random.seed(0)
         config = dict(
             location=dict(lat=1, lon=2, width=100000),
             depth=[0, 10],
@@ -62,6 +63,7 @@ class Test_main:
         assert result['Z'].values.tolist() == [5.0, 10.0, 7.5, 0.0, 2.5]
 
     def test_location_when_width(self):
+        np.random.seed(0)
         config = dict(
             location=dict(lat=60, lon=0, width=100000),
             depth=[0, 0],
@@ -86,6 +88,7 @@ class Test_main:
         ]
 
     def test_location_when_polygon(self):
+        np.random.seed(0)
         config = dict(
             location=dict(
                 lat=[0, 0, 1, 1],
@@ -113,6 +116,7 @@ class Test_main:
         ]
 
     def test_location_when_multipolygon(self):
+        np.random.seed(0)
         config = dict(
             location=dict(
                 lat=[[0, 0, 1, 1], [10, 10, 11]],
@@ -140,6 +144,7 @@ class Test_main:
         ]
 
     def test_location_when_file(self):
+        np.random.seed(0)
         from pkg_resources import resource_filename, cleanup_resources
         fname = resource_filename('ladim_plugins.chemicals', 'release_area.geojson')
         config = dict(
@@ -207,17 +212,16 @@ class Test_main:
             'lat': [
                 59.99996568023897,
                 60.000065584359625,
-                61.4551168170031,
-                60.89177300078208,
-                61.64589411306665
-            ],
+                60.39278479610083,
+                60.16392123646262,
+                60.33739616041727],
             'lon': [
                 4.0004254257913106,
                 4.000277779481143,
-                5.01752960574041,
-                6.684572199879016,
-                5.609556873567685
+                6.1295500865778205,
+                6.648247492312871,
+                6.182626667207674
             ],
-            'Z': [10.0, 0.0, 0.0, 5.0, 10.0],
+            'Z': [10.0, 0.0, 10.0, 5.0, 0.0],
             'group_id': [1, 1, 2, 2, 2]
         }

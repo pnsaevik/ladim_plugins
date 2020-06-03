@@ -1,6 +1,5 @@
 import numpy as np
 from ladim_plugins.sedimentation import make_release
-# noinspection PyPackageRequirements
 import pandas as pd
 
 
@@ -34,6 +33,7 @@ class Test_main:
         ]
 
     def test_location_when_polygon(self):
+        np.random.seed(0)
         config = dict(
             num_particles=5,
             location=dict(lat=[0, 0, 1], lon=[1, 0, 1]),

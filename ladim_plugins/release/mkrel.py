@@ -206,8 +206,6 @@ def get_polygon_sample_nonconvex(coords, num):
 
 
 def get_polygon_sample_triangles(triangles, num):
-    np.random.seed(0)
-
     # Triangulate the polygon
     areas = triangle_areas(triangles)
 
