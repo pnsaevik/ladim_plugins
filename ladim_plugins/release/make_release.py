@@ -2,13 +2,23 @@ import numpy as np
 
 
 def make_release(conf):
-    start_date = np.datetime64(conf['date'])
     num = conf['num']
+    release_time = date_range(conf['date'], num)
     lon, lat = conf['location']
 
     r = dict()
-    r['release_time'] = np.repeat(start_date, num)
-    r['lon'] = np.repeat(lon, num)
-    r['lat'] = np.repeat(lat, num)
+    r['release_time'] = release_time
+    r['lon'] = np.repeat(lon, num).tolist()
+    r['lat'] = np.repeat(lat, num).tolist()
 
     return r
+
+
+def date_range(date_span, num):
+    if isinstance(date_span, str) or not hasattr(date_span, '__len__'):
+        date_span = [date_span] * 2
+
+    start, stop = [np.datetime64(d) for d in date_span]
+    dt = (stop - start).astype('timedelta64[s]')
+    drange = start + (np.arange(num) * dt) / (num - 1)
+    return drange.astype(str).tolist()
