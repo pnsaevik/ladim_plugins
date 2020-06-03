@@ -14,9 +14,10 @@ release = make_release(conf)
 
 The argument `conf` is a dict with the following keywords: 
 
--   *start_date*: Date and time for first release, ISO format (YYYY-MM-DD hh:mm:ss)
--   *stop_date*: Date and time for final release. Defaults to `start_date`
 -   *num*: Number of particles
+-   *date*: Date and time for the release, ISO format (YYYY-MM-DD hh:mm:ss).
+    Either a single date or a list of the form [start, stop], which represents
+    a date span.
 -   *location*: Release position. Two forms of this argument is possible:
     1.  A list of the form [lon, lat], representing a point
     2.  A list of lists, of the form [[lon_1, lon_2, ...], [lat_1, lat_2, ...]],
@@ -29,12 +30,17 @@ The argument `conf` is a dict with the following keywords:
 -   *attrs*: A dictionary (key-value pairs) of particle attributes. Attribute
     values may be single values (= all particles are equal), or one value per
     particle, or a function / function name with no arguments.
--   *file*: Name of the output file (or handle). Defaults to `None` (no file output).
+-   *file*: Name of the output file (or handle). Defaults to `None` (no file
+    output).
 
 Alternatively, `conf` can be a list of dicts, representing the union of several
 independent release configurations. Finally, `conf` can also be the name of a
 `.yaml` file containing the configuration keywords.
 
+Returns a dict with the following fields (in order): `release_time`, `lon`,
+`lat`, `Z`, followed by the attribute fields. If a file name is given, the data
+is written to a tab-delimited text file with to headers. The columns will be in
+the same order as the dict returned by the function.
 
 ## History
 
