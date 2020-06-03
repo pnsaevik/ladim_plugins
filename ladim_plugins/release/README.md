@@ -18,7 +18,7 @@ The argument `conf` is a dict with the following keywords:
 -   *date*: Date and time for the release, ISO format (YYYY-MM-DD hh:mm:ss).
     Either a single date or a list of the form [start, stop], which represents
     a date span.
--   *location*: Release position. Two forms of this argument is possible:
+-   *location*: Release position. Several forms of this argument is possible:
     1.  A list of the form [lon, lat], representing a point
     2.  A list of lists, of the form [[lon_1, lon_2, ...], [lat_1, lat_2, ...]],
         representing a polygon

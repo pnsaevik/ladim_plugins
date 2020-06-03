@@ -153,3 +153,37 @@ def is_convex(coords):
     sgn = v[:-1, 0] * v[1:, 1] > v[:-1, 1] * v[1:, 0]
     # noinspection PyUnresolvedReferences
     return np.all(sgn == sgn[0])
+
+
+# --- lat / lon procedures ---
+
+def metric_diff_to_degrees(dx, dy, reference_latitude):
+    a = 6378137.0
+    b = 6356752.314245
+    reflat_rad = reference_latitude * np.pi / 180
+    lat_cos = np.cos(reflat_rad)
+    lat_sin = np.sin(reflat_rad)
+
+    phi_diff = dy / np.sqrt((a*lat_sin)**2 + (b*lat_cos)**2)
+    theta_diff = dx / (a * lat_cos)
+
+    lat_diff = phi_diff * 180 / np.pi
+    lon_diff = theta_diff * 180 / np.pi
+
+    return lon_diff, lat_diff
+
+
+def degree_diff_to_metric(lon_diff, lat_diff, reference_latitude):
+    a = 6378137.0
+    b = 6356752.314245
+    reflat_rad = reference_latitude * np.pi / 180
+    lat_cos = np.cos(reflat_rad)
+    lat_sin = np.sin(reflat_rad)
+
+    phi_diff = lat_diff * np.pi / 180
+    theta_diff = lon_diff * np.pi / 180
+
+    dy = np.sqrt((a * lat_sin) ** 2 + (b * lat_cos) ** 2) * phi_diff
+    dx = (a * lat_cos) * theta_diff
+
+    return dx, dy

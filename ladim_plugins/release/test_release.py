@@ -214,3 +214,29 @@ class Test_is_convex:
     def test_returns_false_if_nonconvex_quadrilateral(self):
         coords = np.array([[0, 0], [1, 0], [.1, .1], [0, 1]])
         assert not mkrel.is_convex(coords)
+
+
+class Test_metric_degree_conversion:
+    def test_metric_to_degrees_correct_when_lat_60(self):
+        dx = 1000
+        dy = 2000
+        lat = 60
+        dlon, dlat = mkrel.metric_diff_to_degrees(dx, dy, lat)
+        assert (dlon, dlat) == (0.01796630568239042, 0.017981358739225493)
+
+    def test_degrees_to_metric_correct_when_lat_60(self):
+        dlon = 0.02
+        dlat = 0.01
+        lat = 60
+        dx, dy = mkrel.degree_diff_to_metric(dlon, dlat, lat)
+        assert (dx, dy) == (1113.194907932736, 1112.2629991453834)
+
+    def test_back_and_forth_is_identity_when_lat_60(self):
+        dx = 1000
+        dy = 2000
+        lat = 60
+        dlon, dlat = mkrel.metric_diff_to_degrees(dx, dy, lat)
+        dx2, dy2 = mkrel.degree_diff_to_metric(dlon, dlat, lat)
+
+        assert np.isclose(dx, dx2)
+        assert np.isclose(dy, dy2)
