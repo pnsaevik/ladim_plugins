@@ -28,7 +28,20 @@ def date_range(date_span, num):
 
 
 def get_attrs(attrs_conf, num):
-    attrs = dict()
-    for k, v in attrs_conf.items():
-        attrs[k] = [v] * num
-    return attrs
+    return {k: get_attr(v, num) for k, v in attrs_conf.items()}
+
+
+def get_attr(v, num):
+    if isinstance(v, str):
+        import importlib
+        mod_name, fn_name = v.rsplit('.', 1)
+        mod = importlib.import_module(mod_name)
+        v = getattr(mod, fn_name)
+
+    if callable(v):
+        v = v(num)
+
+    if not hasattr(v, '__len__'):
+        v = [v] * num
+
+    return list(v)

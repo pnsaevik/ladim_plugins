@@ -29,7 +29,8 @@ The argument `conf` is a dict with the following keywords:
         particles over the given depth range.
 -   *attrs*: A dictionary (key-value pairs) of particle attributes. Attribute
     values may be single values (= all particles are equal), or one value per
-    particle, or a function / function name with no arguments.
+    particle, or a function / function name with the number of particles as its
+    sole argument.
 -   *file*: Name of the output file (or handle). Defaults to `None` (no file
     output).
 

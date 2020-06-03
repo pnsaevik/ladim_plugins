@@ -29,13 +29,19 @@ class Test_make_release:
     def test_can_add_attributes(self, conf0):
         conf0['attrs'] = dict(
             first=0,
-            second=1,
+            second=[1, 2],
+            third=lambda num: np.arange(num) + 10,
+            fourth="numpy.arange",
         )
+
         r = make_release(conf0)
-        assert list(r.keys()) == [
-            'release_time', 'lon', 'lat', 'Z', 'first', 'second']
-        assert r['first'] == [0] * conf0['num']
-        assert r['second'] == [1] * conf0['num']
+
+        assert list(r.keys()) == ['release_time', 'lon', 'lat', 'Z', 'first',
+                                  'second', 'third', 'fourth']
+        assert r['first'] == [0, 0]
+        assert r['second'] == [1, 2]
+        assert r['third'] == [10, 11]
+        assert r['fourth'] == [0, 1]
 
     def test_accepts_numpy_date(self, conf0):
         r0 = make_release(conf0)
