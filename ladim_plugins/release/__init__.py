@@ -1,1 +1,1 @@
-from .make_release import make_release
+from .mkrel import make_release
