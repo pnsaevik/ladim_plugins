@@ -277,12 +277,42 @@ def latlon_from_poly(lat, lon, n):
     return get_polygon_sample_triangles(np.array(triangles), n)
 
 
-if __name__ == '__main__':
+def main():
     import sys
+
     if len(sys.argv) < 2:
-        print('Usage: makrel <config.yaml> <out.rls>')
+        print("""
+    makrel: MAKe RELease files
+    
+    Usage: makrel <config.yaml> <out.rls>
+    
+    Sample config.yaml file:
+    
+    num: 5                                      # Number of particles
+    date: [2000-01-01 01:00, 2000-02-01 01:00]  # Start and stop dates
+    location: [5, 60]                           # Release location
+    depth: [0, 10]                              # Release depth range
+    attrs:                                      
+        region: 0                               # Constant-valued attribute
+        age: [0, 0, 0, 3, 3]                    # Vector-valued attribute
+        id: numpy.arange                        # Function-valued attribute
+        health: numpy.random.randn              # Function-valued attribute
+    
+    # Alternative: Release polygon
+    # location: [[5, 6, 6, 5], [60, 60, 61, 61]]
+    
+    # Alternative: Release polygon from .geojson file  
+    # location: area.geojson  
+    
+    # Alternative: Metric offset from center location
+    # location: 
+    #   center: [5, 60]
+    #   offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]
+    
+    """)
     elif len(sys.argv) == 2:
+        import pandas as pd
         out = make_release(sys.argv[1])
-        print(out)
+        print(pd.DataFrame(out))
     else:
         make_release(sys.argv[1], sys.argv[2])
