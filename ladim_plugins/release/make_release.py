@@ -11,7 +11,7 @@ def make_release(conf):
     r['release_time'] = release_time
     r['lon'] = np.repeat(lon, num).tolist()
     r['lat'] = np.repeat(lat, num).tolist()
-    r['Z'] = [0] * num
+    r['Z'] = get_depth(conf.get('depth', 0), num)
     r = {**r, **attrs}
 
     return r
@@ -45,3 +45,9 @@ def get_attr(v, num):
         v = [v] * num
 
     return list(v)
+
+
+def get_depth(depth_span, num):
+    if not hasattr(depth_span, '__len__'):
+        depth_span = [depth_span] * 2
+    return np.linspace(*depth_span, num=num).tolist()

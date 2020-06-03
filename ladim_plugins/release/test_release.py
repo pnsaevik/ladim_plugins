@@ -62,3 +62,16 @@ class Test_make_release:
             '2000-01-01T01:50:00',
             '2000-01-01T02:00:00',
         ]
+
+    def test_can_set_depth(self, conf0):
+        r = make_release(conf0)
+        assert r['Z'] == [0, 0]
+
+        conf0['depth'] = 3
+        r = make_release(conf0)
+        assert r['Z'] == [3, 3]
+
+        conf0['depth'] = [3, 6]
+        conf0['num'] = 3
+        r = make_release(conf0)
+        assert r['Z'] == [3, 4.5, 6]
