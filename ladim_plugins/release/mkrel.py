@@ -22,6 +22,12 @@ def make_release(conf):
 
 
 def get_location(loc_conf, num):
+    if isinstance(loc_conf, str):
+        with open(loc_conf, 'r', encoding='utf-8') as file:
+            return get_location_file(file, num)
+    elif hasattr(loc_conf, 'read'):
+        return get_location_file(loc_conf, num)
+
     lon, lat = loc_conf
 
     if isinstance(loc_conf, dict) and 'offset' in loc_conf:
@@ -39,6 +45,30 @@ def get_location_offset(loc_conf, num):
     dlon, dlat = metric_diff_to_degrees(olon, olat, clat)
     plon = clon + np.array(dlon)
     plat = clat + np.array(dlat)
+    slat, slon = latlon_from_poly(plat, plon, num)
+    return slon.tolist(), slat.tolist()
+
+
+def get_location_file(file, num):
+    import json
+
+    data = json.loads(file.read())
+    if isinstance(data, dict):
+        data = [data]
+
+    def get_points_from_layer(layer):
+        feats = layer['features']
+        return [p for f in feats for p in get_points_from_feature(f)]
+
+    def get_points_from_feature(feature):
+        geom = feature['geometry']
+        assert geom['type'].upper() == 'MULTIPOLYGON'
+        return [np.array(p[0]) for p in geom['coordinates']]
+
+    points = get_points_from_layer(data[0])
+    plon = [p[:, 0] for p in points]
+    plat = [p[:, 1] for p in points]
+
     slat, slon = latlon_from_poly(plat, plon, num)
     return slon.tolist(), slat.tolist()
 

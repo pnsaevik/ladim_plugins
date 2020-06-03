@@ -30,6 +30,8 @@ The argument `conf` is a dict with the following keywords:
         where `offset` is a polygon, specified as a metric offset from the
         `center` location. The `offset` variable could also be a collection
         of polygons, using a two-element list of lists of lists.
+    5.  A file name or handle containing a geojson-formatted polygonal area.
+        WGS84 coordinate reference frame is required. 
 -   *depth*: Release depth in meters, defaults to zero. Two forms of the
     argument is possible:
     1.  A single number, representing a single depth

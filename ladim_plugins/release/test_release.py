@@ -135,6 +135,62 @@ class Test_make_release:
             0.6165584811742223,
         ]
 
+    def test_can_use_geojson_as_sampling_area(self, conf0):
+        geojson = """
+{
+    "type": "FeatureCollection",
+    "name": "test",
+    "crs": {
+        "type": "name",
+        "properties": {
+            "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+        }
+    },
+    "features": [
+        {
+            "type": "Feature",
+            "properties": { },
+            "geometry": {
+                "type": "MultiPolygon",
+                "coordinates": [
+                    [ [ [ 0, 0 ], [ 0, 1 ], [ 1, 1 ], [ 1, 0 ] ] ],
+                    [ [ [ 10, 10 ], [ 11, 10 ], [ 11, 11] ] ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": { },
+            "geometry": {
+                "type": "MultiPolygon",
+                "coordinates": [
+                    [ [ [ 2, 4 ], [ 2, 5 ], [ 3, 5 ], [ 3, 4 ] ] ]
+                ]
+            }
+        }
+    ]
+}
+"""
+        import io
+        geojson_file = io.StringIO(geojson)
+
+        conf0['location'] = geojson_file
+        conf0['num'] = 10
+        result = make_release(conf0)
+
+        assert result['lat'] == [
+            4.2296566196845715, 4.328053483969628, 4.029523923346864,
+            4.293874185420884, 4.18931048406682, 4.272949678970935,
+            4.163571684849372, 10.167380154452061, 10.22184324905015,
+            0.28467408823734275,
+        ]
+        assert result['lon'] == [
+            2.7917250380826646, 2.4711050802470957, 2.431955438906068,
+            2.925596638292661, 2.928963941802113, 2.087129299701541,
+            2.979781602559674, 10.222711237402478, 10.699994927300079,
+            0.4146619399905236,
+        ]
+
     def test_can_use_offset_polygon_as_sampling_area(self, conf0):
         np.random.seed(0)
 
