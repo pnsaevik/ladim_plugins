@@ -5,17 +5,23 @@ The module is used to generate release files for ladim.
 
 ## Usage
 
-Release files are generated using the `make_release` function:
+Release files are generated using the `makrel` shell script,
+
+```
+makrel <conf> <out>
+```
+
+or by calling the `make_release` function directly,
 
 ```
 from ladim_plugins.release import make_release
-release = make_release(conf, file)
+release = make_release(conf, out)
 ```
 
-The argument `file` is the name of the output file (or handle). Defaults to
-`None` (no file output, only return value).
+The argument `out` is the name of the output file. Defaults to
+`None` (no file output, only in-memory return value).
 
-The argument `conf` is a dict with the following keywords: 
+The argument `conf` is a dict or a `.yaml` file with the following keywords: 
 
 -   *num*: Number of particles
 -   *date*: Date and time for the release, ISO format (YYYY-MM-DD hh:mm:ss).
@@ -46,8 +52,7 @@ The argument `conf` is a dict with the following keywords:
     sole argument.
 
 Alternatively, `conf` can be a list of dicts, representing the union of several
-independent release configurations. Finally, `conf` can also be the name of a
-`.yaml` file containing the configuration keywords.
+independent release configurations.
 
 Returns a dict with the following fields (in order): `release_time`, `lon`,
 `lat`, `Z`, followed by the attribute fields. If a file name is given, the data
