@@ -26,6 +26,17 @@ class Test_make_release:
         r = make_release(conf0)
         assert all(len(v) == conf0['num'] for v in r.values())
 
+    def test_can_add_attributes(self, conf0):
+        conf0['attrs'] = dict(
+            first=0,
+            second=1,
+        )
+        r = make_release(conf0)
+        assert list(r.keys()) == [
+            'release_time', 'lon', 'lat', 'Z', 'first', 'second']
+        assert r['first'] == [0] * conf0['num']
+        assert r['second'] == [1] * conf0['num']
+
     def test_accepts_numpy_date(self, conf0):
         r0 = make_release(conf0)
         conf0['date'] = np.datetime64(conf0['date'])
