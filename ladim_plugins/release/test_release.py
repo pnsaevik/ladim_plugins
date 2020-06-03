@@ -75,3 +75,15 @@ class Test_make_release:
         conf0['num'] = 3
         r = make_release(conf0)
         assert r['Z'] == [3, 4.5, 6]
+
+    def test_can_print_to_file(self, conf0):
+        import io
+        handle = io.StringIO()
+        conf0['file'] = handle
+        make_release(conf0)
+
+        handle.seek(0)
+        assert handle.read().replace('\r', '') == (
+            '2000-01-01T01:02:03\t5\t60\t0.0\n'
+            '2000-01-01T01:02:03\t5\t60\t0.0\n'
+        )

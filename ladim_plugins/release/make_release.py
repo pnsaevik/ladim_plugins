@@ -14,6 +14,10 @@ def make_release(conf):
     r['Z'] = get_depth(conf.get('depth', 0), num)
     r = {**r, **attrs}
 
+    file = conf.get('file', None)
+    if file:
+        write_to_file(r, file)
+
     return r
 
 
@@ -51,3 +55,9 @@ def get_depth(depth_span, num):
     if not hasattr(depth_span, '__len__'):
         depth_span = [depth_span] * 2
     return np.linspace(*depth_span, num=num).tolist()
+
+
+def write_to_file(r, file):
+    import pandas as pd
+    df = pd.DataFrame(r)
+    df.to_csv(file, header=False, sep='\t', index=False)
