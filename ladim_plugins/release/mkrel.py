@@ -4,13 +4,13 @@ import numpy as np
 def make_release(conf):
     num = conf['num']
     release_time = date_range(conf['date'], num)
-    lon, lat = conf['location']
+    lon, lat = get_location(conf['location'], num)
     attrs = get_attrs(conf.get('attrs', dict()), num)
 
     r = dict()
     r['release_time'] = release_time
-    r['lon'] = np.repeat(lon, num).tolist()
-    r['lat'] = np.repeat(lat, num).tolist()
+    r['lon'] = lon
+    r['lat'] = lat
     r['Z'] = get_depth(conf.get('depth', 0), num)
     r = {**r, **attrs}
 
@@ -19,6 +19,16 @@ def make_release(conf):
         write_to_file(r, file)
 
     return r
+
+
+def get_location(loc_conf, num):
+    lon, lat = loc_conf
+
+    if not hasattr(lon, '__len__'):
+        return [lon] * num, [lat] * num
+    else:
+        plat, plon = get_polygon_sample_convex(np.array((lat, lon)).T, num)
+        return plon.tolist(), plat.tolist()
 
 
 def date_range(date_span, num):

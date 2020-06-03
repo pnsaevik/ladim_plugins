@@ -89,6 +89,30 @@ class Test_make_release:
             '2000-01-01T01:02:03\t5\t60\t0.0\n'
         )
 
+    def test_can_use_polygon_as_sampling_area(self, conf0):
+        np.random.seed(0)
+
+        conf0['num'] = 5
+        conf0['location'] = [[1, 0, 1], [0, 0, 1]]
+
+        r = make_release(conf0)
+
+        assert r['lat'] == [
+            0.2082749619173354,
+            0.5288949197529045,
+            0.4319554389060677,
+            0.07440336170733897,
+            0.07103605819788694,
+        ]
+        assert r['lon'] == [
+            0.6458941130666561,
+            0.5624127887373075,
+            0.8917730007820798,
+            0.9636627605010293,
+            0.6165584811742223,
+        ]
+        assert all(lon >= lat for lon, lat in zip(r['lon'], r['lat']))
+
 
 class Test_triangulate:
     def test_if_triangle(self):
