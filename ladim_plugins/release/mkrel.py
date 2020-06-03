@@ -1,4 +1,5 @@
 import numpy as np
+import typing
 
 
 def make_release(config, fname=None):
@@ -124,7 +125,9 @@ def get_attr(v, num):
 def get_depth(depth_span, num):
     if not hasattr(depth_span, '__len__'):
         depth_span = [depth_span] * 2
-    return np.linspace(*depth_span, num=num).tolist()
+    depth = np.linspace(*depth_span, num=num).tolist()  # type: typing.Any
+    np.random.shuffle(depth)
+    return depth
 
 
 # --- Triangulation procedures ---

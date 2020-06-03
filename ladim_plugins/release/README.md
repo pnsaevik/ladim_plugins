@@ -26,7 +26,7 @@ The argument `conf` is a dict with the following keywords:
     2.  A list of lists, of the form [[lon_1, lon_2, ...], [lat_1, lat_2, ...]],
         representing a polygon
     3.  A two-element list of lists of lists, of the form [[[lo1A, lo2A, ...],
-        [lo1B, lo2B, ...], ...], [[lo1A, lo2A, ...], [lo1B, lo2B, ...], ...]]
+        [lo1B, lo2B, ...], ...], [[la1A, la2A, ...], [la1B, la2B, ...], ...]]
         which represents a collection of polygons.
     4.  A dict of the form `{'center': [lon, lat], 'offset': [[lon_1, lon_2, 
         ...], [lat_1, lat_2, ...]]}`,

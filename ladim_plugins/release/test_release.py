@@ -65,6 +65,8 @@ class Test_make_release:
         ]
 
     def test_can_set_depth(self, conf0):
+        np.random.seed(0)
+
         r = make_release(conf0)
         assert r['Z'] == [0, 0]
 
@@ -75,7 +77,7 @@ class Test_make_release:
         conf0['depth'] = [3, 6]
         conf0['num'] = 3
         r = make_release(conf0)
-        assert r['Z'] == [3, 4.5, 6]
+        assert r['Z'] == [6, 3, 4.5]
 
     def test_can_print_to_file(self, conf0):
         import io
