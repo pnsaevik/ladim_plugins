@@ -56,7 +56,7 @@ independent release configurations.
 
 Returns a dict with the following fields (in order): `release_time`, `lon`,
 `lat`, `Z`, followed by the attribute fields. If a file name is given, the data
-is written to a tab-delimited text file with to headers. The columns will be in
+is written to a tab-delimited text file with no headers. The columns will be in
 the same order as the dict returned by the function.
 
 ## History
