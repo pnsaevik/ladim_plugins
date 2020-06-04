@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from ..release import make_release as mkrl
 
 
@@ -33,8 +34,16 @@ def convert_single_conf(
         num=num_particles,
         depth=depth,
         location=[location['lon'], location['lat']],
-        attrs=dict(group_id=group_id),
+        attrs=dict(group_id=group_id, sinkvel=sinkvel),
     )
+
+
+def sinkvel(n):
+    from scipy.interpolate import InterpolatedUnivariateSpline
+    sinkvel_tab = np.array([.100, .050, .025, .015, .010, .005, 0])
+    cumprob_tab = np.array([.000, .662, .851, .883, .909, .937, 1])
+    fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
+    return fn(np.random.rand(n))
 
 
 if __name__ == '__main__':
