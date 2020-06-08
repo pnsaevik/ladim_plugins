@@ -288,7 +288,7 @@ def main():
     
     Usage: makrel <makrel.yaml> <particles.rls>
     
-    Sample config.yaml file:
+    Sample makrel.yaml file:
     
     num: 5                                      # Number of particles
     date: [2000-01-01 01:00, 2000-02-01 01:00]  # Start and stop dates
