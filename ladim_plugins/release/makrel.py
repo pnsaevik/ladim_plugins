@@ -3,15 +3,16 @@ import typing
 
 
 def make_release(config, fname=None):
-    # Check if input argument is yaml file
-    try:
+    # Is this a file name?
+    if isinstance(config, str):
         with open(config, encoding='utf8') as config_file:
             import yaml
             config = yaml.safe_load(config_file)
-    except TypeError:
-        pass
-    except OSError:
-        pass
+
+    # Is this a stream?
+    elif hasattr(config, 'read'):
+        import yaml
+        config = yaml.safe_load(config)
 
     if isinstance(config, dict):
         config = [config]

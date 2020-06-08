@@ -27,6 +27,13 @@ class Test_make_release:
         r = make_release(conf0)
         assert all(len(v) == conf0['num'] for v in r.values())
 
+    def test_accepts_stream(self, conf0):
+        import io
+        s = '{"date": "2000-01-01 01:02:03", "num": 2, "location": [5, 60]}'
+        r1 = make_release(io.StringIO(s))
+        r2 = make_release(conf0)
+        assert r1 == r2
+
     def test_can_add_attributes(self, conf0):
         conf0['attrs'] = dict(
             first=0,
