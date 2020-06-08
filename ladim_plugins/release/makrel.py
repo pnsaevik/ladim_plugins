@@ -284,7 +284,7 @@ def main():
         print("""
     makrel: MAKe RELease files
     
-    Usage: makrel <config.yaml> <out.rls>
+    Usage: makrel <makrel.yaml> <particles.rls>
     
     Sample config.yaml file:
     
