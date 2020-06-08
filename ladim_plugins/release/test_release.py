@@ -34,6 +34,10 @@ class Test_make_release:
         r2 = make_release(conf0)
         assert r1 == r2
 
+    def test_throws_FileNotFound_if_invalid_filename(self):
+        with pytest.raises(FileNotFoundError):
+            make_release("this_is_no_file_name")
+
     def test_can_add_attributes(self, conf0):
         conf0['attrs'] = dict(
             first=0,

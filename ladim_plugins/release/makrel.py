@@ -14,6 +14,7 @@ def make_release(config, fname=None):
         import yaml
         config = yaml.safe_load(config)
 
+    # Make this a list of dicts
     if isinstance(config, dict):
         config = [config]
 
