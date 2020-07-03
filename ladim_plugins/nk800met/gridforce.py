@@ -1,23 +1,43 @@
 import numpy as np
 import netCDF4 as nc
 import threading
+from pyproj import CRS, Transformer
 
 
 class Grid:
     def __init__(self, config):
-        self.xmin = -1000
-        self.xmax = 1000
-        self.ymin = -90
-        self.ymax = 90
+        dbase = OnlineDatabase()
+        dset = dbase.request_dset(config['start_time'])
+
+        self._init_proj(dset)
+        self._init_gridlimits(dset)
+
+        self.dvars = dict(
+            h=dset.variables['h'][:],
+        )
+
+    def _init_proj(self, dset):
+        nk800_proj4str = dset.variables['projection_stere'].proj4
+        nk800 = CRS.from_proj4(nk800_proj4str)
+        wgs84 = CRS.from_epsg(4326)
+        self.to_wgs84 = Transformer.from_crs(nk800, wgs84, always_xy=True)
+        self.from_wgs84 = Transformer.from_crs(wgs84, nk800, always_xy=True)
+
+    def _init_gridlimits(self, dset):
+        self.xmin = 0
+        self.ymin = 0
+        self.xmax = dset.dimensions['X'].size
+        self.ymax = dset.dimensions['Y'].size
 
     def sample_metric(self, x, y):
-        return np.ones_like(x), np.ones_like(x)
+        return np.ones_like(x)*800, np.ones_like(x)*800
 
     def sample_depth(self, x, y):
-        return np.ones_like(x) * 100
+        return np.ones_like(x) * 10000
 
     def ll2xy(self, lon, lat):
-        return lon, lat
+        x, y = self.from_wgs84.transform(np.array(lon), np.array(lat))
+        return x / 800, y / 800
 
     def ingrid(self, x, y):
         return np.ones_like(x, dtype=bool)
