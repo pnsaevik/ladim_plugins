@@ -7,7 +7,8 @@ from pyproj import CRS, Transformer
 
 class Grid:
     def __init__(self, config):
-        self.dbase = OnlineDatabase()
+        server = config['gridforce'].get('input_file', None)
+        self.dbase = OnlineDatabase(server)
         dset = self.dbase.get_dset(config['start_time'])
 
         self._init_proj(dset)

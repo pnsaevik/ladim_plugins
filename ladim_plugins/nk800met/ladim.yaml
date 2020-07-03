@@ -2,8 +2,8 @@
 
 &deftime time_control:
     # Start and stop of simulation
-    start_time     : 2020-01-01 12:15:00
-    stop_time      : 2020-01-01 12:30:00
+    start_time     : 2020-01-01 00:15:00
+    stop_time      : 2020-01-01 00:30:00
 
 
 files:
@@ -15,7 +15,9 @@ gridforce:
     # Module name is mandatory.
     # The other items are module dependent
     module: ladim_plugins.nk800met
-    time_control: *deftime
+
+    # This line is only used for testing. Remove if this is production code.
+    input_file: forcing.nc
 
 
 particle_release:

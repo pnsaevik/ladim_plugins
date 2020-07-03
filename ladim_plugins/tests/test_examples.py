@@ -59,9 +59,8 @@ def get_config(module_name):
     config_dict = yaml.safe_load(config_string)
     config_dict['files']['particle_release_file'] = os.path.join(
         module_dir, config_dict['files']['particle_release_file'])
-    if 'input_file' in config_dict['gridforce']:
-        config_dict['gridforce']['input_file'] = os.path.join(
-            module_dir, config_dict['gridforce']['input_file'])
+    config_dict['gridforce']['input_file'] = os.path.join(
+        module_dir, config_dict['gridforce']['input_file'])
 
     # Re-serialize as yaml
     import io
