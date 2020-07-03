@@ -33,7 +33,10 @@ class Grid:
         return np.ones_like(x)*800, np.ones_like(x)*800
 
     def sample_depth(self, x, y):
-        return np.ones_like(x) * 10000
+        """Return the depth of grid cells"""
+        i = x.round().astype(int)
+        j = y.round().astype(int)
+        return self.dvars['h'][j, i]
 
     def ll2xy(self, lon, lat):
         x, y = self.from_wgs84.transform(np.array(lon), np.array(lat))
