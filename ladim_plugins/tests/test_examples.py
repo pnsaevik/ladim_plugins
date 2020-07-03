@@ -32,8 +32,9 @@ def check_equal(new, ref):
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.dims.items() == ref.dims.items()
 
-    for k in new.variables.keys():
-        assert ref.variables[k].values.tolist() == new.variables[k].values.tolist()
+    new_dict = {k: v.values.tolist() for k, v in new.variables.items()}
+    ref_dict = {k: v.values.tolist() for k, v in ref.variables.items()}
+    assert new_dict == ref_dict
 
 
 def run_ladim(module_name):
