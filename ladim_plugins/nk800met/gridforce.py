@@ -50,7 +50,12 @@ class Grid:
         return x / 800, y / 800
 
     def ingrid(self, x, y):
-        return np.ones_like(x, dtype=bool)
+        return (
+            (self.xmin + 0.5 < x)
+            & (x < self.xmax - 0.5)
+            & (self.ymin + 0.5 < y)
+            & (y < self.ymax - 0.5)
+        )
 
     def atsea(self, x, y):
         return np.ones_like(x, dtype=bool)
