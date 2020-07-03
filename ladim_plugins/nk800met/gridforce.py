@@ -15,10 +15,10 @@ class Grid:
         self._init_gridlimits(dset)
 
         self.dvars = dict(
-            h=dset.variables['h'][:],
-            depth=dset.variables['depth'][:],
-            dx=np.diff(dset.variables['X'][:]),
-            dy=np.diff(dset.variables['Y'][:]),
+            h=dset.variables['h'][:].filled(0),
+            depth=dset.variables['depth'][:].filled(0),
+            dx=np.diff(dset.variables['X'][:].filled(0)),
+            dy=np.diff(dset.variables['Y'][:].filled(0)),
         )
 
     def _init_proj(self, dset):
@@ -53,7 +53,8 @@ class Grid:
 
     def ll2xy(self, lon, lat):
         x, y = self.from_wgs84.transform(np.array(lon), np.array(lat))
-        return x / 800, y / 800
+        dx, dy = self.sample_metric(np.array(0), np.array(0))
+        return x / dx, y / dy
 
     def ingrid(self, x, y):
         return (
