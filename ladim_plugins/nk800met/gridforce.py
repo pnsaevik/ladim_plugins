@@ -17,6 +17,8 @@ class Grid:
         self.dvars = dict(
             h=dset.variables['h'][:],
             depth=dset.variables['depth'][:],
+            dx=np.diff(dset.variables['X'][:]),
+            dy=np.diff(dset.variables['Y'][:]),
         )
 
     def _init_proj(self, dset):
@@ -33,7 +35,11 @@ class Grid:
         self.ymax = dset.dimensions['Y'].size
 
     def sample_metric(self, x, y):
-        return np.ones_like(x)*800, np.ones_like(x)*800
+        i = np.clip(self.xmin, x.round().astype(int), self.xmax)
+        j = np.clip(self.ymin, y.round().astype(int), self.ymax)
+        dx = self.dvars['dx'][i]
+        dy = self.dvars['dy'][j]
+        return dx, dy
 
     def sample_depth(self, x, y):
         """Return the depth of grid cells"""
@@ -58,7 +64,7 @@ class Grid:
         )
 
     def atsea(self, x, y):
-        return np.ones_like(x, dtype=bool)
+        return self.sample_depth(x, y) > 5
 
 
 class Forcing:
