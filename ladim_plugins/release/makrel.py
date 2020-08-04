@@ -86,13 +86,15 @@ def get_location_shape(loc_conf, num):
             offset=[[-r, r, r, -r], [-r, -r, r, r]],
         )
         return get_location_offset(poly_conf, num)
+
     elif shape == 'gaussian':
-        stdev = loc_conf['extent'] * .5
+        stdev = loc_conf['extent']
         clon, clat = loc_conf['center']
         dlon, dlat = metric_diff_to_degrees(stdev, stdev, clat)
         slon = clon + dlon * np.random.randn(num)
         slat = clat + dlat * np.random.randn(num)
         return slon.tolist(), slat.tolist()
+
     else:
         raise ValueError(f"Unknown shape: {shape}")
 
@@ -337,6 +339,18 @@ def main():
     # location: 
     #   center: [5, 60]
     #   offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]
+    
+    # Alternative: Square-shaped release area
+    # location:
+    #   center: [5, 60]
+    #   shape: square
+    #   extent: 100  # Metric side lenght of square
+    
+    # Alternative: Gaussian release area
+    # location:
+    #   center: [5, 60]
+    #   shape: gaussian
+    #   extent: 100  # Standard deviation, in meters
     
     """)
     elif len(sys.argv) == 2:

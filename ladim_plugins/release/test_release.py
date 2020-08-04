@@ -280,7 +280,7 @@ class Test_make_release:
         conf0['location'] = dict(
             center=[0, 60],
             shape='gaussian',
-            extent=100000,
+            extent=50000,
         )
         conf0['num'] = 5
         result = make_release(conf0)
