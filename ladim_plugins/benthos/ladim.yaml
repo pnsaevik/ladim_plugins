@@ -21,18 +21,41 @@ gridforce:
 ibm:
     module: ladim_plugins.benthos
     variables:
-        - active  # 1 if mobile, 0 if immobile
-        - ptype   # particle type
+    - ptype     # Particle type
+    - sink_vel  # Sinking velocity [m/s]
+    - active    # 1 if mobile, 0 if immobile
+    - age       # Particle age in seconds
+
+    submodules:
+        capitella:
+            ibm_class: ladim_plugins.benthos.ibm.Capitella
+            ptype: 1  # ID number for this submodule
+
+        pom:
+            ibm_class: ladim_plugins.benthos.ibm.POM
+            ptype: 0  # ID number for this submodule
+
+            # Time (seconds) before a particle is taken out of the simulation
+            lifespan: 200
+
+            # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
+            vertical_mixing: 0.0001
+
+            # Critical shear stress for resuspension
+            #    0 ==> All material is resuspended
+            #    Large number (e.g., 1000) ==> No material is resuspended
+            #    sand = 0.12 kg / m s2)
+            taucrit: 0
 
 
 particle_release:
-    variables: [active, release_time, X, Y, Z, ptype]
+    variables: [ptype, active, release_time, X, Y, Z, sink_vel]
     release_time: time   # np.datetime64[s]
     active: int
     ptype: int
 
     # Mark variables as time independent
-    particle_variables: [release_time, ptype]
+    particle_variables: [release_time]
 
 
 output_variables:
@@ -40,7 +63,7 @@ output_variables:
     outper: [60, s]
 
     # Variables included in output
-    particle: [release_time, ptype]
+    particle: [release_time]
     instance: [pid, X, Y, Z, active]
 
 
@@ -79,15 +102,15 @@ output_variables:
     active:
         ncformat: i4
         long_name: particle active mask
-        #flag_values: [0, 1]
-        flag_meanings: inactive active
+        # flag_values: [0, 1]
+        flag_meanings: inactive active,
 
     # Output format for the particle type indicator
-    ptype:
-        ncformat: i4
-        long_name: particle type id
-        #flag_values: [0, 1]
-        flag_meanings: pom capitella
+    # ptype:
+    #    ncformat: i4
+    #    long_name: particle type id
+    #    flag_values: [0, 1]
+    #    flag_meanings: pom capitella
 
 
 numerics:
