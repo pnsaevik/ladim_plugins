@@ -248,6 +248,32 @@ class Test_make_release:
         r = make_release([conf0, conf0])
         assert len(r['release_time']) == 4
 
+    def test_can_use_square_sampling_shape(self, conf0):
+        np.random.seed(0)
+
+        conf0['location'] = dict(
+            center=[0, 60],
+            shape='square',
+            extent=100000,
+        )
+        conf0['num'] = 5
+        result = make_release(conf0)
+
+        assert result['lat'] == [
+            60.26228062814893,
+            59.974021504109096,
+            60.061176683164156,
+            60.382640291567434,
+            59.6143322738132,
+        ]
+        assert result['lon'] == [
+            0.11207533991782959,
+            0.8380960561199113,
+            0.0721929966399305,
+            -0.6993553348470959,
+            0.08178697665959145,
+        ]
+
 
 class Test_triangulate:
     def test_if_triangle(self):

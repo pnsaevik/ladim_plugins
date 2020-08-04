@@ -49,11 +49,17 @@ def get_location(loc_conf, num):
     elif hasattr(loc_conf, 'read'):
         return get_location_file(loc_conf, num)
 
+    if isinstance(loc_conf, dict):
+        if 'offset' in loc_conf:
+            return get_location_offset(loc_conf, num)
+        elif 'shape' in loc_conf:
+            return get_location_shape(loc_conf, num)
+        else:
+            raise ValueError('Unknown location format')
+
     lon, lat = loc_conf
 
-    if isinstance(loc_conf, dict) and 'offset' in loc_conf:
-        return get_location_offset(loc_conf, num)
-    elif not hasattr(lon, '__len__'):
+    if not hasattr(lon, '__len__'):
         return [lon] * num, [lat] * num
     else:
         slat, slon = latlon_from_poly(lat, lon, num)
@@ -68,6 +74,20 @@ def get_location_offset(loc_conf, num):
     plat = clat + np.array(dlat)
     slat, slon = latlon_from_poly(plat, plon, num)
     return slon.tolist(), slat.tolist()
+
+
+def get_location_shape(loc_conf, num):
+    shape = loc_conf['shape']
+
+    if shape == 'square':
+        r = loc_conf['extent'] * .5
+        poly_conf = dict(
+            center=loc_conf['center'],
+            offset=[[-r, r, r, -r], [-r, -r, r, r]],
+        )
+        return get_location_offset(poly_conf, num)
+    else:
+        raise ValueError(f"Unknown shape: {shape}")
 
 
 def get_location_file(file, num):
