@@ -1,4 +1,4 @@
-# Configuration file for sedimentation model
+# Configuration file for benthos model
 
 time_control:
     # Start and stop of simulation
@@ -19,25 +19,20 @@ gridforce:
 
 
 ibm:
-    module: ladim_plugins.sedimentation
+    module: ladim_plugins.benthos
     variables:
-    - sink_vel  # Sinking velocity [m/s]
-    - active    # 1 if mobile, 0 if immobile
-    - age       # Particle age in seconds
-    lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
-    vertical_mixing: 0.0001  # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
-    taucrit: 0  # Critical shear stress for resuspension
-                #    0 ==> All material is resuspended
-                #    Large number (e.g., 1000) ==> No material is resuspended
-                #    sand = 0.12 kg / m s2)
+        - active  # 1 if mobile, 0 if immobile
+        - ptype   # particle type
+
 
 particle_release:
-    variables: [active, release_time, X, Y, Z, sink_vel]
+    variables: [active, release_time, X, Y, Z, ptype]
     release_time: time   # np.datetime64[s]
     active: int
+    ptype: int
 
     # Mark variables as time independent
-    particle_variables: [release_time]
+    particle_variables: [release_time, ptype]
 
 
 output_variables:
@@ -45,7 +40,7 @@ output_variables:
     outper: [60, s]
 
     # Variables included in output
-    particle: [release_time]
+    particle: [release_time, ptype]
     instance: [pid, X, Y, Z, active]
 
 
@@ -82,10 +77,17 @@ output_variables:
 
     # Output format for the particle active indicator
     active:
-        ncformat: i4,
-        long_name: particle active mask,
-        # flag_values: [0, 1],
-        flag_meanings: inactive active,
+        ncformat: i4
+        long_name: particle active mask
+        #flag_values: [0, 1]
+        flag_meanings: inactive active
+
+    # Output format for the particle type indicator
+    ptype:
+        ncformat: i4
+        long_name: particle type id
+        #flag_values: [0, 1]
+        flag_meanings: pom capitella
 
 
 numerics:
