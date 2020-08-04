@@ -61,7 +61,18 @@ class Capitella:
 
     def update(self):
         self.state = SubState(self.parent.state, self.ptype)
+
+        self.grow()
+        self.kill_old()
+
         self.state.save_to_parent()
+
+    def grow(self):
+        pass
+
+    def kill_old(self):
+        state = self.state
+        state.age[:] += self.parent.dt
 
 
 class POM:
