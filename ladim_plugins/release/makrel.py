@@ -86,6 +86,13 @@ def get_location_shape(loc_conf, num):
             offset=[[-r, r, r, -r], [-r, -r, r, r]],
         )
         return get_location_offset(poly_conf, num)
+    elif shape == 'gaussian':
+        stdev = loc_conf['extent'] * .5
+        clon, clat = loc_conf['center']
+        dlon, dlat = metric_diff_to_degrees(stdev, stdev, clat)
+        slon = clon + dlon * np.random.randn(num)
+        slat = clat + dlat * np.random.randn(num)
+        return slon.tolist(), slat.tolist()
     else:
         raise ValueError(f"Unknown shape: {shape}")
 

@@ -274,6 +274,32 @@ class Test_make_release:
             0.08178697665959145,
         ]
 
+    def test_can_use_gaussian_sampling_shape(self, conf0):
+        np.random.seed(0)
+
+        conf0['location'] = dict(
+            center=[0, 60],
+            shape='gaussian',
+            extent=100000,
+        )
+        conf0['num'] = 5
+        result = make_release(conf0)
+
+        assert result['lat'] == [
+            59.56068039635081,
+            60.42709701673777,
+            59.931959793495786,
+            59.953599619931225,
+            60.184577974028564,
+        ]
+        assert result['lon'] == [
+            1.58467518436965,
+            0.35946733632687666,
+            0.8792152902705146,
+            2.0130286109221602,
+            1.67765588653125,
+        ]
+
 
 class Test_triangulate:
     def test_if_triangle(self):
