@@ -7,9 +7,8 @@ class IBM:
         self.lifespan = config['ibm']['lifespan']
 
         # Vertical mixing [m*2/s]
-        self.D = config['ibm']['vertical_mixing']  # 0.001 m2/s -- 0.01 m2/s (?)
-        self.taucrit = config['ibm'].get('taucrit', None)
-        self.vertical_diffusion = self.D > 0
+        self.D_fn = get_diffusion_fn(config['ibm'].get('vertical_mixing', None))
+        self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', None))
 
         # Store time step value to calculate age
         self.dt = config['dt']
@@ -24,19 +23,22 @@ class IBM:
         self.forcing = forcing
         self.state = state
 
-        self.resuspend()
-        self.diffuse()
+        ustar = self.shear_velocity_btm()
+
+        self.resuspend(ustar)
+        self.diffuse(ustar)
         self.sink()
         self.bury()
         self.kill_old()
 
-    def resuspend(self):
-        if self.taucrit is None:
+    def resuspend(self, ustar):
+        if self.taucrit_fn is None:
             return
 
-        ustar = self.shear_velocity_btm()
         tau = shear_stress_btm(ustar)
-        resusp = tau > self.taucrit
+        lon, lat = self.grid.lonlat(self.state.X, self.state.Y)
+        taucrit = self.taucrit_fn(lon, lat)
+        resusp = tau > taucrit
         self.state.active[resusp] = True
 
     def bury(self):
@@ -53,24 +55,35 @@ class IBM:
         self.state.Z[a] = Z
         self.state.active[a] = ~at_seabed
 
-    def diffuse(self):
+    def diffuse(self, ustar):
         # Get parameters
         a = self.state.active != 0
-        x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
-        h = self.grid.sample_depth(x, y)
+        x0, y0, z0 = self.state.X[a], self.state.Y[a], self.state.Z[a]
+        h = self.grid.sample_depth(x0, y0)
 
-        # Diffusion
-        b0 = np.sqrt(2 * self.D)
-        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(self.dt)
-        z1 = z + b0 * dw
+        # Define size of random perturbation. Possibly force negative values.
+        dw = np.random.randn(z0.size).reshape(z0.shape) * np.sqrt(self.dt)
+        at_bottom = (h == z0)  # Force upwards motion if on the bottom
+        dw[at_bottom] = -np.abs(dw[at_bottom])
+
+        # First diffusion step (predictor)
+        ustar_a = ustar[a]
+        D0 = self.D_fn(ustar_a, h - z0)
+        b0 = np.sqrt(2 * D0)
+        z1 = z0 + b0 * dw
+
+        # Second diffusion step (corrector)
+        D1 = self.D_fn(ustar_a, h - z1)
+        b1 = np.sqrt(2 * D1)
+        z2 = z0 + b1 * dw
 
         # Reflexive boundary conditions
-        z1[z1 < 0] *= -1  # Surface
-        below_seabed = z1 > h
-        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
+        z2[z2 < 0] *= -1  # Surface
+        below_seabed = z2 > h
+        z2[below_seabed] = 2*h[below_seabed] - z2[below_seabed]
 
         # Store new vertical position
-        self.state.Z[a] = z1
+        self.state.Z[a] = z2
 
     def sink(self):
         # Get parameters
@@ -161,3 +174,50 @@ def ladis(x0, t0, t1, v, K):
     x3 = x2 + a3 * dt
 
     return x3
+
+
+def get_diffusion_fn(subconf):
+    if not isinstance(subconf, dict):
+        subconf = dict(method='constant', value=subconf)
+
+    method = subconf['method']
+    if method == 'constant':
+        return get_turbulence_constant_fn(subconf['value'])
+    elif method == 'linear_bounded':
+        return get_turbulence_linear_bounded_fn(subconf['max_mixing'])
+    else:
+        raise ValueError(f'Unknown method: {method}')
+
+
+def get_turbulence_linear_bounded_fn(max_mixing):
+    def linear_bounded_fn(ustar, meters_from_seafloor):
+        kappa = 0.41
+        dA_dz = kappa * ustar  # Alternative formulation: kappa * ustar * w * exp(-w/w0), where w = z - h
+        A = dA_dz * meters_from_seafloor
+        cutoff = (A > max_mixing)
+        A[cutoff] = max_mixing
+        dA_dz[cutoff] = 0
+        return A
+
+    return linear_bounded_fn
+
+
+def get_turbulence_constant_fn(const):
+    def constant_fn(ustar, meters_from_seafloor):
+        A = np.zeros_like(ustar) + const
+        A[meters_from_seafloor < 0] = 0
+        return A
+
+    return constant_fn
+
+
+def get_taucrit_fn(subconf):
+    if not isinstance(subconf, dict):
+        subconf = dict(method='constant', value=subconf)
+
+    method = subconf['method']
+    if method == 'constant':
+        value = subconf['value']
+        return lambda lon, lat: np.zeros_like(lon) + value
+    else:
+        raise ValueError(f'Unknown method: {method}')

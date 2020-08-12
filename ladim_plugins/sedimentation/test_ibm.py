@@ -22,7 +22,10 @@ class Test_update:
 
         zr = np.zeros(num)
         zrl = np.zeros_like
-        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (x, y),
+        )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
@@ -44,7 +47,10 @@ class Test_update:
 
         zr = np.zeros(num)
         zrl = np.zeros_like
-        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (x, y),
+        )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
@@ -66,7 +72,10 @@ class Test_update:
 
         zr = np.zeros(num)
         zrl = np.zeros_like
-        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (x, y),
+        )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
@@ -91,7 +100,10 @@ class Test_update:
 
         zr = np.zeros(num)
         zrl = np.zeros_like
-        grid = Stub(sample_depth=lambda x, y: zrl(x) + 10)
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (x, y),
+        )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
