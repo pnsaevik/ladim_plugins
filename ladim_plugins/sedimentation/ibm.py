@@ -23,11 +23,16 @@ class IBM:
         self.forcing = forcing
         self.state = state
 
+        has_been_buried_before = (self.state.active != 1)
+
         self.resuspend()
         self.diffuse()
         self.sink()
         self.bury()
         self.kill_old()
+
+        is_active = (self.state.active != 0)
+        self.state.active[is_active & has_been_buried_before] = 2
 
     def resuspend(self):
         if self.taucrit_fn is None:

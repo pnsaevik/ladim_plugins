@@ -29,7 +29,7 @@ class Test_update:
         )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
-            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
             sink_vel=zr + w, dt=config['dt'],
         )
 
@@ -54,13 +54,38 @@ class Test_update:
         )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
-            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
             sink_vel=zr + w, dt=config['dt'],
         )
 
         my_ibm.update_ibm(grid, state, forcing)
 
         assert np.all(state.Z < 10)
+
+    def test_resuspended_particles_have_altered_active_flag(self):
+        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        config = dict(dt=1, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        num = 5
+        vel = 1
+        w = 0
+
+        zr = np.zeros(num)
+        zrl = np.zeros_like
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (x, y),
+        )
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
+        state = Stub(
+            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
+            sink_vel=zr + w, dt=config['dt'],
+        )
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.active == 2)
 
     def test_does_not_resuspend_when_zero_diffusion(self):
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0)
@@ -79,7 +104,7 @@ class Test_update:
         )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
-            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
             sink_vel=zr + w, dt=config['dt'],
         )
 
@@ -107,7 +132,7 @@ class Test_update:
         )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
-            X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
             sink_vel=zr + w, dt=config['dt'],
         )
 
