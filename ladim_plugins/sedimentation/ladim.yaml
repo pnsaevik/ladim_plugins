@@ -33,6 +33,23 @@ ibm:
         method: constant
         value: 0
 
+    # Alternative `taucrit` format: Read from file
+    #
+    # Two methods are available, both of which computes taucrit from the grain size:
+    # - `grain_size_bin` uses Carvajalino-Fernández et al (2019) directly
+    # - `grain_size_poly` is similar, but uses a polygonal fit instead of a binned approach
+    #
+    # Source file needs to be a netCDF file with a raster map of the grain size,
+    # with `latitude` and `longitude` as 1-dimensional coordinates.
+    #
+    # Example below:
+    #
+    # taucrit:
+    #   method: grain_size_bin
+    #   source: grainsize.nc
+    #   varname: grain_size
+
+
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
     vertical_mixing: 0.0001  # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
 
