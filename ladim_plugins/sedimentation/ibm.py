@@ -7,7 +7,7 @@ class IBM:
         self.lifespan = config['ibm']['lifespan']
 
         # Vertical mixing [m*2/s]
-        self.D_fn = get_diffusion_fn(config['ibm'].get('vertical_mixing', None))
+        self.diffparams = get_diffparams(config['ibm'].get('vertical_mixing', None))
         self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', None))
 
         # Store time step value to calculate age
@@ -18,23 +18,26 @@ class IBM:
         self.forcing = None
         self.state = None
 
+        # Parameters for lazy evaluation
+        self._ustar = None
+        self._ustar_ts = -1
+
     def update_ibm(self, grid, state, forcing):
         self.grid = grid
         self.forcing = forcing
         self.state = state
 
-        ustar = self.shear_velocity_btm()
-
-        self.resuspend(ustar)
-        self.diffuse(ustar)
+        self.resuspend()
+        self.diffuse()
         self.sink()
         self.bury()
         self.kill_old()
 
-    def resuspend(self, ustar):
+    def resuspend(self):
         if self.taucrit_fn is None:
             return
 
+        ustar = self.shear_velocity_btm()
         tau = shear_stress_btm(ustar)
         lon, lat = self.grid.lonlat(self.state.X, self.state.Y)
         taucrit = self.taucrit_fn(lon, lat)
@@ -55,35 +58,32 @@ class IBM:
         self.state.Z[a] = Z
         self.state.active[a] = ~at_seabed
 
-    def diffuse(self, ustar):
+    def diffuse(self):
+        method = self.diffparams['method']
+        if method == 'constant':
+            self.diffuse_constant()
+        else:
+            raise KeyError('Unknown method')
+
+    def diffuse_constant(self):
         # Get parameters
         a = self.state.active != 0
-        x0, y0, z0 = self.state.X[a], self.state.Y[a], self.state.Z[a]
-        h = self.grid.sample_depth(x0, y0)
+        x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
+        h = self.grid.sample_depth(x, y)
+        D = self.diffparams['value']
 
-        # Define size of random perturbation. Possibly force negative values.
-        dw = np.random.randn(z0.size).reshape(z0.shape) * np.sqrt(self.dt)
-        at_bottom = (h == z0)  # Force upwards motion if on the bottom
-        dw[at_bottom] = -np.abs(dw[at_bottom])
-
-        # First diffusion step (predictor)
-        ustar_a = ustar[a]
-        D0 = self.D_fn(ustar_a, h - z0)
-        b0 = np.sqrt(2 * D0)
-        z1 = z0 + b0 * dw
-
-        # Second diffusion step (corrector)
-        D1 = self.D_fn(ustar_a, h - z1)
-        b1 = np.sqrt(2 * D1)
-        z2 = z0 + b1 * dw
+        # Diffusion
+        b0 = np.sqrt(2 * D)
+        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(self.dt)
+        z1 = z + b0 * dw
 
         # Reflexive boundary conditions
-        z2[z2 < 0] *= -1  # Surface
-        below_seabed = z2 > h
-        z2[below_seabed] = 2*h[below_seabed] - z2[below_seabed]
+        z1[z1 < 0] *= -1  # Surface
+        below_seabed = z1 > h
+        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
 
         # Store new vertical position
-        self.state.Z[a] = z2
+        self.state.Z[a] = z1
 
     def sink(self):
         # Get parameters
@@ -100,17 +100,24 @@ class IBM:
         state.alive = state.alive & (state.age <= self.lifespan)
 
     def shear_velocity_btm(self):
-        # Calculates bottom shear velocity from last computational layer
-        # velocity
-        # returns: Ustar at bottom cell
-        x = self.state.X
-        y = self.state.Y
-        h = self.grid.sample_depth(x, y)
+        # Recompute only if necessary
+        if self._ustar_ts < self.state.timestep:
+            # Calculate bottom shear velocity from last computational layer
+            # velocity
+            # returns: Ustar at bottom cell
+            x = self.state.X
+            y = self.state.Y
+            h = self.grid.sample_depth(x, y)
 
-        u_btm, v_btm = self.forcing.velocity(x, y, h, tstep=0)
-        U2 = u_btm*u_btm + v_btm*v_btm
-        c = 0.003
-        return np.sqrt(c * U2)
+            u_btm, v_btm = self.forcing.velocity(x, y, h, tstep=0)
+            U2 = u_btm*u_btm + v_btm*v_btm
+            c = 0.003
+            ustar = np.sqrt(c * U2)
+
+            self._ustar_ts = self.state.timestep
+            self._ustar = ustar
+
+        return self._ustar
 
 
 def shear_stress_btm(ustar):
@@ -176,17 +183,13 @@ def ladis(x0, t0, t1, v, K):
     return x3
 
 
-def get_diffusion_fn(subconf):
-    if not isinstance(subconf, dict):
+def get_diffparams(subconf):
+    if subconf is None:
+        subconf = dict(method='constant', value=0)
+    elif not isinstance(subconf, dict):
         subconf = dict(method='constant', value=subconf)
 
-    method = subconf['method']
-    if method == 'constant':
-        return get_turbulence_constant_fn(subconf['value'])
-    elif method == 'linear_bounded':
-        return get_turbulence_linear_bounded_fn(subconf['max_mixing'])
-    else:
-        raise ValueError(f'Unknown method: {method}')
+    return subconf
 
 
 def get_turbulence_linear_bounded_fn(max_mixing):
