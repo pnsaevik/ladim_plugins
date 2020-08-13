@@ -1,5 +1,6 @@
 import numpy as np
 from ladim_plugins.sedimentation import ibm
+import pytest
 
 
 class Stub:
@@ -231,12 +232,13 @@ def get_grainsize_fixture_fname():
 
 
 class Test_taucrit_grain_size_bin:
-    def test_varying_taucrit_when_regular_grid(self):
+    @pytest.mark.parametrize("method", ['grain_size_bin', 'grain_size_poly'])
+    def test_varying_taucrit_when_regular_grid(self, method):
         grainsize_fname = get_grainsize_fixture_fname()
         ibmconf = dict(
             lifespan=100,
             taucrit=dict(
-                method='grain_size_bin',
+                method=method,
                 source=grainsize_fname,
                 varname='grain_size',
             ),
@@ -246,7 +248,7 @@ class Test_taucrit_grain_size_bin:
         my_ibm = ibm.IBM(config)
 
         num = 5
-        vel = .1
+        vel = .12  # Tuned to give tau ~ 0.09
         w = 0
 
         zr = np.zeros(num)

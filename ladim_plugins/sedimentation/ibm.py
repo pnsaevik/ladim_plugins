@@ -228,4 +228,3 @@ def get_taucrit_fn_grain_size(source, varname, method):
     )
 
     return taucrit_fn[method]
-
