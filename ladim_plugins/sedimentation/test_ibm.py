@@ -29,7 +29,7 @@ class Test_update:
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
-            sink_vel=zr + w, dt=config['dt'], timestep=0,
+            sink_vel=zr + w, dt=config['dt'],
         )
 
         my_ibm.update_ibm(grid, state, forcing)
@@ -54,7 +54,7 @@ class Test_update:
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
-            sink_vel=zr + w, dt=config['dt'], timestep=0,
+            sink_vel=zr + w, dt=config['dt'],
         )
 
         my_ibm.update_ibm(grid, state, forcing)
@@ -79,7 +79,7 @@ class Test_update:
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
-            sink_vel=zr + w, dt=config['dt'], timestep=0,
+            sink_vel=zr + w, dt=config['dt'],
         )
 
         my_ibm.update_ibm(grid, state, forcing)
@@ -107,7 +107,7 @@ class Test_update:
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=zr, Y=zr, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
-            sink_vel=zr + w, dt=config['dt'], timestep=0,
+            sink_vel=zr + w, dt=config['dt'],
         )
 
         my_ibm.update_ibm(grid, state, forcing)

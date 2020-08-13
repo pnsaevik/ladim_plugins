@@ -33,17 +33,8 @@ ibm:
         method: constant
         value: 0
 
-    # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
-    vertical_mixing:
-        method: constant
-        value: 0.0001
-
-    # Alternative: Compute from vertical profile
-    # vertical_mixing:
-    #     method: linear_bounded
-    #     max_mixing: 0.0001
-
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
+    vertical_mixing: 0.0001  # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
 
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]
