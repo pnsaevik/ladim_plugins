@@ -172,5 +172,60 @@ def get_taucrit_fn(subconf):
     if method == 'constant':
         value = subconf['value']
         return lambda lon, lat: np.zeros_like(lon) + value
+    elif method == 'grain_size_bin':
+        return get_taucrit_fn_grain_size(
+            source=subconf['source'],
+            varname=subconf['varname'],
+            method='bin',
+        )
+    elif method == 'grain_size_poly':
+        return get_taucrit_fn_grain_size(
+            source=subconf['source'],
+            varname=subconf['varname'],
+            method='poly',
+        )
     else:
         raise ValueError(f'Unknown method: {method}')
+
+
+def get_taucrit_fn_grain_size(source, varname, method):
+    import xarray as xr
+    with xr.open_dataset(source) as dset:
+        grain_size_var = dset.data_vars[varname]
+        grain_size = grain_size_var.transpose('latitude', 'longitude').values
+        clat = dset.latitude.values
+        clon = dset.longitude.values
+
+    difflat = clat[1] - clat[0]
+    difflon = clon[1] - clon[0]
+    lat0 = clat[0]
+    lon0 = clon[0]
+    imax = grain_size.shape[1] - 1
+    jmax = grain_size.shape[0] - 1
+
+    def sedvalue(lon, lat):
+        i = np.clip(np.int32(.5 + (lon - lon0) / difflon), 0, imax)
+        j = np.clip(np.int32(.5 + (lat - lat0) / difflat), 0, jmax)
+        return grain_size[j, i]
+
+    def taucrit_bin(lon, lat):
+        sed = sedvalue(lon, lat)
+        tauc = np.empty(lon.shape, dtype=np.float32)
+        tauc[:] = 0.12  # Applies both to sed == 0 (default value) and 70 <= sed < 180
+        tauc[(sed > 0) & (sed < 70)] = 0.06
+        tauc[sed > 180] = 0.32
+        return tauc
+
+    def taucrit_poly(lon, lat):
+        sed = sedvalue(lon, lat)
+        tauc = 6e-6*sed**2+3e-5*sed+0.0591
+        tauc[sed == 0] = 0.12  # Default value
+        return tauc
+
+    taucrit_fn = dict(
+        bin=taucrit_bin,
+        poly=taucrit_poly,
+    )
+
+    return taucrit_fn[method]
+

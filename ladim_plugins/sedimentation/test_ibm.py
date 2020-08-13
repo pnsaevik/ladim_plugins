@@ -221,3 +221,51 @@ class Test_ladis:
 
         assert not np.any(too_low)
         assert not np.any(too_high)
+
+
+def get_grainsize_fixture_fname():
+    import ladim_plugins.tests
+    import os
+    return os.path.join(
+        os.path.dirname(ladim_plugins.tests.__file__), 'grainsize.nc')
+
+
+class Test_taucrit_grain_size_bin:
+    def test_varying_taucrit_when_regular_grid(self):
+        grainsize_fname = get_grainsize_fixture_fname()
+        ibmconf = dict(
+            lifespan=100,
+            taucrit=dict(
+                method='grain_size_bin',
+                source=grainsize_fname,
+                varname='grain_size',
+            ),
+            vertical_mixing=0.01,
+        )
+        config = dict(dt=1, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        num = 5
+        vel = .1
+        w = 0
+
+        zr = np.zeros(num)
+        rng = np.arange(num)
+        zrl = np.zeros_like
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (
+                5.651 + x*0.01,
+                59.021 + y*0.01,
+            ),
+        )
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
+        state = Stub(
+            X=rng, Y=rng, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            sink_vel=zr + w, dt=config['dt'],
+        )
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.any(state.Z < 10)
+        assert np.any(state.Z == 10)
