@@ -40,7 +40,9 @@ ibm:
     # - `grain_size_poly` is similar, but uses a polygonal fit instead of a binned approach
     #
     # Source file needs to be a netCDF file with a raster map of the grain size,
-    # with `latitude` and `longitude` as 1-dimensional coordinates.
+    # with `latitude` and `longitude` as 1-dimensional, regularly-spaced
+    # coordinates. Grain size typically range from 1 to 500. A value of 0 is
+    # regarded as a "missing value" and is treated like a grain size of 100.
     #
     # Example below:
     #

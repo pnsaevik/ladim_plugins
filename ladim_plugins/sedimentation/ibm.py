@@ -206,7 +206,9 @@ def get_taucrit_fn_grain_size(source, varname, method):
     def sedvalue(lon, lat):
         i = np.clip(np.int32(.5 + (lon - lon0) / difflon), 0, imax)
         j = np.clip(np.int32(.5 + (lat - lat0) / difflat), 0, jmax)
-        return grain_size[j, i]
+        sed = grain_size[j, i]
+        sed[np.isnan(sed)] = 0
+        return sed
 
     def taucrit_bin(lon, lat):
         sed = sedvalue(lon, lat)
