@@ -38,6 +38,11 @@ ibm:
         method: constant
         value: 0.0001
 
+    # Alternative: Compute from vertical profile
+    # vertical_mixing:
+    #     method: linear_bounded
+    #     max_mixing: 0.0001
+
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
 
 particle_release:
