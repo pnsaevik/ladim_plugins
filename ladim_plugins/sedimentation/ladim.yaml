@@ -59,6 +59,16 @@ ibm:
         method: constant
         value: 0.0001
 
+    # Alternative `vertical_mixing` format: Linearly increasing from bottom,
+    # until a maximal limit. Diffusion increases from bottom according to
+    # the 'law of the wall' and the current velocity at the bottom.
+    #
+    # Example below:
+    #
+    # vertical_mixing:
+    #   method: bounded_linear
+    #   max_diff: 0.01
+
 
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]
