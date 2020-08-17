@@ -330,5 +330,25 @@ class Test_vertical_mixing:
 
         assert np.all(state.Z == 10)
         my_ibm.update_ibm(grid, state, forcing)
-
         assert np.all(state.Z != 10)
+
+    def test_some_initial_lift_when_method_bounded_linear(self):
+        np.random.seed(0)
+
+        ibmconf = dict(
+            lifespan=100,
+            taucrit=0.12,
+            vertical_mixing=dict(
+                method='bounded_linear',
+                max_diff=0.01,
+            ),
+        )
+
+        grid, forcing, state = self.gfs(num=5, hvel=1)
+        config = dict(dt=state.dt, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.any(state.Z != 10)
+        assert np.any(state.Z == 10)

@@ -64,8 +64,9 @@ class IBM:
         a = self.state.active != 0
         x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
         h = self.grid.sample_depth(x, y)
+        ustar = self.shear_velocity_btm()
 
-        self.state.Z[a] = self.vdiff_fn(z, h, self.dt)
+        self.state.Z[a] = self.vdiff_fn(z, h, self.dt, ustar)
 
     def sink(self):
         # Get parameters
@@ -234,12 +235,15 @@ def get_vdiff_fn(subconf):
     if method == 'constant':
         return get_vdiff_constant_fn(subconf['value'])
 
+    elif method == 'bounded_linear':
+        return get_vdiff_bounded_linear_fn(subconf['max_diff'])
+
     else:
         raise ValueError(f'Unknown method: {method}')
 
 
 def get_vdiff_constant_fn(value):
-    def fn(z, h, dt):
+    def fn(z, h, dt, _):
         # Diffusion
         b0 = np.sqrt(2 * value)
         dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(dt)
@@ -252,5 +256,38 @@ def get_vdiff_constant_fn(value):
 
         # Return new vertical position
         return z1
+
+    return fn
+
+
+def get_vdiff_bounded_linear_fn(max_diff):
+    def get_turbulence(ustar, meters_from_seafloor, max_mixing):
+        # Extracts vertical diffusion and vertical diffusion gradient following a linear
+        # function from the bottom to the base of the model where we asume BBL finishes
+        # and Az becomes constant and max
+        kappa = 0.41
+        dA_dz = kappa * ustar  # Alternative formulation: kappa * ustar * w * exp(-w/w0), where w = z - h
+        A = dA_dz * meters_from_seafloor
+        cutoff = (A > max_mixing)
+        A[cutoff] = max_mixing
+        dA_dz[cutoff] = 0
+        return A, dA_dz
+
+    def fn(z, h, dt, ustar):
+        A, dA_dZ = get_turbulence(ustar, h - z, max_diff)
+
+        # Diffusion velocity, adding a pseudovelocity and evaluating the diffusion
+        # in an upstream point
+        rand = np.random.normal(size=len(A))
+        diff_upstream = A + 0.5 * dA_dZ ** 2 * dt
+        w = -dA_dZ + rand * np.sqrt(2 * diff_upstream / dt)
+
+        # Vertical position update
+        z_new = z + dt * w  # Euler forward timestepping
+        benthic = z_new >= h  # Newly settled particles
+        z_new[benthic] = h[benthic]  # Absorbant boundary at bottom
+        z_new[z_new < 0] *= -1  # Reflective boundary at surface
+
+        return z_new
 
     return fn
