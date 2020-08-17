@@ -12,26 +12,26 @@ class Stub:
 
 
 class Test_update:
-    def test_does_not_resuspend_when_zero_velocity(self):
-        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
-        config = dict(dt=1, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        num = 5
-        vel = 0
-        w = 0
-
+    @staticmethod
+    def gsf(num, hvel=0, wvel=0, dt=1):
         zr = np.zeros(num)
         zrl = np.zeros_like
         grid = Stub(
             sample_depth=lambda x, y: zrl(x) + 10,
             lonlat=lambda x, y: (x, y),
         )
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + hvel] * 2)
         state = Stub(
             X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
-            sink_vel=zr + w, dt=config['dt'],
+            sink_vel=zr + wvel, dt=dt, timestep=0,
         )
+        return grid, state, forcing
+
+    def test_does_not_resuspend_when_zero_velocity(self):
+        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        grid, state, forcing = self.gsf(num=5)
+        config = dict(dt=state.dt, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
 
         my_ibm.update_ibm(grid, state, forcing)
 
@@ -39,24 +39,9 @@ class Test_update:
 
     def test_does_resuspend_when_high_velocity(self):
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
-        config = dict(dt=1, ibm=ibmconf)
+        grid, state, forcing = self.gsf(num=5, hvel=1)
+        config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
-
-        num = 5
-        vel = 1
-        w = 0
-
-        zr = np.zeros(num)
-        zrl = np.zeros_like
-        grid = Stub(
-            sample_depth=lambda x, y: zrl(x) + 10,
-            lonlat=lambda x, y: (x, y),
-        )
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
-        state = Stub(
-            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
-            sink_vel=zr + w, dt=config['dt'],
-        )
 
         my_ibm.update_ibm(grid, state, forcing)
 
@@ -64,24 +49,9 @@ class Test_update:
 
     def test_resuspended_particles_have_altered_active_flag(self):
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
-        config = dict(dt=1, ibm=ibmconf)
+        grid, state, forcing = self.gsf(num=5, hvel=1)
+        config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
-
-        num = 5
-        vel = 1
-        w = 0
-
-        zr = np.zeros(num)
-        zrl = np.zeros_like
-        grid = Stub(
-            sample_depth=lambda x, y: zrl(x) + 10,
-            lonlat=lambda x, y: (x, y),
-        )
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
-        state = Stub(
-            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
-            sink_vel=zr + w, dt=config['dt'],
-        )
 
         my_ibm.update_ibm(grid, state, forcing)
 
@@ -89,24 +59,9 @@ class Test_update:
 
     def test_does_not_resuspend_when_zero_diffusion(self):
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0)
-        config = dict(dt=1, ibm=ibmconf)
+        grid, state, forcing = self.gsf(num=5, hvel=1)
+        config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
-
-        num = 5
-        vel = 1
-        w = 0
-
-        zr = np.zeros(num)
-        zrl = np.zeros_like
-        grid = Stub(
-            sample_depth=lambda x, y: zrl(x) + 10,
-            lonlat=lambda x, y: (x, y),
-        )
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
-        state = Stub(
-            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
-            sink_vel=zr + w, dt=config['dt'],
-        )
 
         my_ibm.update_ibm(grid, state, forcing)
 
@@ -117,24 +72,9 @@ class Test_update:
         np.random.seed(0)
 
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
-        config = dict(dt=1, ibm=ibmconf)
+        grid, state, forcing = self.gsf(num=5, hvel=1, wvel=1)
+        config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
-
-        num = 5
-        vel = 1
-        w = 1
-
-        zr = np.zeros(num)
-        zrl = np.zeros_like
-        grid = Stub(
-            sample_depth=lambda x, y: zrl(x) + 10,
-            lonlat=lambda x, y: (x, y),
-        )
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
-        state = Stub(
-            X=zr*0, Y=zr*0, Z=zr + 10, active=zr*0, alive=zr == 0, age=zr*0,
-            sink_vel=zr + w, dt=config['dt'],
-        )
 
         my_ibm.update_ibm(grid, state, forcing)
 
@@ -289,7 +229,7 @@ class Test_taucrit_grain_size_bin:
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
             X=rng, Y=rng, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
-            sink_vel=zr + w, dt=config['dt'],
+            sink_vel=zr + w, dt=config['dt'], timestep=1,
         )
 
         my_ibm.update_ibm(grid, state, forcing)
@@ -310,7 +250,7 @@ class Test_vertical_mixing:
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + hvel] * 2)
         state = Stub(
             X=zrl(zr), Y=zrl(zr), Z=zr + 10, active=zrl(zr), alive=zr == 0,
-            age=zrl(zr), sink_vel=zr + wvel, dt=dt,
+            age=zrl(zr), sink_vel=zr + wvel, dt=dt, timestep=0,
         )
         return grid, forcing, state
 

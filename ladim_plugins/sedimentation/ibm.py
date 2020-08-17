@@ -18,6 +18,10 @@ class IBM:
         self.forcing = None
         self.state = None
 
+        # Variables for lazy evaluation
+        self._ustar = None
+        self._ustar_tstep = -1
+
     def update_ibm(self, grid, state, forcing):
         self.grid = grid
         self.forcing = forcing
@@ -83,17 +87,21 @@ class IBM:
         state.alive = state.alive & (state.age <= self.lifespan)
 
     def shear_velocity_btm(self):
-        # Calculate bottom shear velocity from last computational layer
-        # velocity
-        # returns: Ustar at bottom cell
-        x = self.state.X
-        y = self.state.Y
-        h = self.grid.sample_depth(x, y)
+        if self._ustar_tstep < self.state.timestep:
+            # Calculate bottom shear velocity from last computational layer
+            # velocity
+            # returns: Ustar at bottom cell
+            x = self.state.X
+            y = self.state.Y
+            h = self.grid.sample_depth(x, y)
 
-        u_btm, v_btm = self.forcing.velocity(x, y, h, tstep=0)
-        U2 = u_btm*u_btm + v_btm*v_btm
-        c = 0.003
-        return np.sqrt(c * U2)
+            u_btm, v_btm = self.forcing.velocity(x, y, h, tstep=0)
+            U2 = u_btm*u_btm + v_btm*v_btm
+            c = 0.003
+            self._ustar = np.sqrt(c * U2)
+            self._ustar_tstep = self.state.timestep
+
+        return self._ustar
 
 
 def shear_stress_btm(ustar):
