@@ -7,7 +7,7 @@ class IBM:
         self.lifespan = config['ibm']['lifespan']
 
         # Vertical mixing [m*2/s]
-        self.D = config['ibm']['vertical_mixing']  # 0.001 m2/s -- 0.01 m2/s (?)
+        self.vdiff_fn = get_vdiff_fn(config['ibm']['vertical_mixing'])
         self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', None))
 
         # Store time step value to calculate age
@@ -42,7 +42,7 @@ class IBM:
         tau = shear_stress_btm(ustar)
         lon, lat = self.grid.lonlat(self.state.X, self.state.Y)
         taucrit = self.taucrit_fn(lon, lat)
-        resusp = tau > taucrit
+        resusp = tau >= taucrit
         self.state.active[resusp] = True
 
     def bury(self):
@@ -65,18 +65,7 @@ class IBM:
         x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
         h = self.grid.sample_depth(x, y)
 
-        # Diffusion
-        b0 = np.sqrt(2 * self.D)
-        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(self.dt)
-        z1 = z + b0 * dw
-
-        # Reflexive boundary conditions
-        z1[z1 < 0] *= -1  # Surface
-        below_seabed = z1 > h
-        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
-
-        # Store new vertical position
-        self.state.Z[a] = z1
+        self.state.Z[a] = self.vdiff_fn(z, h, self.dt)
 
     def sink(self):
         # Get parameters
@@ -235,3 +224,33 @@ def get_taucrit_fn_grain_size(source, varname, method):
     )
 
     return taucrit_fn[method]
+
+
+def get_vdiff_fn(subconf):
+    if not isinstance(subconf, dict):
+        subconf = dict(method='constant', value=subconf)
+
+    method = subconf['method']
+    if method == 'constant':
+        return get_vdiff_constant_fn(subconf['value'])
+
+    else:
+        raise ValueError(f'Unknown method: {method}')
+
+
+def get_vdiff_constant_fn(value):
+    def fn(z, h, dt):
+        # Diffusion
+        b0 = np.sqrt(2 * value)
+        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(dt)
+        z1 = z + b0 * dw
+
+        # Reflexive boundary conditions
+        z1[z1 < 0] *= -1  # Surface
+        below_seabed = z1 > h
+        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
+
+        # Return new vertical position
+        return z1
+
+    return fn

@@ -53,7 +53,12 @@ ibm:
 
 
     lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
-    vertical_mixing: 0.0001  # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
+
+    # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
+    vertical_mixing:
+        method: constant
+        value: 0.0001
+
 
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]

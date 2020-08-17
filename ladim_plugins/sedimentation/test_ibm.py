@@ -296,3 +296,39 @@ class Test_taucrit_grain_size_bin:
 
         assert np.any(state.Z < 10)
         assert np.any(state.Z == 10)
+
+
+class Test_vertical_mixing:
+    @staticmethod
+    def gfs(num, hvel=0, wvel=0, dt=1):
+        zr = np.zeros(num)
+        zrl = np.zeros_like
+        grid = Stub(
+            sample_depth=lambda x, y: zrl(x) + 10,
+            lonlat=lambda x, y: (x, y),
+        )
+        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + hvel] * 2)
+        state = Stub(
+            X=zrl(zr), Y=zrl(zr), Z=zr + 10, active=zrl(zr), alive=zr == 0,
+            age=zrl(zr), sink_vel=zr + wvel, dt=dt,
+        )
+        return grid, forcing, state
+
+    def test_vertical_movement_when_method_constant(self):
+        ibmconf = dict(
+            lifespan=100,
+            taucrit=0,
+            vertical_mixing=dict(
+                method='constant',
+                value=0.01,
+            ),
+        )
+
+        grid, forcing, state = self.gfs(num=5)
+        config = dict(dt=state.dt, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        assert np.all(state.Z == 10)
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.Z != 10)
