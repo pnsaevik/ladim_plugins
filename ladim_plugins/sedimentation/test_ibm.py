@@ -67,6 +67,19 @@ class Test_update:
 
         assert np.all(state.Z == 10)
 
+    def test_sinking_when_mix_of_pelagic_and_benthic_particles(self):
+        ibmconf = dict(lifespan=100, taucrit=1, vertical_mixing=0)
+        grid, state, forcing = self.gsf(num=5, wvel=1)
+        state.Z[:] = [0, 1, 5, 10, 10]
+        state.active[:] = 1
+        config = dict(dt=state.dt, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.int32(state.active).tolist() == [1, 1, 1, 0, 0]
+        assert state.Z.tolist() == [1, 2, 6, 10, 10]
+
     def test_does_not_resuspend_when_large_sinkvel(self):
         # On rare occasions, vertical mixing can overcome the sinking velocity
         np.random.seed(0)

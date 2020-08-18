@@ -68,7 +68,7 @@ class IBM:
         a = self.state.active != 0
         x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
         h = self.grid.sample_depth(x, y)
-        ustar = self.shear_velocity_btm()
+        ustar = self.shear_velocity_btm()[a]
 
         self.state.Z[a] = self.vdiff_fn(z, h, self.dt, ustar)
 
