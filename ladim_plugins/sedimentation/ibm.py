@@ -282,7 +282,7 @@ def get_vdiff_bounded_linear_fn(max_diff):
         return A, dA_dz
 
     def fn(z, h, dt, ustar):
-        A, dA_dZ = get_turbulence(ustar, h - z, max_diff)
+        A, dA_dZ = get_turbulence(ustar, np.maximum(h - z, 0), max_diff)
 
         # Diffusion velocity, adding a pseudovelocity and evaluating the diffusion
         # in an upstream point
