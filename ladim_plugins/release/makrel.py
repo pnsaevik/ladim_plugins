@@ -87,8 +87,8 @@ def get_location_file(file, num):
         return [np.array(p[0]) for p in geom['coordinates']]
 
     points = get_points_from_layer(data[0])
-    plon = [p[:, 0] for p in points]
-    plat = [p[:, 1] for p in points]
+    plon = [p[:-1, 0] for p in points]
+    plat = [p[:-1, 1] for p in points]
 
     slat, slon = latlon_from_poly(plat, plon, num)
     return slon.tolist(), slat.tolist()
