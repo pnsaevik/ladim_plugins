@@ -78,6 +78,8 @@ contents of `out.nc`.
 
 ## History
 
+**Version 1.2.1** (Sep 2020): Corrections to `sedimentation` module.
+
 **Version 1.2** (Apr 2020): Module added: `lunar_eel`
 
 **Version 1.1** (Apr 2020): Resuspension added to `sedimentation` module.
