@@ -7,7 +7,7 @@ setup(
     package_data={'': [
         '*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp', '*.geojson',
     ]},
-    entry_points = {
+    entry_points={
         'console_scripts': ['makrel=ladim_plugins.release.makrel:main'],
     },
     url='https://github.com/pnsaevik/ladim_plugins',

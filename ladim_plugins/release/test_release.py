@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 
-@pytest.fixture()
+@pytest.fixture(scope='function')
 def conf0() -> dict:
     return dict(
         date='2000-01-01 01:02:03',
@@ -54,6 +54,16 @@ class Test_make_release:
         assert r['second'] == [1, 2]
         assert r['third'] == [10, 11]
         assert r['fourth'] == [0, 1]
+
+    def test_can_change_sortorder(self, conf0):
+        conf0['attrs'] = dict(first=0, second=1, third=2)
+        conf0['columns'] = ['lon', 'lat', 'first', 'third', 'Z']
+
+        r = make_release(conf0)
+
+        assert list(r.keys()) == conf0['columns']
+        assert r['first'] == [0, 0]
+        assert r['third'] == [2, 2]
 
     def test_accepts_numpy_date(self, conf0):
         r0 = make_release(conf0)

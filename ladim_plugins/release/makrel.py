@@ -18,9 +18,14 @@ def make_release(config, fname=None):
     if isinstance(config, dict):
         config = [config]
 
+    # Create release params
     import pandas as pd
     frames = [pd.DataFrame(make_single_release(c)) for c in config]
     frame = pd.concat(frames)
+
+    # Make column selection if specified
+    if 'columns' in config[0]:
+        frame = frame[config[0]['columns']]
 
     if fname:
         frame.to_csv(fname, sep="\t", header=False, index=False)
