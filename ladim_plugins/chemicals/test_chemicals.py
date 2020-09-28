@@ -75,3 +75,25 @@ class Test_ibm_land_collision:
 
         assert state.X.tolist() == [1.4636627435684204, 2, 3, 4]
         assert state.Y.tolist() == [0.8834415078163147, 1, 1, 1]
+
+
+class Test_compute_w:
+    def test_zero_when_divergence_free_horizontal_velocity(self):
+        t, z, eta, xi = np.meshgrid(
+            range(1), range(3), range(4), range(5), indexing='ij')
+
+        eta_u = 0.5 * (eta[:, :, :, :-1] + eta[:, :, :, 1:])
+        xi_u = 0.5 * (xi[:, :, :, :-1] + xi[:, :, :, 1:])
+        eta_v = 0.5 * (eta[:, :, :-1, :] + eta[:, :, 1:, :])
+        # xi_v = 0.5 * (xi[:, :, :-1, :] + xi[:, :, 1:, :])
+
+        z_r = z + 0.5
+        z_w = np.concatenate((z, 1 + z[:, -1:, :, :]), axis=1)
+        pn = np.ones(xi.shape[-2:])
+        pm = pn
+
+        # Define divergence-free field
+        u = eta_u * xi_u
+        v = - eta_v * eta_v
+        w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
+        assert np.max(np.abs(w)) < 1e-7
