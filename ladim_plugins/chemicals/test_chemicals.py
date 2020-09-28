@@ -84,7 +84,9 @@ class Test_compute_w:
         u = np.zeros((1, 20, 10, 14))
         v = np.zeros((1, 20, 9, 15))
         z_w = np.zeros((1, 21, 10, 15))
-        z_r = np.zeros((1, 20, 10, 15))
+        for i in range(21):
+            z_w[:, i, :, :] = i
+        z_r = z_w[:, :-1, :, :] + 0.5
         w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
         assert w.shape == z_w.shape
 
