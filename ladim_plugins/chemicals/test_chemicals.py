@@ -95,5 +95,34 @@ class Test_compute_w:
         # Define divergence-free field
         u = eta_u * xi_u
         v = - eta_v * eta_v
+
         w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
         assert np.max(np.abs(w)) < 1e-7
+
+    def test_computes_positive_velocity_when_downward(self):
+        t, z, eta, xi = np.meshgrid(
+            range(1), range(3), range(4), range(5), indexing='ij')
+
+        z_r = z + 0.5
+        z_w = np.concatenate((z, 1 + z[:, -1:, :, :]), axis=1)
+
+        eta_u = 0.5 * (eta[:, :, :, :-1] + eta[:, :, :, 1:])
+        xi_u = 0.5 * (xi[:, :, :, :-1] + xi[:, :, :, 1:])
+        z_u = 0.5 * (z_r[:, :, :, :-1] + z_r[:, :, :, 1:])
+        eta_v = 0.5 * (eta[:, :, :-1, :] + eta[:, :, 1:, :])
+        xi_v = 0.5 * (xi[:, :, :-1, :] + xi[:, :, 1:, :])
+        z_v = 0.5 * (z_r[:, :, :-1, :] + z_r[:, :, 1:, :])
+
+        pn = np.ones(xi.shape[-2:])
+        pm = pn
+
+        # Define convergence on top, divergence on bottom
+        # This gives downward movement
+        u = (z_u - 1.5) * (eta_u + xi_u)
+        v = (z_v - 1.5) * (eta_v + xi_v)
+
+        w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
+
+        # Outer edges and top+bottom is zero, so we check internal velocity
+        w_internal = w[0, 1:-1, 1:-1, 1:-1]
+        assert np.all(w_internal > 0), 'Downward velocity should be positive'
