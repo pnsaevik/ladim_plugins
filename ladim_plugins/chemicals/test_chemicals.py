@@ -78,6 +78,16 @@ class Test_ibm_land_collision:
 
 
 class Test_compute_w:
+    def test_requires_correct_shape(self):
+        pn = np.ones((10, 15))
+        pm = pn
+        u = np.zeros((1, 20, 10, 14))
+        v = np.zeros((1, 20, 9, 15))
+        z_w = np.zeros((1, 21, 10, 15))
+        z_r = np.zeros((1, 20, 10, 15))
+        w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
+        assert w.shape == z_w.shape
+
     def test_zero_when_divergence_free_horizontal_velocity(self):
         t, z, eta, xi = np.meshgrid(
             range(1), range(3), range(4), range(5), indexing='ij')
