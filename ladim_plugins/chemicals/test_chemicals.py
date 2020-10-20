@@ -244,15 +244,47 @@ class Test_divergence:
                     for k, v in self._dict.items()
                 }
 
+            @property
+            def s_rho(self):
+                s_int, s_frac = gridforce.z2s(
+                    forcing._grid.z_r,
+                    self.X - forcing._grid.i0,
+                    self.Y - forcing._grid.j0,
+                    self.Z,
+                )
+                return s_int - s_frac
+
+            @property
+            def s_w(self):
+                s_int, s_frac = gridforce.z2s(
+                    forcing._grid.z_w,
+                    self.X - forcing._grid.i0,
+                    self.Y - forcing._grid.j0,
+                    self.Z,
+                )
+                return s_int - s_frac
+
+            def in_middle(self):
+                idx = np.round(self.X) == 2
+                idx &= np.round(self.Y) == 2
+                idx &= np.round(self.s_rho) == 1
+                return idx
+
         n = 1000
 
         mystate = MyState(
-            X=np.random.uniform(1.01, 2.99, n),
-            Y=np.random.uniform(1.01, 2.99, n),
+            X=np.random.uniform(1, 3, n),
+            Y=np.random.uniform(1, 3, n),
             Z=np.random.uniform(0, 1, n),
             alive=np.ones(n),
             dt=self.CONST_DT,
         )
+
+        h = gridforce.sample2D(
+            forcing._grid.H,
+            mystate.X - 1, mystate.Y - 1,
+        )
+        mystate.Z *= h
         return mystate
 
     @staticmethod
@@ -271,4 +303,6 @@ class Test_divergence:
 
     def test_no_divergence_if_velocity_is_zero(self, state, forcing, ibm):
         newstate = self.one_timestep(state, forcing, ibm)
-        assert newstate.todict() == state.todict()
+        num_init = np.count_nonzero(state.in_middle())
+        num_after = np.count_nonzero(newstate.in_middle())
+        assert num_init == num_after
