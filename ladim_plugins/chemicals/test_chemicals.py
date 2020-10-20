@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from ladim_plugins.chemicals import gridforce, IBM
 from contextlib import contextmanager
+from typing import Any
 
 
 class Test_nearest_unmasked:
@@ -145,7 +146,7 @@ class Test_divergence:
     CONST_DT = 600
 
     @contextmanager
-    def get_forcing(self, u=0, v=0, h=3):
+    def get_forcing(self, u: Any = 0.0, v: Any = 0.0, h: Any = 3.0):
         import netCDF4 as nc
         from uuid import uuid4
 
@@ -181,16 +182,37 @@ class Test_divergence:
         dset.variables['ocean_time'].calendar = 'proleptic_gregorian'
 
         dset.variables['ocean_time'][:] = [0, 600]
-        dset.variables['h'][:] = h
         dset.variables['mask_rho'][:] = 1
         dset.variables['pm'][:] = 0.00625
         dset.variables['pn'][:] = 0.00625
-        dset.variables['u'][:] = u
-        dset.variables['v'][:] = v
         dset.variables['hc'][:] = 0
         dset.variables['Vtransform'][:] = 2
         dset.variables['Cs_w'][:] = [-1, -2/3, -1/3, 0]
         dset.variables['Cs_r'][:] = [-5/6, -1/2, -1/6]
+
+        x_rho = np.arange(5)
+        y_rho = x_rho
+        x_u = x_rho[:-1] + 0.5
+        y_u = y_rho
+        x_v = x_rho
+        y_v = x_u
+        z_rho = dset.variables['Cs_r'][:] * h
+
+        if callable(h):
+            y, x = np.meshgrid(y_rho, x_rho, indexing='ij')
+            h = h(x, y)
+
+        if callable(u):
+            z, y, x = np.meshgrid(z_rho, y_u, x_u, indexing='ij')
+            u = u(x, y, z)
+
+        if callable(v):
+            z, y, x = np.meshgrid(z_rho, y_v, x_v, indexing='ij')
+            v = v(x, y, z)
+
+        dset.variables['h'][:] = h
+        dset.variables['u'][:] = u
+        dset.variables['v'][:] = v
 
         dset_buf = dset.close()
 
@@ -271,7 +293,7 @@ class Test_divergence:
                 idx &= np.round(self.s_rho) == 1
                 return idx
 
-        nn = np.int32(np.power(n, 1 / 3))
+        nn = np.int32(np.round(np.power(n, 1 / 3)))
         n = nn ** 3
         z, y, x = np.meshgrid(
             np.linspace(0, 1, nn),
@@ -331,3 +353,27 @@ class Test_divergence:
             num_after = np.count_nonzero(newstate.in_middle())
             assert num_init == num_after, \
                 "Number of particles in middle cell should not change"
+
+    def test_accumulation_if_torus_velocity_and_vertical_adv_off(self, ibm):
+        u = np.array([[
+            [[0] * 4, [0] * 4, [0, -1, 1, 0], [0] * 4, [0] * 4],
+            [[0] * 4, [0] * 4, [0, 2, -2, 0], [0] * 4, [0] * 4],
+            [[0] * 4, [0] * 4, [0, -1, 1, 0], [0] * 4, [0] * 4],
+        ]] * 2) * 0.1
+
+        v = np.swapaxes(u, 2, 3)
+
+        with self.get_forcing(u, v) as forcing:
+            n = 9
+            state = self.get_state(forcing, n=n**3)
+            newstate = self.one_timestep(state, forcing, ibm)
+
+            idx_init = state.in_middle()
+            idx_after = newstate.in_middle()
+            assert np.any(idx_init != idx_after), \
+                "Some particles should exit or enter the middle cell"
+
+            num_init = np.count_nonzero(state.in_middle())
+            num_after = np.count_nonzero(newstate.in_middle())
+            assert num_init * 2 < num_after, \
+                "Strong accumulation expected"
