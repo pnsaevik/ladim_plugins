@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from ladim_plugins.chemicals import gridforce, IBM
+from contextlib import contextmanager
 
 
 class Test_nearest_unmasked:
@@ -138,3 +139,80 @@ class Test_compute_w:
         # Outer edges and top+bottom is zero, so we check internal velocity
         w_internal = w[0, 1:-1, 1:-1, 1:-1]
         assert np.all(w_internal > 0), 'Downward velocity should be positive'
+
+
+class Test_divergence:
+    @pytest.fixture()
+    def forcing(self):
+        import netCDF4 as nc
+        from uuid import uuid4
+
+        # noinspection PyArgumentList
+        dset = nc.Dataset(uuid4(), mode='w', format='NETCDF4', memory=1000)
+
+        dset.createDimension('ocean_time', 2)
+        dset.createDimension('xi_rho', 3)
+        dset.createDimension('eta_rho', 3)
+        dset.createDimension('s_rho', 3)
+        dset.createDimension('xi_u', 2)
+        dset.createDimension('eta_u', 3)
+        dset.createDimension('xi_v', 3)
+        dset.createDimension('eta_v', 2)
+        dset.createDimension('s_w', 4)
+
+        dset.createVariable('ocean_time', 'd', ('ocean_time', ))
+        dset.createVariable('h', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('mask_rho', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('pn', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('pm', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('lon_rho', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('lat_rho', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('angle', 'd', ('eta_rho', 'xi_rho'))
+        dset.createVariable('u', 'd', ('ocean_time', 's_rho', 'eta_u', 'xi_u'))
+        dset.createVariable('v', 'd', ('ocean_time', 's_rho', 'eta_v', 'xi_v'))
+        dset.createVariable('hc', 'd', ())
+        dset.createVariable('Vtransform', 'd', ())
+        dset.createVariable('Cs_r', 'd', ('s_rho', ))
+        dset.createVariable('Cs_w', 'd', ('s_w', ))
+
+        dset.variables['ocean_time'].units = 'seconds since 1970-01-01'
+        dset.variables['ocean_time'].calendar = 'proleptic_gregorian'
+
+        dset.variables['ocean_time'][:] = [0, 600]
+        dset.variables['h'][:] = 3
+        dset.variables['mask_rho'][:] = 1
+        dset.variables['pm'] = 0.00625
+        dset.variables['pn'] = 0.00625
+        dset.variables['u'][:] = 0
+        dset.variables['v'][:] = 0
+        dset.variables['hc'][:] = 0
+        dset.variables['Vtransform'][:] = 2
+        dset.variables['Cs_w'][:] = [-1, -2/3, -1/3, 0]
+        dset.variables['Cs_r'][:] = [-5/6, -1/2, -1/6]
+
+        dset_buf = dset.close()
+
+        config = dict(
+            gridforce=dict(
+                input_file=[dset_buf],
+            ),
+            start_time=np.datetime64('1970-01-01T00:00:00'),
+            stop_time=np.datetime64('1970-01-01T00:00:10'),
+            ibm_forcing=[],
+            dt=600,
+        )
+        grid = gridforce.Grid(config)
+        forcing = gridforce.Forcing(config, grid)
+        yield forcing
+        forcing.close()
+
+    @pytest.fixture()
+    def ibm(self):
+        config = dict(
+            ibm=dict(),
+            dt=600,
+        )
+        return IBM(config)
+
+    def test_forcing_and_ibm_is_initialized(self, forcing, ibm):
+        print(forcing)
