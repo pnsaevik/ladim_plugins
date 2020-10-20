@@ -215,8 +215,8 @@ class Test_divergence:
         )
         return IBM(config)
 
-    @pytest.fixture()
-    def state(self, forcing):
+    @staticmethod
+    def get_state(forcing, n):
         class MyState:
             def __init__(self, **kwargs):
                 self._dict = dict(**kwargs)
@@ -270,14 +270,12 @@ class Test_divergence:
                 idx &= np.round(self.s_rho) == 1
                 return idx
 
-        n = 1000
-
         mystate = MyState(
             X=np.random.uniform(1, 3, n),
             Y=np.random.uniform(1, 3, n),
             Z=np.random.uniform(0, 1, n),
             alive=np.ones(n),
-            dt=self.CONST_DT,
+            dt=Test_divergence.CONST_DT,
         )
 
         h = gridforce.sample2D(
@@ -301,7 +299,8 @@ class Test_divergence:
         tracker.move_particles(forcing._grid, forcing, newstate)
         return newstate
 
-    def test_no_divergence_if_velocity_is_zero(self, state, forcing, ibm):
+    def test_no_divergence_if_velocity_is_zero(self, forcing, ibm):
+        state = self.get_state(forcing, n=1000)
         newstate = self.one_timestep(state, forcing, ibm)
         num_init = np.count_nonzero(state.in_middle())
         num_after = np.count_nonzero(newstate.in_middle())
