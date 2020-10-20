@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from ladim_plugins.chemicals import gridforce, IBM
+from contextlib import contextmanager
 
 
 class Test_nearest_unmasked:
@@ -143,8 +144,8 @@ class Test_compute_w:
 class Test_divergence:
     CONST_DT = 600
 
-    @pytest.fixture()
-    def forcing(self):
+    @contextmanager
+    def get_forcing(self, u=0, v=0, h=3):
         import netCDF4 as nc
         from uuid import uuid4
 
@@ -180,12 +181,12 @@ class Test_divergence:
         dset.variables['ocean_time'].calendar = 'proleptic_gregorian'
 
         dset.variables['ocean_time'][:] = [0, 600]
-        dset.variables['h'][:] = 3
+        dset.variables['h'][:] = h
         dset.variables['mask_rho'][:] = 1
         dset.variables['pm'][:] = 0.00625
         dset.variables['pn'][:] = 0.00625
-        dset.variables['u'][:] = 0
-        dset.variables['v'][:] = 0
+        dset.variables['u'][:] = u
+        dset.variables['v'][:] = v
         dset.variables['hc'][:] = 0
         dset.variables['Vtransform'][:] = 2
         dset.variables['Cs_w'][:] = [-1, -2/3, -1/3, 0]
@@ -200,7 +201,7 @@ class Test_divergence:
             start_time=np.datetime64('1970-01-01T00:00:00'),
             stop_time=np.datetime64('1970-01-01T00:00:10'),
             ibm_forcing=[],
-            dt=self.CONST_DT,
+            dt=Test_divergence.CONST_DT,
         )
         grid = gridforce.Grid(config)
         forcing = gridforce.Forcing(config, grid)
@@ -308,9 +309,10 @@ class Test_divergence:
         tracker.move_particles(forcing._grid, forcing, newstate)
         return newstate
 
-    def test_no_divergence_if_velocity_is_zero(self, forcing, ibm):
-        state = self.get_state(forcing, n=1000)
-        newstate = self.one_timestep(state, forcing, ibm)
-        num_init = np.count_nonzero(state.in_middle())
-        num_after = np.count_nonzero(newstate.in_middle())
-        assert num_init == num_after
+    def test_no_divergence_if_velocity_is_zero(self, ibm):
+        with self.get_forcing() as forcing:
+            state = self.get_state(forcing, n=1000)
+            newstate = self.one_timestep(state, forcing, ibm)
+            num_init = np.count_nonzero(state.in_middle())
+            num_after = np.count_nonzero(newstate.in_middle())
+            assert num_init == num_after
