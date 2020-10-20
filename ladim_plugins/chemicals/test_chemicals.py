@@ -270,10 +270,19 @@ class Test_divergence:
                 idx &= np.round(self.s_rho) == 1
                 return idx
 
+        nn = np.int32(np.power(n, 1 / 3))
+        n = nn ** 3
+        z, y, x = np.meshgrid(
+            np.linspace(0, 1, nn),
+            np.linspace(1, 3, nn + 2)[1:-1],
+            np.linspace(1, 3, nn + 2)[1:-1],
+            indexing='ij',
+        )
+
         mystate = MyState(
-            X=np.random.uniform(1, 3, n),
-            Y=np.random.uniform(1, 3, n),
-            Z=np.random.uniform(0, 1, n),
+            X=x.ravel(),
+            Y=y.ravel(),
+            Z=z.ravel(),
             alive=np.ones(n),
             dt=Test_divergence.CONST_DT,
         )
