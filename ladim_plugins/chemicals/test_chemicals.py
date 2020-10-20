@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from ladim_plugins.chemicals import gridforce, IBM
-from contextlib import contextmanager
 
 
 class Test_nearest_unmasked:
@@ -142,6 +141,8 @@ class Test_compute_w:
 
 
 class Test_divergence:
+    CONST_DT = 600
+
     @pytest.fixture()
     def forcing(self):
         import netCDF4 as nc
@@ -151,13 +152,13 @@ class Test_divergence:
         dset = nc.Dataset(uuid4(), mode='w', format='NETCDF4', memory=1000)
 
         dset.createDimension('ocean_time', 2)
-        dset.createDimension('xi_rho', 3)
-        dset.createDimension('eta_rho', 3)
+        dset.createDimension('xi_rho', 5)
+        dset.createDimension('eta_rho', 5)
         dset.createDimension('s_rho', 3)
-        dset.createDimension('xi_u', 2)
-        dset.createDimension('eta_u', 3)
-        dset.createDimension('xi_v', 3)
-        dset.createDimension('eta_v', 2)
+        dset.createDimension('xi_u', 4)
+        dset.createDimension('eta_u', 5)
+        dset.createDimension('xi_v', 5)
+        dset.createDimension('eta_v', 4)
         dset.createDimension('s_w', 4)
 
         dset.createVariable('ocean_time', 'd', ('ocean_time', ))
@@ -181,8 +182,8 @@ class Test_divergence:
         dset.variables['ocean_time'][:] = [0, 600]
         dset.variables['h'][:] = 3
         dset.variables['mask_rho'][:] = 1
-        dset.variables['pm'] = 0.00625
-        dset.variables['pn'] = 0.00625
+        dset.variables['pm'][:] = 0.00625
+        dset.variables['pn'][:] = 0.00625
         dset.variables['u'][:] = 0
         dset.variables['v'][:] = 0
         dset.variables['hc'][:] = 0
@@ -199,7 +200,7 @@ class Test_divergence:
             start_time=np.datetime64('1970-01-01T00:00:00'),
             stop_time=np.datetime64('1970-01-01T00:00:10'),
             ibm_forcing=[],
-            dt=600,
+            dt=self.CONST_DT,
         )
         grid = gridforce.Grid(config)
         forcing = gridforce.Forcing(config, grid)
@@ -210,9 +211,64 @@ class Test_divergence:
     def ibm(self):
         config = dict(
             ibm=dict(),
-            dt=600,
+            dt=self.CONST_DT,
         )
         return IBM(config)
 
-    def test_forcing_and_ibm_is_initialized(self, forcing, ibm):
-        print(forcing)
+    @pytest.fixture()
+    def state(self, forcing):
+        class MyState:
+            def __init__(self, **kwargs):
+                self._dict = dict(**kwargs)
+
+            def __getattr__(self, item):
+                return self._dict[item]
+
+            def __getitem__(self, item):
+                return self._dict[item]
+
+            def copy(self):
+                def deepcopy(item):
+                    if isinstance(item, dict):
+                        return {k: deepcopy(v) for k, v in item.items()}
+                    elif hasattr(item, 'copy'):
+                        return item.copy()
+                    else:
+                        return item
+
+                return MyState(**deepcopy(self._dict))
+
+            def todict(self):
+                return {
+                    k: v.tolist() if hasattr(v, 'tolist') else v
+                    for k, v in self._dict.items()
+                }
+
+        n = 1000
+
+        mystate = MyState(
+            X=np.random.uniform(1.01, 2.99, n),
+            Y=np.random.uniform(1.01, 2.99, n),
+            Z=np.random.uniform(0, 1, n),
+            alive=np.ones(n),
+            dt=self.CONST_DT,
+        )
+        return mystate
+
+    @staticmethod
+    def one_timestep(state, forcing, ibm):
+        import ladim.tracker
+        config = dict(
+            advection='RK4',
+            diffusion=0,
+            ibm_variables=[],
+            dt=Test_divergence.CONST_DT,
+        )
+        tracker = ladim.tracker.Tracker(config)
+        newstate = state.copy()
+        tracker.move_particles(forcing._grid, forcing, newstate)
+        return newstate
+
+    def test_no_divergence_if_velocity_is_zero(self, state, forcing, ibm):
+        newstate = self.one_timestep(state, forcing, ibm)
+        assert newstate.todict() == state.todict()

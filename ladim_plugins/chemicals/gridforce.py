@@ -197,10 +197,10 @@ class Grid:
     def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Returns True for points inside the subgrid"""
         return (
-            (self.xmin + 0.5 < X)
-            & (X < self.xmax - 0.5)
-            & (self.ymin + 0.5 < Y)
-            & (Y < self.ymax - 0.5)
+            (self.xmin - 0.5 < X)
+            & (X < self.xmax + 0.5)
+            & (self.ymin - 0.5 < Y)
+            & (Y < self.ymax + 0.5)
         )
 
     def onland(self, X, Y):
