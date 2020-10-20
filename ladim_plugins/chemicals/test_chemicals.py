@@ -316,3 +316,18 @@ class Test_divergence:
             num_init = np.count_nonzero(state.in_middle())
             num_after = np.count_nonzero(newstate.in_middle())
             assert num_init == num_after
+
+    def test_no_divergence_if_linear_horz_velocity(self, ibm):
+        with self.get_forcing(.1, .05) as forcing:
+            state = self.get_state(forcing, n=1000)
+            newstate = self.one_timestep(state, forcing, ibm)
+
+            idx_init = state.in_middle()
+            idx_after = newstate.in_middle()
+            assert np.any(idx_init != idx_after), \
+                "Some particles should exit or enter the middle cell"
+
+            num_init = np.count_nonzero(state.in_middle())
+            num_after = np.count_nonzero(newstate.in_middle())
+            assert num_init == num_after, \
+                "Number of particles in middle cell should not change"
