@@ -11,8 +11,8 @@ import pkg_resources
 
 
 module_names = [
-    d for d in next(os.walk(os.path.dirname(os.path.dirname(__file__))))[1]
-    if d not in ['tests', 'release', '__pycache__']
+    d.name for d in pathlib.Path(__file__).parent.parent.glob('*/')
+    if d.joinpath('ladim.yaml').is_file()
 ]
 
 
