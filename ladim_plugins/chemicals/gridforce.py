@@ -540,7 +540,11 @@ class Forcing:
 
         i0 = self._grid.i0
         j0 = self._grid.j0
-        K, A = z2s(self._grid.z_r, X - i0, Y - j0, Z)
+        K, A = z2s(self._grid.z_w, X - i0, Y - j0, Z)
+        A = np.ones_like(A)
+        idx_K_limit = K >= self._grid.z_w.shape[0] - 1
+        K[idx_K_limit] = self._grid.z_w.shape[0] - 2
+        A[idx_K_limit] = 0
         if tstep < 0.001:
             U = self.U
             V = self.V
@@ -559,12 +563,12 @@ class Forcing:
         return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
 
     def compute_w(self, u_in, v_in):
-        z_r = np.pad(self._grid.z_r[np.newaxis, :, :, :], ((0, 0), (0, 0), (1, 1), (1, 1)), 'edge')
-        z_w = np.pad(self._grid.z_w[np.newaxis, :, :, :], ((0, 0), (0, 0), (1, 1), (1, 1)), 'edge')
-        u = np.pad(u_in[np.newaxis, :, :, :], ((0, 0), (0, 0), (1, 1), (0, 0)), 'constant')
-        v = np.pad(v_in[np.newaxis, :, :, :], ((0, 0), (0, 0), (0, 0), (1, 1)), 'constant')
-        pm = np.pad(1 / self._grid.dx, ((1, 1), (1, 1)), 'edge')
-        pn = np.pad(1 / self._grid.dy, ((1, 1), (1, 1)), 'edge')
+        z_r = self._grid.z_r[np.newaxis, :, :, :]
+        z_w = self._grid.z_w[np.newaxis, :, :, :]
+        u = u_in[np.newaxis, :, :, 1:-1]
+        v = v_in[np.newaxis, :, 1:-1, :]
+        pm = 1 / self._grid.dx
+        pn = 1 / self._grid.dy
 
         w = compute_w(pn, pm, u, v, z_w, z_r)
         return w[0, :, :, :]
@@ -572,7 +576,7 @@ class Forcing:
     def wvel(self, X, Y, Z, tstep=0.0, method='bilinear'):
         i0 = self._grid.i0
         j0 = self._grid.j0
-        K, A = z2s(self._grid.z_r, X-i0, Y-j0, Z)
+        K, A = z2s(self._grid.z_w, X-i0, Y-j0, Z)
         F = self['W']
         if tstep >= 0.001:
             F += tstep*self['dW']
