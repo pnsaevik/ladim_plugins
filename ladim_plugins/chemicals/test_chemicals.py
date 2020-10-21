@@ -233,7 +233,9 @@ class Test_divergence:
     @pytest.fixture()
     def ibm(self):
         config = dict(
-            ibm=dict(),
+            ibm=dict(
+                land_collision='freeze',
+            ),
             dt=self.CONST_DT,
         )
         return IBM(config)
@@ -307,6 +309,7 @@ class Test_divergence:
             Y=y.ravel(),
             Z=z.ravel(),
             alive=np.ones(n),
+            pid=np.arange(n),
             dt=Test_divergence.CONST_DT,
         )
 
@@ -318,7 +321,7 @@ class Test_divergence:
         return mystate
 
     @staticmethod
-    def one_timestep(state, forcing, ibm):
+    def one_timestep(state, forcing, ibm=None):
         import ladim.tracker
         config = dict(
             advection='RK4',
@@ -329,20 +332,26 @@ class Test_divergence:
         tracker = ladim.tracker.Tracker(config)
         newstate = state.copy()
         tracker.move_particles(forcing._grid, forcing, newstate)
+        if ibm is not None:
+            class Mock:
+                pass
+            f = Mock()
+            f.forcing = forcing
+            ibm.update_ibm(forcing._grid, newstate, f)
         return newstate
 
-    def test_no_divergence_if_velocity_is_zero(self, ibm):
+    def test_no_divergence_if_velocity_is_zero(self):
         with self.get_forcing() as forcing:
             state = self.get_state(forcing, n=1000)
-            newstate = self.one_timestep(state, forcing, ibm)
+            newstate = self.one_timestep(state, forcing)
             num_init = np.count_nonzero(state.in_middle())
             num_after = np.count_nonzero(newstate.in_middle())
             assert num_init == num_after
 
-    def test_no_divergence_if_linear_horz_velocity(self, ibm):
+    def test_no_divergence_if_linear_horz_velocity(self):
         with self.get_forcing(.1, .05) as forcing:
             state = self.get_state(forcing, n=1000)
-            newstate = self.one_timestep(state, forcing, ibm)
+            newstate = self.one_timestep(state, forcing)
 
             idx_init = state.in_middle()
             idx_after = newstate.in_middle()
@@ -354,7 +363,31 @@ class Test_divergence:
             assert num_init == num_after, \
                 "Number of particles in middle cell should not change"
 
-    def test_accumulation_if_torus_velocity_and_vertical_adv_off(self, ibm):
+    def test_accumulation_if_torus_velocity_and_vertical_adv_off(self):
+        u = np.array([[
+            [[0] * 4, [0] * 4, [0, -1, 1, 0], [0] * 4, [0] * 4],
+            [[0] * 4, [0] * 4, [0, 2, -2, 0], [0] * 4, [0] * 4],
+            [[0] * 4, [0] * 4, [0, -1, 1, 0], [0] * 4, [0] * 4],
+        ]] * 2) * 0.1
+
+        v = np.swapaxes(u, 2, 3)
+
+        with self.get_forcing(u, v) as forcing:
+            n = 9
+            state = self.get_state(forcing, n=n**3)
+            newstate = self.one_timestep(state, forcing)
+
+            idx_init = state.in_middle()
+            idx_after = newstate.in_middle()
+            assert np.any(idx_init != idx_after), \
+                "Some particles should exit or enter the middle cell"
+
+            num_init = np.count_nonzero(state.in_middle())
+            num_after = np.count_nonzero(newstate.in_middle())
+            assert num_init * 2 < num_after, \
+                "Strong accumulation expected"
+
+    def test_less_accumulation_if_torus_velocity_and_vertical_adv_on(self, ibm):
         u = np.array([[
             [[0] * 4, [0] * 4, [0, -1, 1, 0], [0] * 4, [0] * 4],
             [[0] * 4, [0] * 4, [0, 2, -2, 0], [0] * 4, [0] * 4],
@@ -375,5 +408,5 @@ class Test_divergence:
 
             num_init = np.count_nonzero(state.in_middle())
             num_after = np.count_nonzero(newstate.in_middle())
-            assert num_init * 2 < num_after, \
-                "Strong accumulation expected"
+            assert num_init < num_after < 1.2 * num_init, \
+                "Very little accumulation expected"
