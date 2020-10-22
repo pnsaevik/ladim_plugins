@@ -903,7 +903,7 @@ def compute_w(pn, pm, u, v, z_w, z_r):
     # Add zeros as boundary values
     wvel_pad = np.pad(vert, ((0, 0), (0, 0), (1, 1), (1, 1)), 'constant')
 
-    return wvel_pad[:]
+    return -wvel_pad[:]
 
 
 def nearest_unmasked(mask, i, j):
