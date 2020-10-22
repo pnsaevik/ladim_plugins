@@ -115,10 +115,10 @@ class Test_compute_w:
 
     def test_computes_positive_velocity_when_downward(self):
         t, z, eta, xi = np.meshgrid(
-            range(1), range(3), range(4), range(5), indexing='ij')
+            range(1), [-2, -1, 0], range(4), range(5), indexing='ij')
 
         z_r = z + 0.5
-        z_w = np.concatenate((z, 1 + z[:, -1:, :, :]), axis=1)
+        z_w = np.concatenate((1 + z[:, :1, :, :], z), axis=1)
 
         eta_u = 0.5 * (eta[:, :, :, :-1] + eta[:, :, :, 1:])
         xi_u = 0.5 * (xi[:, :, :, :-1] + xi[:, :, :, 1:])
