@@ -408,5 +408,5 @@ class Test_divergence:
 
             num_init = np.count_nonzero(state.in_middle())
             num_after = np.count_nonzero(newstate.in_middle())
-            assert num_init < num_after < 1.2 * num_init, \
+            assert num_init / 1.2 < num_after < 1.2 * num_init, \
                 "Very little accumulation expected"
