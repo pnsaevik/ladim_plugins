@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 from ladim_plugins.chemicals import gridforce, IBM
+from contextlib import contextmanager
+from typing import Any
 
 
 class Test_nearest_unmasked:
@@ -75,3 +77,66 @@ class Test_ibm_land_collision:
 
         assert state.X.tolist() == [1.4636627435684204, 2, 3, 4]
         assert state.Y.tolist() == [0.8834415078163147, 1, 1, 1]
+
+
+class Test_compute_w:
+    def test_requires_correct_shape(self):
+        pn = np.ones((10, 15))
+        pm = pn
+        u = np.zeros((1, 20, 10, 14))
+        v = np.zeros((1, 20, 9, 15))
+        z_w = np.zeros((1, 21, 10, 15))
+        for i in range(21):
+            z_w[:, i, :, :] = i
+        z_r = z_w[:, :-1, :, :] + 0.5
+        w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
+        assert w.shape == z_w.shape
+
+    def test_zero_when_divergence_free_horizontal_velocity(self):
+        t, z, eta, xi = np.meshgrid(
+            range(1), range(3), range(4), range(5), indexing='ij')
+
+        eta_u = 0.5 * (eta[:, :, :, :-1] + eta[:, :, :, 1:])
+        xi_u = 0.5 * (xi[:, :, :, :-1] + xi[:, :, :, 1:])
+        eta_v = 0.5 * (eta[:, :, :-1, :] + eta[:, :, 1:, :])
+        # xi_v = 0.5 * (xi[:, :, :-1, :] + xi[:, :, 1:, :])
+
+        z_r = z + 0.5
+        z_w = np.concatenate((z, 1 + z[:, -1:, :, :]), axis=1)
+        pn = np.ones(xi.shape[-2:])
+        pm = pn
+
+        # Define divergence-free field
+        u = eta_u * xi_u
+        v = - eta_v * eta_v
+
+        w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
+        assert np.max(np.abs(w)) < 1e-7
+
+    def test_computes_positive_velocity_when_downward(self):
+        t, z, eta, xi = np.meshgrid(
+            range(1), [-2, -1, 0], range(4), range(5), indexing='ij')
+
+        z_r = z + 0.5
+        z_w = np.concatenate((1 + z[:, :1, :, :], z), axis=1)
+
+        eta_u = 0.5 * (eta[:, :, :, :-1] + eta[:, :, :, 1:])
+        xi_u = 0.5 * (xi[:, :, :, :-1] + xi[:, :, :, 1:])
+        z_u = 0.5 * (z_r[:, :, :, :-1] + z_r[:, :, :, 1:])
+        eta_v = 0.5 * (eta[:, :, :-1, :] + eta[:, :, 1:, :])
+        xi_v = 0.5 * (xi[:, :, :-1, :] + xi[:, :, 1:, :])
+        z_v = 0.5 * (z_r[:, :, :-1, :] + z_r[:, :, 1:, :])
+
+        pn = np.ones(xi.shape[-2:])
+        pm = pn
+
+        # Define convergence on top, divergence on bottom
+        # This gives downward movement
+        u = (z_u - 1.5) * (eta_u + xi_u)
+        v = (z_v - 1.5) * (eta_v + xi_v)
+
+        w = gridforce.compute_w(pn, pm, u, v, z_w, z_r)
+
+        # Outer edges and top+bottom is zero, so we check internal velocity
+        w_internal = w[0, 1:-1, 1:-1, 1:-1]
+        assert np.all(w_internal > 0), 'Downward velocity should be positive'
