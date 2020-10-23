@@ -34,6 +34,9 @@ def make_release(config, fname=None):
 
 
 def make_single_release(conf):
+    if 'seed' in conf:
+        np.random.seed(conf['seed'])
+
     num = conf['num']
     release_time = date_range(conf['date'], num)
     lon, lat = get_location(conf['location'], num)
