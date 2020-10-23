@@ -62,13 +62,14 @@ The utility can create particles from an area, with sinking velocities taken
 from Bannister et al. (2016,
 [doi: 10.1093/icesjms/fsw027](http://dx.doi.org/10.1093/icesjms/fsw027)).
 
-To create a release file, use the command
+To create a release file, use either of the commands
 
-`makrel makrel.yaml out.rls`
+`python -m ladim_plugins.release release.yaml out.rls`
+`makrel release.yaml out.rls`
 
-where `makrel.yaml` is the release config file, and `out.rls` is the output
+where `release.yaml` is the release config file, and `out.rls` is the output
 particle release file. For details about the config file, see the attached
-example `makrel.yaml` in the sedimentation module directory.
+example `release.yaml` in the sedimentation module directory.
 
 
 ## Output
