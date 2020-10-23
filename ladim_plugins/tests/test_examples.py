@@ -19,7 +19,7 @@ module_names = [
 
 modules_with_makrel = [
     d.name for d in pathlib.Path(__file__).parent.parent.glob('*/')
-    if d.joinpath('makrel.yaml').is_file()
+    if d.joinpath('release.yaml').is_file()
 ]
 
 
@@ -34,7 +34,7 @@ def test_output_matches_snapshot(module_name):
 @pytest.mark.parametrize("module_name", modules_with_makrel)
 def test_makrel_matches_snapshot(module_name):
     out = run_makrel(module_name)
-    ref_fname = get_module_dir(module_name).joinpath('makrel_out.rls')
+    ref_fname = get_module_dir(module_name).joinpath('out.rls')
     # with open(ref_fname, 'w', encoding='utf-8') as f:
     #     f.writelines(out.replace('\r', ''))
     with open(ref_fname, encoding='utf-8') as f:
@@ -58,7 +58,7 @@ def check_equal(new, ref):
 
 def run_makrel(module_name):
     package = 'ladim_plugins.' + module_name
-    with pkg_resources.resource_stream(package, 'makrel.yaml') as config_file:
+    with pkg_resources.resource_stream(package, 'release.yaml') as config_file:
         conf = yaml.safe_load(config_file)
 
     import io
