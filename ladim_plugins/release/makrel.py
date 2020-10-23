@@ -87,10 +87,10 @@ def make_single_release(conf):
     attrs = get_attrs(conf.get('attrs', dict()), num)
 
     r = dict()
-    r['release_time'] = release_time
-    r['lon'] = lon
-    r['lat'] = lat
-    r['Z'] = get_depth(conf.get('depth', 0), num)
+    r['date'] = release_time
+    r['longitude'] = lon
+    r['latitude'] = lat
+    r['depth'] = get_depth(conf.get('depth', 0), num)
     return {**r, **attrs}
 
 

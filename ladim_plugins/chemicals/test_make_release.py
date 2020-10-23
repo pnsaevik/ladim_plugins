@@ -24,7 +24,7 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        time = result.release_time.values
+        time = result.date.values
         assert len(np.unique(time)) == config['num_particles']
 
     def test_returns_correct_number_of_particles(self):
@@ -47,8 +47,8 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        assert result['lat'].values.tolist() == [1, 1, 1, 1, 1]
-        assert result['lon'].values.tolist() == [2, 2, 2, 2, 2]
+        assert result['latitude'].values.tolist() == [1, 1, 1, 1, 1]
+        assert result['longitude'].values.tolist() == [2, 2, 2, 2, 2]
 
     def test_correct_depth(self):
         np.random.seed(0)
@@ -60,7 +60,7 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        assert result['Z'].values.tolist() == [5.0, 10.0, 7.5, 0.0, 2.5]
+        assert result['depth'].values.tolist() == [5.0, 10.0, 7.5, 0.0, 2.5]
 
     def test_location_when_width(self):
         np.random.seed(0)
@@ -72,14 +72,14 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        assert result['lat'].values.tolist() == [
+        assert result['latitude'].values.tolist() == [
             60.26228062814893,
             59.974021504109096,
             60.061176683164156,
             60.382640291567434,
             59.6143322738132,
         ]
-        assert result['lon'].values.tolist() == [
+        assert result['longitude'].values.tolist() == [
             0.11207533991782959,
             0.8380960561199113,
             0.0721929966399305,
@@ -100,14 +100,14 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        assert result['lat'].values.tolist() == [
+        assert result['latitude'].values.tolist() == [
             0.7917250380826646,
             0.4711050802470955,
             0.5680445610939323,
             0.925596638292661,
             0.07103605819788694,
          ]
-        assert result['lon'].values.tolist() == [
+        assert result['longitude'].values.tolist() == [
             0.5623808488506793,
             0.966482131015597,
             0.5401824381239879,
@@ -128,14 +128,14 @@ class Test_main:
             group_id=0,
         )
         result = make_release.main(config)
-        assert result['lat'].values.tolist() == [
+        assert result['latitude'].values.tolist() == [
             0.5623808488506793,
             10.033517868984402,
             0.5401824381239879,
             0.11074060120630969,
             0.45447757702366465,
         ]
-        assert result['lon'].values.tolist() == [
+        assert result['longitude'].values.tolist() == [
             0.6458941130666561,
             10.471105080247096,
             0.8917730007820798,
@@ -158,13 +158,13 @@ class Test_main:
 
         cleanup_resources()
 
-        assert result['lat'].values.tolist() == [
+        assert result['latitude'].values.tolist() == [
             4.2296566196845715, 4.328053483969628, 4.029523923346864,
             4.293874185420884, 4.18931048406682, 4.272949678970935,
             4.163571684849372, 10.167380154452061, 10.22184324905015,
             0.28467408823734275,
         ]
-        assert result['lon'].values.tolist() == [
+        assert result['longitude'].values.tolist() == [
             2.7917250380826646, 2.4711050802470957, 2.431955438906068,
             2.925596638292661, 2.928963941802113, 2.087129299701541,
             2.979781602559674, 10.222711237402478, 10.699994927300079,
@@ -202,26 +202,26 @@ class Test_main:
 
         result = make_release.main(config)
         assert result.to_dict('list') == {
-            'release_time': [
+            'date': [
                 '2000-01-01T00:00:00',
                 '2000-01-01T00:00:00',
                 '2000-01-01T00:00:00',
                 '2000-01-01T12:00:00',
                 '2000-01-02T00:00:00',
             ],
-            'lat': [
+            'latitude': [
                 59.99996568023897,
                 60.000065584359625,
                 60.39278479610083,
                 60.16392123646262,
                 60.33739616041727],
-            'lon': [
+            'longitude': [
                 4.0004254257913106,
                 4.000277779481143,
                 6.1295500865778205,
                 6.648247492312871,
                 6.182626667207674
             ],
-            'Z': [10.0, 0.0, 10.0, 5.0, 0.0],
+            'depth': [10.0, 0.0, 10.0, 5.0, 0.0],
             'group_id': [1, 1, 2, 2, 2]
         }

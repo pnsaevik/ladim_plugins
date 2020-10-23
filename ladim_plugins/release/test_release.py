@@ -21,7 +21,7 @@ class Test_make_release:
 
     def test_returns_correct_keys(self, conf0):
         r = make_release(conf0)
-        assert list(r.keys()) == ['release_time', 'lon', 'lat', 'Z']
+        assert list(r.keys()) == ['date', 'longitude', 'latitude', 'depth']
 
     def test_returns_correct_number(self, conf0):
         r = make_release(conf0)
@@ -48,8 +48,7 @@ class Test_make_release:
 
         r = make_release(conf0)
 
-        assert list(r.keys()) == ['release_time', 'lon', 'lat', 'Z', 'first',
-                                  'second', 'third', 'fourth']
+        assert all(k in r.keys() for k in conf0['attrs'].keys())
         assert r['first'] == [0, 0]
         assert r['second'] == [1, 2]
         assert r['third'] == [10, 11]
@@ -57,7 +56,7 @@ class Test_make_release:
 
     def test_can_change_sortorder(self, conf0):
         conf0['attrs'] = dict(first=0, second=1, third=2)
-        conf0['columns'] = ['lon', 'lat', 'first', 'third', 'Z']
+        conf0['columns'] = ['longitude', 'latitude', 'first', 'third', 'depth']
 
         r = make_release(conf0)
 
@@ -75,7 +74,7 @@ class Test_make_release:
         conf0['num'] = 7
         conf0['date'] = ['2000-01-01 01:00', '2000-01-01 02:00']
         r = make_release(conf0)
-        assert r['release_time'] == [
+        assert r['date'] == [
             '2000-01-01T01:00:00',
             '2000-01-01T01:10:00',
             '2000-01-01T01:20:00',
@@ -89,16 +88,16 @@ class Test_make_release:
         np.random.seed(0)
 
         r = make_release(conf0)
-        assert r['Z'] == [0, 0]
+        assert r['depth'] == [0, 0]
 
         conf0['depth'] = 3
         r = make_release(conf0)
-        assert r['Z'] == [3, 3]
+        assert r['depth'] == [3, 3]
 
         conf0['depth'] = [3, 6]
         conf0['num'] = 3
         r = make_release(conf0)
-        assert r['Z'] == [6, 3, 4.5]
+        assert r['depth'] == [6, 3, 4.5]
 
     def test_can_print_to_file(self, conf0):
         import io
@@ -119,21 +118,21 @@ class Test_make_release:
 
         r = make_release(conf0)
 
-        assert r['lat'] == [
+        assert r['latitude'] == [
             0.3541058869333439,
             0.4375872112626925,
             0.10822699921792023,
             0.03633723949897072,
             0.3834415188257777,
         ]
-        assert r['lon'] == [
+        assert r['longitude'] == [
             0.5623808488506793,
             0.966482131015597,
             0.5401824381239879,
             0.11074060120630969,
             0.45447757702366465,
         ]
-        assert all(lon >= lat for lon, lat in zip(r['lon'], r['lat']))
+        assert all(lon >= lat for lon, lat in zip(r['longitude'], r['latitude']))
 
     def test_can_use_multipolygon_as_sampling_area(self, conf0):
         lat = [[0, 0, 1, 1], [10, 10, 11]]
@@ -142,14 +141,14 @@ class Test_make_release:
         conf0['num'] = 5
 
         result = make_release(conf0)
-        assert result['lat'] == [
+        assert result['latitude'] == [
             10.279093103873562,
             0.6788795301189603,
             10.194233074072574,
             0.7683521354018671,
             10.27429140657797,
         ]
-        assert result['lon'] == [
+        assert result['longitude'] == [
             10.758615624322356,
             0.10590760718779213,
             10.473600419346658,
@@ -200,7 +199,7 @@ class Test_make_release:
         conf0['num'] = 10
         result = make_release(conf0)
 
-        assert result['lat'] == [
+        assert result['latitude'] == [
             0.2881989094015015,
             0.8337908471860672,
             0.05999750359194067,
@@ -212,7 +211,7 @@ class Test_make_release:
             0.7238489893061836,
             10.347209682994508,
         ]
-        assert result['lon'] == [
+        assert result['longitude'] == [
             0.6350588736035638,
             0.004700432322112369,
             0.4181496705614657,
@@ -239,14 +238,14 @@ class Test_make_release:
 
         result = make_release(conf0)
 
-        assert result['lat'] == [
+        assert result['latitude'] == [
             60.26228062814893,
             59.974021504109096,
             60.061176683164156,
             60.382640291567434,
             59.6143322738132,
         ]
-        assert result['lon'] == [
+        assert result['longitude'] == [
             0.11207533991782959,
             0.8380960561199113,
             0.0721929966399305,
@@ -256,7 +255,7 @@ class Test_make_release:
 
     def test_accepts_list_of_configs(self, conf0):
         r = make_release([conf0, conf0])
-        assert len(r['release_time']) == 4
+        assert len(r['date']) == 4
 
 
 class Test_triangulate:
