@@ -66,11 +66,11 @@ needed (automatically installed on unix when using `pip`).
 
 To create a release file, use the command
 
-`python -m ladim_plugins.sedimentation.make_release release.yaml out.rls`
+`makrel makrel.yaml out.rls`
 
-where `release.yaml` is the release config file, and `out.rls` is the output
+where `makrel.yaml` is the release config file, and `out.rls` is the output
 particle release file. For details about the config file, see the attached
-example `release.yaml` in the sedimentation module directory.
+example `makrel.yaml` in the sedimentation module directory.
 
 
 ## Output
