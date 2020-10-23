@@ -385,3 +385,74 @@ class Test_metric_degree_conversion:
 
         assert np.isclose(dx, dx2)
         assert np.isclose(dy, dy2)
+
+
+class Test_load_config:
+    def test_throws_filenotfound_if_nonexisting_file(self):
+        with pytest.raises(FileNotFoundError) as e:
+            makrel.load_config('nofile')
+
+        msg = str(e.value)
+        assert msg == "[Errno 2] No such file or directory: 'nofile'"
+
+    def test_throws_valueerror_if_wrong_yaml_format(self):
+        import io
+        buf = io.StringIO("*unknown_tag")
+        with pytest.raises(ValueError) as e:
+            makrel.load_config(buf)
+
+        msg = str(e.value)
+        assert msg == (
+            "Error parsing yaml file: found undefined alias 'unknown_tag'\n"
+            '  in "<unicode string>", line 1, column 1:\n'
+            '    *unknown_tag\n'
+            '    ^'
+        )
+
+    def test_throws_typeerror_if_wrong_format(self):
+        with pytest.raises(TypeError) as e:
+            makrel.load_config(123)
+
+        msg = str(e.value)
+        assert msg == "Not a valid config format: <class 'int'>"
+
+    def test_throws_valueerror_if_missing_parameters(self):
+        config = dict(
+            groups=[
+                dict(num=1, date=['2000-01-01', '2000-01-02'], location=[5, 9]),
+                dict(num=1, date=['2000-01-01', '2000-01-02']),
+                dict(num=1),
+            ],
+        )
+        with pytest.raises(ValueError) as e:
+            makrel.load_config(config)
+
+        msg = str(e.value)
+        assert msg == (
+            'Missing parameters: location in group 1\n'
+            '  and date, location in group 2'
+        )
+
+    def test_throws_valueerror_if_wrong_date_format(self):
+        config = dict(num=1, date=['nodate', 'nodate2'], location=[5, 9])
+        with pytest.raises(ValueError) as e:
+            makrel.load_config(config)
+
+        msg = str(e.value)
+        assert msg == 'Error parsing datetime string "nodate" at position 0'
+
+    def test_accepts_flat_format(self):
+        config = dict(num=1, date=['2000-01-01', '2000-01-02'], location=[5, 9])
+        makrel.load_config(config)
+
+    def test_accepts_group_format(self):
+        config = dict(groups=[
+            dict(num=1, date=['2000-01-01', '2000-01-02'], location=[5, 9])
+        ])
+        makrel.load_config(config)
+
+    def test_accepts_list_format(self):
+        config = [
+            dict(num=1, date=['2000-01-01', '2000-01-02'], location=[5, 9])
+        ]
+        makrel.load_config(config)
