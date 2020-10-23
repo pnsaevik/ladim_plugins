@@ -5,6 +5,10 @@ import typing
 def make_release(config, fname=None):
     config = load_config(config)
 
+    # Set seed if specified
+    if 'seed' in config:
+        np.random.seed(config['seed'])
+
     # Create release params
     import pandas as pd
     frames = [pd.DataFrame(make_single_release(c)) for c in config['groups']]
