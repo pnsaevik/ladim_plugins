@@ -48,20 +48,8 @@ entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
 
 
-## Creating particles
-
-To create a release file, use either of the commands
-
-`python -m ladim_plugins.release release.yaml out.rls`
-`makrel release.yaml out.rls`
-
-where `release.yaml` is the release config file, and `out.rls` is the output
-particle release file. For details about the config file, see the
-[release](../release) module.
-
-
 ## History
 
-April 2020: Added `make_release` module
+October 2020: Applied corrections to vertical velocity computation
 
 Created by Pål Næverlid Sævik (2020).
