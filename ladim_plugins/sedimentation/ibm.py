@@ -299,3 +299,11 @@ def get_vdiff_bounded_linear_fn(max_diff):
         return z_new
 
     return fn
+
+
+def sinkvel(n):
+    from scipy.interpolate import InterpolatedUnivariateSpline
+    sinkvel_tab = np.array([.100, .050, .025, .015, .010, .005, 0])
+    cumprob_tab = np.array([.000, .662, .851, .883, .909, .937, 1])
+    fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
+    return fn(np.random.rand(n))

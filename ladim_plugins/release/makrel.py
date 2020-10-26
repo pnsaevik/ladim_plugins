@@ -3,34 +3,81 @@ import typing
 
 
 def make_release(config, fname=None):
-    # Is this a file name?
-    if isinstance(config, str):
-        with open(config, encoding='utf8') as config_file:
-            import yaml
-            config = yaml.safe_load(config_file)
+    config = load_config(config)
 
-    # Is this a stream?
-    elif hasattr(config, 'read'):
-        import yaml
-        config = yaml.safe_load(config)
-
-    # Make this a list of dicts
-    if isinstance(config, dict):
-        config = [config]
+    # Set seed if specified
+    if 'seed' in config:
+        np.random.seed(config['seed'])
 
     # Create release params
     import pandas as pd
-    frames = [pd.DataFrame(make_single_release(c)) for c in config]
+    frames = [pd.DataFrame(make_single_release(c)) for c in config['groups']]
     frame = pd.concat(frames)
 
     # Make column selection if specified
-    if 'columns' in config[0]:
-        frame = frame[config[0]['columns']]
+    if 'columns' in config:
+        frame = frame[config['columns']]
 
     if fname:
         frame.to_csv(fname, sep="\t", header=False, index=False)
 
     return frame.to_dict(orient='list')
+
+
+def load_config(config):
+    # Is this a file name?
+    config_str = None
+    if isinstance(config, str):
+        with open(config, encoding='utf8') as config_file:
+            config_str = config_file.read()
+
+    # Is this a stream?
+    elif hasattr(config, 'read'):
+        config_str = config.read()
+
+    if config_str is not None:
+        import yaml
+        try:
+            config = yaml.safe_load(config_str)
+        except yaml.YAMLError as e:
+            raise ValueError(f'Error parsing yaml file: {e}') from e
+
+    # Is this a list? If so, convert to group format
+    if isinstance(config, list):
+        config = dict(groups=config)
+
+    # Is this not a dict? If not, it wrong format
+    if not isinstance(config, dict):
+        raise TypeError(f'Not a valid config format: {type(config)}')
+
+    # Is this a flat format? If so, make a single group
+    if 'groups' not in config:
+        global_params = ['seed', 'columns']
+        new_config = {k: v for k, v in config.items() if k in global_params}
+        groups = [{k: v for k, v in config.items() if k not in global_params}]
+        new_config['groups'] = groups
+        config = new_config
+
+    # Does any of the groups lack necessary parameters?
+    necessary = ['date', 'location', 'num']
+    not_present = [
+        [k for k in necessary if k not in params]
+        for params in config['groups']
+    ]
+    if any(m for m in not_present):
+        messages = [
+            ", ".join(p) + (
+                f" in group {i}" if len(config['groups']) > 1 else '')
+            for i, p in enumerate(not_present) if p
+        ]
+        msg = "\n  and ".join(messages)
+        raise ValueError("Missing parameters: " + msg)
+
+    # Are any of the date strings wrongly formatted?
+    for g in config['groups']:
+        np.array(g['date']).astype('datetime64')
+
+    return config
 
 
 def make_single_release(conf):
@@ -40,10 +87,10 @@ def make_single_release(conf):
     attrs = get_attrs(conf.get('attrs', dict()), num)
 
     r = dict()
-    r['release_time'] = release_time
-    r['lon'] = lon
-    r['lat'] = lat
-    r['Z'] = get_depth(conf.get('depth', 0), num)
+    r['date'] = release_time
+    r['longitude'] = lon
+    r['latitude'] = lat
+    r['depth'] = get_depth(conf.get('depth', 0), num)
     return {**r, **attrs}
 
 

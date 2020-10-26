@@ -60,13 +60,12 @@ run `ladim` here.
 The module comes with a utility function for creating particle files.
 The utility can create particles from an area, with sinking velocities taken
 from Bannister et al. (2016,
-[doi: 10.1093/icesjms/fsw027](http://dx.doi.org/10.1093/icesjms/fsw027)). To
-release particles from an area rather than a point, the `triangle` library is
-needed (automatically installed on unix when using `pip`).
+[doi: 10.1093/icesjms/fsw027](http://dx.doi.org/10.1093/icesjms/fsw027)).
 
-To create a release file, use the command
+To create a release file, use either of the commands
 
-`python -m ladim_plugins.sedimentation.make_release release.yaml out.rls`
+`python -m ladim_plugins.release release.yaml out.rls`
+`makrel release.yaml out.rls`
 
 where `release.yaml` is the release config file, and `out.rls` is the output
 particle release file. For details about the config file, see the attached
