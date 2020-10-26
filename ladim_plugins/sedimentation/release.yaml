@@ -1,20 +1,29 @@
-# First group of particles (beware the leading hyphen "-" on group_id)
-- group_id: 0                    # An id used to identify the group of particles for post-processing
-  depth: 0                       # The depth [m] where the particles should be released
-  start_time: 2000-01-01T01:00   # When the continuous particle release should start
-  stop_time: 2000-01-02T02:00   # When the continuous particle release should end
-  num_particles: 2               # The total number of particles to be released
-  location:                      # The location (or area) of initial release
-    lat: [60, 60, 61]            # One can specify a list (defining a polygon) or a single point
-    lon: [4, 5, 5]
+# Seed for random number generator (optional)
+seed: 0
 
+# Column order (optional, default is date, longitude, latitude, depth, *attrs)
+columns: [active, date, longitude, latitude, depth, sink_vel, region]
 
-# Second group of particles (beware the leading hyphen "-")
-- group_id: 1
-  depth: 10
-  start_time: 2000-01-01
-  stop_time: 2000-01-01
-  num_particles: 4
-  location:
-    lat: 60
-    lon: 4
+groups:
+# First group of particles. Note the leading hyphen ("-")
+-   num: 5                                      # Number of particles
+    date: [2000-01-01 01:00, 2000-02-01 01:00]  # Start and stop dates
+    location: [5, 60]                           # Release location
+    depth: [0, 10]                              # Release depth range
+    attrs:
+        active: 1
+        sink_vel: ladim_plugins.sedimentation.sinkvel
+        region: 0
+
+# Second group of particles. Note the leading hyphen ("-")
+-   num: 5                                      # Number of particles
+    seed: 0                                     # Seed for random number generator (optional)
+    date: [2000-01-01 01:00, 2000-02-01 01:00]  # Start and stop dates
+    location:                                   # Release area
+        center: [5, 60]                         # latitude, longitude of release center
+        offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]  # metric offset (polygon) relative to release center
+    depth: [0, 10]                              # Release depth range
+    attrs:
+        active: 1
+        sink_vel: ladim_plugins.sedimentation.sinkvel
+        region: 1

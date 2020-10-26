@@ -1,9 +1,9 @@
 # Configuration file for sedimentation model
 
-time_control:
+&deftime time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:05:00
+    start_time     : 2020-01-01 00:15:00
+    stop_time      : 2020-01-01 00:30:00
 
 
 files:
@@ -14,17 +14,14 @@ files:
 gridforce:
     # Module name is mandatory.
     # The other items are module dependent
-    module: ladim_plugins.chemicals
-    input_file: forcing.nc  # Use wildcards (*) to select a range of files
+    module: ladim_plugins.nk800met
 
+    # Replace with string pattern for the thredds server, or remove line
+    input_file: forcing.nc
 
-ibm:
-    module: ladim_plugins.chemicals
-    vertical_mixing: 0.0001  # [m*2/s]
-    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze'
 
 particle_release:
-    variables: [release_time, X, Y, Z, group_id]
+    variables: [release_time, lat, lon, Z, group_id]
     release_time: time   # np.datetime64[s]
 
     # Mark variables as time independent
@@ -33,7 +30,7 @@ particle_release:
 
 output_variables:
     # Frequency of output
-    outper: [60, s]
+    outper: [5, m]
 
     # Variables included in output
     particle: [release_time]
@@ -88,7 +85,7 @@ output_variables:
 
 numerics:
     # Model time step
-    dt: [60, s]     # Format = [value, unit]
+    dt: [5, m]     # Format = [value, unit]
     # Advection method, EF, RK2, or RK4
     advection: RK4
-    diffusion: 1    # [m/s**2]
+    diffusion: 0    # [m/s**2]

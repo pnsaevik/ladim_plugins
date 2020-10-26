@@ -17,7 +17,9 @@ Name                                                   | Description
 [salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
 [sedimentation](ladim_plugins/sedimentation) | Sinking particles 
 [lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
- 
+[release](ladim_plugins/release)             | General module for creating release files
+[nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
+
 
 ## Installation
 
@@ -60,8 +62,9 @@ properly structured IBM subpackage has the following ingredients:
 4. A simple test example. This includes a `ladim.yaml` configuration file,
    a `particles.rls` release file, a `forcing.nc` forcing file (may be
    copied from another subpackage), and a ladim output file named `out.nc`.
-5. Optionally a generic routine for generating release files, named
-  `make_release.py` or `make_release.m`.
+5. Optionally a test example for generating release files. This includes a
+   `release.yaml` configuration file and an output release file named
+   `out.rls`.
 6. Optionally additional automated test modules, named `test_*.py`
 
 An ideal test example should be quick to run and easy to analyze, 
@@ -72,11 +75,13 @@ it may also be necessary to specify somewhat unrealistic particle parameters
 to demonstrate certain features.
 
 The test is ran using the command `pytest -Wignore --pyargs ladim_plugins`. The
-test succeeds if ladim is able to run the example, and the output matches the
-contents of `out.nc`.
+test succeeds if ladim is able to run the examples, and the output matches the
+contents of `out.nc` / `out.rls`.
 
 
 ## History
+
+**Version 1.3.0** (Oct 2020): Added `release` and `nk800met` modules.
 
 **Version 1.2.2** (Oct 2020): Corrections to `chemicals` module.
 

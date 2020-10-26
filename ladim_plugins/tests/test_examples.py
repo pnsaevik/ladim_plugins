@@ -8,11 +8,18 @@ import xarray as xr
 import pytest
 import numpy as np
 import pkg_resources
+from ladim_plugins import release
 
 
 module_names = [
     d.name for d in pathlib.Path(__file__).parent.parent.glob('*/')
     if d.joinpath('ladim.yaml').is_file()
+]
+
+
+modules_with_makrel = [
+    d.name for d in pathlib.Path(__file__).parent.parent.glob('*/')
+    if d.joinpath('release.yaml').is_file()
 ]
 
 
@@ -24,6 +31,18 @@ def test_output_matches_snapshot(module_name):
     check_equal(out, ref)
 
 
+@pytest.mark.parametrize("module_name", modules_with_makrel)
+def test_makrel_matches_snapshot(module_name):
+    out = run_makrel(module_name)
+    ref_fname = get_module_dir(module_name).joinpath('out.rls')
+    # with open(ref_fname, 'w', encoding='utf-8') as f:
+    #     f.writelines(out.replace('\r', ''))
+    with open(ref_fname, encoding='utf-8') as f:
+        ref = f.read()
+
+    assert ref.splitlines() == out.splitlines()
+
+
 def check_equal(new, ref):
     dt = {'date': ''}
     assert {**new.attrs, **dt} == {**ref.attrs, **dt}
@@ -32,8 +51,21 @@ def check_equal(new, ref):
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.dims.items() == ref.dims.items()
 
-    for k in new.variables.keys():
-        assert ref.variables[k].values.tolist() == new.variables[k].values.tolist()
+    new_dict = {k: v.values.tolist() for k, v in new.variables.items()}
+    ref_dict = {k: v.values.tolist() for k, v in ref.variables.items()}
+    assert new_dict == ref_dict
+
+
+def run_makrel(module_name):
+    package = 'ladim_plugins.' + module_name
+    with pkg_resources.resource_stream(package, 'release.yaml') as config_file:
+        conf = yaml.safe_load(config_file)
+
+    import io
+    buf = io.StringIO()
+    release.make_release(conf, buf)
+    buf.seek(0)
+    return buf.read()
 
 
 def run_ladim(module_name):

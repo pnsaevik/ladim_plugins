@@ -206,7 +206,7 @@ def get_grainsize_fixture_fname():
     import ladim_plugins.tests
     import os
     return os.path.join(
-        os.path.dirname(ladim_plugins.tests.__file__), 'grainsize.nc')
+        os.path.dirname(ladim_plugins.sedimentation.__file__), 'grainsize.nc')
 
 
 class Test_taucrit_grain_size_bin:

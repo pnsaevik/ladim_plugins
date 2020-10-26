@@ -40,15 +40,23 @@ class Grid:
         if "grid_file" in config["gridforce"]:
             grid_file = config["gridforce"]["grid_file"]
         elif "input_file" in config["gridforce"]:
-            files = glob.glob(config["gridforce"]["input_file"])
-            files.sort()
+            pat = config["gridforce"]["input_file"]
+            if isinstance(pat, list) or isinstance(pat, tuple):
+                files = pat
+            else:
+                files = sorted(glob.glob(pat))
             grid_file = files[0]
         else:
             logging.error("No grid file specified")
             raise SystemExit(1)
 
         try:
-            ncid = Dataset(grid_file)
+            if isinstance(grid_file, memoryview):
+                import uuid
+                # noinspection PyArgumentList
+                ncid = Dataset(uuid.uuid4(), mode='r', memory=grid_file)
+            else:
+                ncid = Dataset(grid_file)
         except OSError:
             logging.error("Could not open grid file " + grid_file)
             raise SystemExit(1)
@@ -189,10 +197,10 @@ class Grid:
     def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Returns True for points inside the subgrid"""
         return (
-            (self.xmin + 0.5 < X)
-            & (X < self.xmax - 0.5)
-            & (self.ymin + 0.5 < Y)
-            & (Y < self.ymax - 0.5)
+            (self.xmin - 0.5 < X)
+            & (X < self.xmax + 0.5)
+            & (self.ymin - 0.5 < Y)
+            & (Y < self.ymax + 0.5)
         )
 
     def onland(self, X, Y):
@@ -334,6 +342,10 @@ class Forcing:
     @staticmethod
     def find_files(force_config):
         """Find (and sort) the forcing file(s)"""
+        pat = force_config["input_file"]
+        if isinstance(pat, list) or isinstance(pat, tuple):
+            return list(pat)
+
         files = glob.glob(force_config["input_file"])
         files.sort()
         if force_config.get("first_file", None):
@@ -341,6 +353,14 @@ class Forcing:
         if force_config.get("last_file", None):
             files = [f for f in files if f <= force_config["last_file"]]
         return files
+
+    @staticmethod
+    def open_dataset(fname):
+        if isinstance(fname, memoryview):
+            import uuid
+            return Dataset(uuid.uuid4(), memory=fname)
+        else:
+            return Dataset(fname)
 
     @staticmethod
     def scan_file_times(files):
@@ -354,7 +374,7 @@ class Forcing:
         all_frames = []  # All time frames
         num_frames = {}  # Number of time frames in each file
         for fname in files:
-            with Dataset(fname) as nc:
+            with Forcing.open_dataset(fname) as nc:
                 new_times = nc.variables["ocean_time"][:]
                 num_frames[fname] = len(new_times)
                 units = nc.variables["ocean_time"].units
@@ -460,7 +480,7 @@ class Forcing:
     def open_forcing_file(self, n):
         """Open forcing file at time step = n"""
         nc = self._nc
-        nc = Dataset(self.file_idx[n])
+        nc = self.open_dataset(self.file_idx[n])
         nc.set_auto_maskandscale(False)
 
         self.scaled = dict()
@@ -571,7 +591,7 @@ class Forcing:
         pn = 1 / self._grid.dy
 
         w = compute_w(pn, pm, u, v, z_w, z_r)
-        return w[0, :, :, :]
+        return w[0]
 
     def wvel(self, X, Y, Z, tstep=0.0, method='bilinear'):
         i0 = self._grid.i0
@@ -764,10 +784,9 @@ def sample3D(F, X, Y, K, A, method="bilinear"):
     """
 
     if method == "bilinear":
-      try:
         # Find rho-point as lower left corner
-        I = X.astype("int")
-        J = Y.astype("int")
+        I = np.clip(X.astype("int"), 0, F.shape[2] - 2)
+        J = np.clip(Y.astype("int"), 0, F.shape[1] - 2)
         P = X - I
         Q = Y - J
         W000 = (1 - P) * (1 - Q) * (1 - A)
@@ -789,8 +808,6 @@ def sample3D(F, X, Y, K, A, method="bilinear"):
             + W101 * F[K - 1, J, I + 1]
             + W111 * F[K - 1, J + 1, I + 1]
         )
-      except IndexError:
-        return np.zeros(len(X), dtype=F.dtype)
 
     # else:  method == 'nearest'
     I = X.round().astype("int")

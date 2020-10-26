@@ -2,9 +2,14 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_plugins',
-    version='1.2.2',
+    version='1.3.0',
     packages=find_packages(),
-    package_data={'': ['*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp']},
+    package_data={'': [
+        '*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp', '*.geojson',
+    ]},
+    entry_points={
+        'console_scripts': ['makrel=ladim_plugins.release.makrel:main'],
+    },
     url='https://github.com/pnsaevik/ladim_plugins',
     license='MIT',
     classifiers=[
@@ -33,8 +38,8 @@ setup(
     author_email='a5606@hi.no',
     description='Plugins for LADiM',
     install_requires=[
-        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4',
-        'triangle', 'scipy', 'cftime', 'ladim', 'skyfield'
+        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'pyproj',
+        'triangle', 'scipy', 'cftime', 'ladim', 'skyfield', 'pandas', 'requests'
     ],
     python_requires='>=3.6',
 )

@@ -1,0 +1,35 @@
+# Seed for random number generator (optional)
+seed: 0
+
+# Column order (optional, default is date, longitude, latitude, depth, *attrs)
+columns: [date, longitude, latitude, depth, group_id]
+
+groups:
+# First group of particles (beware the leading hyphen "-" on group_id)
+- num: 2  # Number of particles to release
+  # [yyyy-mm-dd hh:mm:ss] Time of release. Single entry or range [start, stop]
+  date: 2000-01-01 00:00
+  location:                                   # Release area
+      center: [5, 60]                         # latitude, longitude of release center
+      offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]  # metric offset (polygon) relative to release center
+  depth: [0, 10]    # [m] Depth of particles (single number or range)
+  attrs:
+    group_id: 1
+
+# Second group of particles (beware the leading hyphen "-" on group_id)
+- group_id: 2
+  num: 3  # Number of particles to release
+  # [yyyy-mm-dd hh:mm:ss] Time of release. Single entry or range [start, stop]
+  date: [2000-01-01 00:00, 2000-01-02 00:00]
+  depth: [0, 10]    # [m] Depth of particles (single number or range [start, stop])
+
+  # Location can also be specified as a polygonal area
+  location:
+    - [6, 7, 7, 6]      # Longitude coordinates
+    - [60, 60, 61, 61]  # Latitude coordinates
+
+
+
+  # A third option is to load polygons from a file. See attached sample file.
+  # location:
+  #   file: release_area.geojson
