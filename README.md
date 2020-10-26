@@ -81,6 +81,8 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
+**Version 1.3.0** (Oct 2020): Added `release` and `nk800met` modules.
+
 **Version 1.2.2** (Oct 2020): Corrections to `chemicals` module.
 
 **Version 1.2.1** (Sep 2020): Corrections to `sedimentation` module.
