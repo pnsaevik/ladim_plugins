@@ -217,10 +217,9 @@ class Grid:
         return self.M[J, I] > 0
 
     def xy2ll(self, X, Y):
-        return (
-            sample2D(self.lon, X - self.i0, Y - self.j0),
-            sample2D(self.lat, X - self.i0, Y - self.j0),
-        )
+        x = np.clip(X - self.i0, 0, self.lon.shape[1] - 1.0001)
+        y = np.clip(Y - self.j0, 0, self.lon.shape[0] - 1.0001)
+        return sample2D(self.lon, x, y), sample2D(self.lat, x, y)
 
     def ll2xy(self, lon, lat):
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
@@ -823,40 +822,42 @@ def sample3DUV(U, V, X, Y, K, A, method="bilinear"):
 
 
 def compute_w(pn, pm, u, v, z_w, z_r):
-    # Precalculated factors
+    # horizontal flux
     Hz_r = z_w[:, 1:, :, :] - z_w[:, :-1, :, :]
     Hz_u = 0.5 * (Hz_r[:, :, :, :-1] + Hz_r[:, :, :, 1:])
     Hz_v = 0.5 * (Hz_r[:, :, :-1, :] + Hz_r[:, :, 1:, :])
-    slope_bot = ((z_r[:, 0, 1:-1, 1:-1] - z_w[:, 0, 1:-1, 1:-1]) /
-                 (z_r[:, 1, 1:-1, 1:-1] - z_r[:, 0, 1:-1, 1:-1]))
-    slope_top = ((z_w[:, -1, 1:-1, 1:-1] - z_r[:, -1, 1:-1, 1:-1]) /
-                 (z_r[:, -1, 1:-1, 1:-1] - z_r[:, -2, 1:-1, 1:-1]))
     on_u = 2 / (pn[:, :-1] + pn[:, 1:])
     om_v = 2 / (pm[:-1, :] + pm[1:, :])
-
-    # horizontal flux
     Huon = Hz_u * u * on_u
     Hvom = Hz_v * v * om_v
+    del Hz_r, Hz_u, Hz_v, on_u, om_v
 
     # vertical flux
     dW = (Huon[:, :, 1:-1, :-1] - Huon[:, :, 1:-1, 1:]
           + Hvom[:, :, :-1, 1:-1] - Hvom[:, :, 1:, 1:-1])
+    del Huon, Hvom
     W_0 = 0 * dW[:, 0:1, :, :]
     W = np.concatenate((W_0, dW.cumsum(axis=1)), axis=1)
+    del dW, W_0
 
     # remove contribution from moving ocean surface
     wrk = W[:, -1:, :, :] / (z_w[:, -1:, 1:-1, 1:-1] - z_w[:, 0:1, 1:-1, 1:-1])
-    W2 = W - wrk * (z_w[:, :, 1:-1, 1:-1] - z_w[:, 0:1, 1:-1, 1:-1])
+    W -= wrk * (z_w[:, :, 1:-1, 1:-1] - z_w[:, 0:1, 1:-1, 1:-1])
+    del wrk
 
     # scale the flux
-    Wscl = W2 * (pm[1:-1, 1:-1] * pn[1:-1, 1:-1])
+    Wscl = W * (pm[1:-1, 1:-1] * pn[1:-1, 1:-1])
+    del W
 
     # find contribution of horizontal movement to vertical flux
     wrk_u = u * (z_r[:, :, :, 1:] - z_r[:, :, :, :-1]) * (pm[:, :-1] + pm[:, 1:])
     vert_u = 0.25 * (wrk_u[:, :, :, :-1] + wrk_u[:, :, :, 1:])
+    del wrk_u
     wrk_v = v * (z_r[:, :, 1:, :] - z_r[:, :, :-1, :]) * (pn[:-1, :] + pn[1:, :])
     vert_v = 0.25 * (wrk_v[:, :, :-1, :] + wrk_v[:, :, 1:, :])
+    del wrk_v
     vert = vert_u[:, :, 1:-1, :] + vert_v[:, :, :, 1:-1]
+    del vert_u, vert_v
 
     # --- Cubic interpolation to move vert from rho-points to w-points ---
 
@@ -867,12 +868,14 @@ def compute_w(pn, pm, u, v, z_w, z_r):
     cff5 = 1 / 16
 
     # Bottom layers
-
+    slope_bot = ((z_r[:, 0, 1:-1, 1:-1] - z_w[:, 0, 1:-1, 1:-1]) /
+                 (z_r[:, 1, 1:-1, 1:-1] - z_r[:, 0, 1:-1, 1:-1]))
     vert_b0 = (cff1 * (vert[:, 0, :, :]
                        - slope_bot * (vert[:, 1, :, :] - vert[:, 0, :, :]))
                + cff2 * vert[:, 0, :, :] - cff3 * vert[:, 1, :, :])
     vert_b1 = (cff1 * vert[:, 0, :, :]
                + cff2 * vert[:, 1, :, :] - cff3 * vert[:, 2, :, :])
+    del slope_bot
 
     # Middle layers
 
@@ -880,13 +883,15 @@ def compute_w(pn, pm, u, v, z_w, z_r):
               - cff5 * (vert[:, 0:-3, :, :] + vert[:, 3:, :, :]))
 
     # Top layers
-
+    slope_top = ((z_w[:, -1, 1:-1, 1:-1] - z_r[:, -1, 1:-1, 1:-1]) /
+                 (z_r[:, -1, 1:-1, 1:-1] - z_r[:, -2, 1:-1, 1:-1]))
     vert_t0 = ((cff1 * (vert[:, -1, :, :]
                         + slope_top * (
                                     vert[:, -1, :, :] - vert[:, -2, :, :]))
                 + cff2 * vert[:, -1, :, :] - cff3 * vert[:, -2, :, :]))
     vert_t1 = (cff1 * vert[:, -1, :, :]
                + cff2 * vert[:, -2, :, :] - cff3 * vert[:, -3, :, :])
+    del slope_top
 
     # Bundle together
 
@@ -895,13 +900,16 @@ def compute_w(pn, pm, u, v, z_w, z_r):
                              vert_m,
                              vert_t1[:, np.newaxis, :, :],
                              vert_t0[:, np.newaxis, :, :]), axis=1)
+    del vert_b0, vert_b1, vert_m, vert_t1, vert_t0
 
     vert = Wscl + vert_w
+    del Wscl, vert_w
 
     # --- End cubic interpolation ---
 
     # Add zeros as boundary values
     wvel_pad = np.pad(vert, ((0, 0), (0, 0), (1, 1), (1, 1)), 'constant')
+    del vert
 
     return -wvel_pad[:]
 
