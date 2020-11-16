@@ -217,10 +217,9 @@ class Grid:
         return self.M[J, I] > 0
 
     def xy2ll(self, X, Y):
-        return (
-            sample2D(self.lon, X - self.i0, Y - self.j0),
-            sample2D(self.lat, X - self.i0, Y - self.j0),
-        )
+        x = np.clip(X - self.i0, 0, self.lon.shape[1] - 1.0001)
+        y = np.clip(Y - self.j0, 0, self.lon.shape[0] - 1.0001)
+        return sample2D(self.lon, x, y), sample2D(self.lat, x, y)
 
     def ll2xy(self, lon, lat):
         Y, X = bilin_inv(lon, lat, self.lon, self.lat)
