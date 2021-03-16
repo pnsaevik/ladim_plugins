@@ -19,6 +19,7 @@ Name                                                   | Description
 [lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
 [release](ladim_plugins/release)             | General module for creating release files
 [nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
+[mine](ladim_plugins/mine)                   | Sinking particles from mining activity 
 
 
 ## Installation
