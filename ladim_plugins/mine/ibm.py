@@ -8,7 +8,7 @@ class IBM:
 
         # Vertical mixing [m*2/s]
         self.vdiff = config['ibm'].get('vertical_mixing', 0)
-        self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', None))
+        self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', 1000))
 
         # Store time step value to calculate age
         self.dt = config['dt']
@@ -42,7 +42,10 @@ class IBM:
         self.forcing = forcing
         self.state = state
 
-        has_been_buried_before = (self.state.active != 1)
+        if 'active' in self.state.ibm_variables:
+            has_been_buried_before = (self.state.active != 1)
+        else:
+            has_been_buried_before = None
 
         self.reposition()
         self.resuspend()
@@ -52,12 +55,20 @@ class IBM:
         self.kill_old()
         self.store()
 
-        is_active = (self.state.active != 0)
-        self.state.active[is_active & has_been_buried_before] = 2
+        if 'active' in self.state.ibm_variables:
+            is_active = (self.state.active != 0)
+            self.state.active[is_active & has_been_buried_before] = 2
+
+    def active(self):
+        if 'active' in self.state.ibm_variables:
+            return self.state.active
+        else:
+            return np.broadcast_to(1, self.state.X.shape)
 
     def reposition(self):
         if self.land_collision == "reposition":
             state = self.state
+            a = self.active()
             X, Y = state['X'], state['Y']
 
             # If particles have not moved: Assume they ended up on land.
@@ -65,7 +76,7 @@ class IBM:
             pid, pidx_old, pidx_new = np.intersect1d(self.pid, state.pid, return_indices=True)
             onland = ((self.x[pidx_old] == X[pidx_new]) &
                       (self.y[pidx_old] == Y[pidx_new]) &
-                      np.bool8(state['active'][pidx_new])
+                      np.bool8(a[pidx_new])
                       )
             num_onland = np.count_nonzero(onland)
             pidx_new_onland = pidx_new[onland]
@@ -93,7 +104,7 @@ class IBM:
 
     def bury(self):
         grid = self.grid
-        a = self.state.active != 0
+        a = self.active() != 0
         X, Y, Z = self.state.X[a], self.state.Y[a], self.state.Z[a]
 
         # Define which particles have settled to the bottom and which have not
@@ -103,7 +114,8 @@ class IBM:
 
         # Store new vertical position
         self.state.Z[a] = Z
-        self.state.active[a] = ~at_seabed
+        if 'active' in self.state.ibm_variables:
+            self.state.active[a] = ~at_seabed
 
         # Kill buried particles if no resuspension
         if not self.taucrit_fn:
@@ -111,7 +123,7 @@ class IBM:
 
     def diffuse(self):
         # Get parameters
-        a = self.state.active != 0
+        a = self.active() != 0
         x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
         dt = self.dt
 
@@ -128,7 +140,7 @@ class IBM:
 
     def sink(self):
         # Get parameters
-        a = self.state.active != 0
+        a = self.active() != 0
         z = self.state.Z[a]
         w = self.state.sink_vel[a]  # Sink velocity
 
