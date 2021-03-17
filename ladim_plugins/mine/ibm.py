@@ -10,6 +10,9 @@ class IBM:
         self.vdiff = config['ibm'].get('vertical_mixing', 0)
         self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', 1000))
 
+        # Vertical advection on/off
+        self.vadv = config['ibm'].get('vertical_advection', False)
+
         # Store time step value to calculate age
         self.dt = config['dt']
 
@@ -143,6 +146,8 @@ class IBM:
         a = self.active() != 0
         z = self.state.Z[a]
         w = self.state.sink_vel[a]  # Sink velocity
+        if self.vadv:
+            w += self.forcing.forcing.wvel(self.state.X[a], self.state.Y[a], z)
 
         # Euler scheme, no boundary conditions
         self.state.Z[a] = z + self.dt * w
