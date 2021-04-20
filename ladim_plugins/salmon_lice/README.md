@@ -1,12 +1,13 @@
 # Salmon lice
 
 The module represents salmon lice having a vertical swimming behaviour due to
-ambient light and salt conditions. The module is used by IMR in operational
+ambient light and salinity conditions. The module is used by IMR in operational
 simulations of salmon lice distribution within Norwegian fjords.
 
 The model is based on a number of scientific works on salmon lice behaviour, including
-- [Author et al. (2011)](http://dx.doi.org/doicode_here)
-- New salinity model: [Sandvik et al. (2020)](https://doi.org/10.1093/icesjms/fsz256)
+- [Myksvoll et al. (2018)](https://doi.org/10.1371/journal.pone.0201338)
+- [Myksvoll et al. (2020)](https://doi.org/10.3354/aei00359)
+- [Sandvik et al. (2020)](https://doi.org/10.1093/icesjms/fsz256)
 
 ## Usage
 
