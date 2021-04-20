@@ -1,5 +1,5 @@
 import numpy as np
-from ladim_plugins import inertial
+from ladim_plugins.inertial import ibm as ibm_module
 
 
 class Stub:
@@ -38,7 +38,7 @@ class Test_IBM_update:
 
         depth_before = state.Z.copy()
 
-        ibm = inertial.IBM(config)
+        ibm = ibm_module.IBM(config)
         ibm.update_ibm(grid, state, forcing)
 
         depth_after = state.Z
@@ -46,6 +46,29 @@ class Test_IBM_update:
         assert np.all(depth_before < depth_after)
 
 
-def test_snapshot():
-    import ladim_plugins.tests.test_examples
-    ladim_plugins.tests.test_examples.test_output_matches_snapshot('inertial')
+class Test_terminal_sinkvel:
+    def test_returns_reasonable_results(self):
+        v = ibm_module.terminal_sinkvel(
+            temp=4,
+            salt=31,
+            drag=1,
+            area=0.3,
+            density_particle=1070,
+            mass_particle=80,
+        )
+        assert 0.46 < v < 0.47
+
+        v = ibm_module.terminal_sinkvel(
+            temp=20,
+            salt=28,
+            drag=1,
+            area=0.3,
+            density_particle=1070,
+            mass_particle=80,
+        )
+        assert 0.49 < v < 0.50
+
+
+# def test_snapshot():
+#     import ladim_plugins.tests.test_examples
+#     ladim_plugins.tests.test_examples.test_output_matches_snapshot('inertial')
