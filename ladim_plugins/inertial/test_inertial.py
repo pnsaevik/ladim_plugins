@@ -9,6 +9,12 @@ class Stub:
     def __getattr__(self, item):
         return self._dic[item]
 
+    def __getitem__(self, item):
+        return self._dic[item]
+
+    def __setitem__(self, key, value):
+        self._dic[key] = value
+
 
 def gsf(num, hvel=0, wvel=0, dt=1):
     zr = np.zeros(num)
@@ -26,18 +32,18 @@ def gsf(num, hvel=0, wvel=0, dt=1):
 
 
 class Test_IBM_update:
-    def test_particles_do_not_sink(self):
+    def test_particles_does_sink(self):
         config = dict(dt=1)
         grid, state, forcing = gsf(5, wvel=1, dt=config['dt'])
 
-        depth_before = state.Z.tolist()
+        depth_before = state.Z.copy()
 
         ibm = inertial.IBM(config)
         ibm.update_ibm(grid, state, forcing)
 
-        depth_after = state.Z.tolist()
+        depth_after = state.Z
 
-        assert depth_before == depth_after
+        assert np.all(depth_before < depth_after)
 
 
 def test_snapshot():

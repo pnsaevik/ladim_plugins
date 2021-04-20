@@ -20,11 +20,13 @@ ibm:
     variables:
     - density  # Density of particle [kg/m3]
     - sinkvel  # Sink velocity of particle [m/s]
+    - active   # 1 if particle is suspended, 0 if settled
 
 
 particle_release:
     release_type: discrete
-    variables: 
+    variables:
+    - active         # 1 if particle is suspended, 0 if settled
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
     - lon            # longitude of release location
     - lat            # latitude of release location
