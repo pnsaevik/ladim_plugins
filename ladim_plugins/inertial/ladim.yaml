@@ -1,0 +1,121 @@
+time_control:
+    # Start and stop of simulation
+    start_time     : 2015-09-07 01:00:00
+    stop_time      : 2015-09-07 01:05:00
+
+
+files:
+    particle_release_file : particles.rls
+    output_file           : out.nc
+
+
+gridforce:
+    module: ladim.gridforce.ROMS
+    input_file: forcing.nc  # Use wildcards (*) to select a range of files
+    ibm_forcing: [temp, salt]
+
+
+ibm:
+    module: ladim_plugins.inertial
+    variables:
+    - density  # Density of particle [kg/m3]
+    - sinkvel  # Sink velocity of particle [m/s]
+
+
+particle_release:
+    release_type: discrete
+    variables: 
+    - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
+    - lon            # longitude of release location
+    - lat            # latitude of release location
+    - Z              # Depth of release location
+    - density        # Initial particle density [kg/m3]
+    - sinkvel        # Initial particle sinking velocity [m/s]
+    
+    # Converters (if not float)
+    release_time: time
+    particle_variables: [release_time]
+
+
+output_variables:
+    # Output period, format [value, unit], unit = s, m, h, or d
+    outper: [60, s]
+
+    # Variable names
+    particle: [release_time]
+    instance: [pid, X, Y, Z, lat, lon, density, sinkvel]
+
+    # --- Output format for standard variables ---
+
+    # Output format for the particle release time
+    release_time:
+        ncformat: f8
+        long_name: particle release time
+        units: seconds since reference_time
+
+    # Output format for the particle identifier
+    pid:
+        ncformat: i4
+        long_name: particle identifier
+
+    # Output format for the X coordinate
+    X:
+        ncformat: f4
+        long_name: particle X-coordinate
+
+    # Output format for the Y coordinate
+    Y:
+        ncformat: f4
+        long_name: particle Y-coordinate
+
+    # Output format for the lat coordinate
+    lat:
+        ncformat: f4
+        long_name: latitude
+        standard_name: latitude
+
+    # Output format for the lon coordinate
+    lon:
+        ncformat: f4
+        long_name: longitude
+        standard_name: longitude
+
+    # Output format for the particle depth
+    Z:
+        ncformat: f4
+        long_name: particle depth
+        standard_name: depth_below_surface
+        units: m
+        positive: down
+
+    # --- Output format for IBM-specific variables ---
+
+    density:
+        ncformat: f4
+        long_name: particle density
+        units: kg/m^3
+
+    sinkvel:
+        ncformat: f4
+        long_name: sinking velocity
+        units: m/s
+        positive: down
+
+    # Output format for the temperature
+    temp:
+        ncformat: f4
+        long_name: temperature
+        units: degrees_celcius
+
+    # Output format for the salinity
+    salt:
+        ncformat: f4
+        long_name: salinity
+        units: "1"
+
+
+numerics:
+    # Model time step, [value, unit]
+    dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
+    advection: RK4  # either EF, RK2 or RK4 (recommended)
+    diffusion: 0    # [m*2/s]
