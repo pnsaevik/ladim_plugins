@@ -82,7 +82,7 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
-**Version x.x.x** (): Added `salmon_lice` module.
+**Version x.x.x** (): Added `salmon_lice` and `mine` modules.
 
 **Version 1.3.0** (Oct 2020): Added `release` and `nk800met` modules.
 
