@@ -25,7 +25,7 @@ ibm:
     - temp        # Particle ambient temperature [Celcius]
     - salt        # Particle ambient salinity [1]
 
-    salinity_model: new  # 'old' or 'new'
+    salinity_model: new  # 'old' or 'new' (default)
     vertical_mixing: 0.001  # [m^2/s]
 
 
