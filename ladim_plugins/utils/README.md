@@ -15,3 +15,7 @@ Usage: `EB = light(time, lon, lat, depth, extinction_coefficient)`
 
 Depth is given in m, extinction coefficient in m^-1. Default values are depth = 0 and
 extinction_coefficient = 0.2. Return value is given in µmol photons s^-1 m^-2.
+
+## History
+
+Created by Pål Næverlid Sævik (2021)
