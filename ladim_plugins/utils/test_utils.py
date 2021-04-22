@@ -1,4 +1,4 @@
-from ladim_plugins.utils import light
+from ladim_plugins.utils import light, density
 import numpy as np
 
 
@@ -20,3 +20,13 @@ class Test_light:
     def test_changes_with_depth(self):
         Eb = light(time='2000-01-01T12', lon=5, lat=60, depth=np.array([0, 5, 10]))
         assert Eb.tolist() == [1484.063211499949, 545.9563449096972, 200.84611506938265]
+
+
+class Test_density:
+    def test_changes_with_temperature(self):
+        rho = density(temp=np.array([0, 50]), salt=30)
+        assert rho.tolist() == [1024.0715523751858, 1009.9641764883575]
+
+    def test_changes_with_salinity(self):
+        rho = density(temp=4, salt=np.array([10, 40]))
+        assert rho.tolist() == [1007.9473603468945, 1031.7686242667996]
