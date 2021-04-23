@@ -26,3 +26,13 @@ class Test_sinkvel_egg:
         )
 
         assert s.tolist() == [-0.00013625, 0, 0.00013625]
+
+
+class Test_growth_cod_larvae:
+    def test_changes_with_temp(self):
+        g = ibm.growth_cod_larvae(temp=np.array([2, 4, 6]), weight=1, dt=86400)
+        assert g.tolist() == [0.046599999999999975, 0.08240000000000003, 0.11820000000000008]
+
+    def test_changes_with_weight(self):
+        g = ibm.growth_cod_larvae(temp=16, weight=[.1, 1, 10], dt=86400)
+        assert g.tolist() == [0.022072443645092355, 0.29720000000000013, 2.0995294989750346]
