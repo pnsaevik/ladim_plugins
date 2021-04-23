@@ -4,7 +4,7 @@ from ..utils import light, density, viscosity
 
 def growth_cod_larvae(temp, weight, dt):
     """
-    Specific growth rate of NA cod larvae as reported by Folkvord (2005):
+    Incremental growth of NA cod larvae as reported by Folkvord (2005):
     "Comparison of size-at-age of larval Atlantic cod (Gadus morhua) from different
     populations based on size- and temperature-dependent growth models". Canadian Journal
     of Fisheries and Aquatic Sciences 62(5). https://doi.org/10.1139/f05-008
@@ -12,7 +12,7 @@ def growth_cod_larvae(temp, weight, dt):
     :param temp: Temperature [degrees Celcius]
     :param weight: Larvae dry weight [mg]
     :param dt: Growth time [s]
-    :returns: Dry weight increase [mg]
+    :return: Dry weight increase [mg]
     """
 
     w = np.log(weight)
@@ -20,6 +20,21 @@ def growth_cod_larvae(temp, weight, dt):
     GR_percent = (1.08 + temp * (1.79 + w * (- 0.074 + w * (-0.0965 + w * 0.0112))))
     GR = np.log(1 + 0.01 * GR_percent)
     return (np.exp(GR * sec2day * dt) - 1) * weight
+
+
+def weight_to_length(weight):
+    """
+    Compute larvae length from dry weight using equation (6) of Folkvord (2005):
+    "Comparison of size-at-age of larval Atlantic cod (Gadus morhua) from different
+    populations based on size- and temperature-dependent growth models". Canadian Journal
+    of Fisheries and Aquatic Sciences 62(5). https://doi.org/10.1139/f05-008
+
+    :param weight: Dry weight [mg]
+    :return: Body length of larvae [mm]
+    """
+
+    w = np.log(weight)
+    return np.exp(2.296 + w * (0.277 - w * 0.005128))
 
 
 def sinkvel_egg(mu_w, dens_w, dens_egg, diam_egg):

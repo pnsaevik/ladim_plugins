@@ -36,3 +36,9 @@ class Test_growth_cod_larvae:
     def test_changes_with_weight(self):
         g = ibm.growth_cod_larvae(temp=16, weight=[.1, 1, 10], dt=86400)
         assert g.tolist() == [0.022072443645092355, 0.29720000000000013, 2.0995294989750346]
+
+
+class Test_weight_to_length:
+    def test_changes_with_weight(self):
+        L = ibm.weight_to_length(weight=np.array([0.1, 1, 10]))
+        assert L.tolist() == [5.108959666553063, 9.934365412170125, 18.295002538937236]
