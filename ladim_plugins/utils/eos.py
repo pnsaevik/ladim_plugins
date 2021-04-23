@@ -1,9 +1,15 @@
-# Compute density of sea water according to Fofonoff, N.P. & Millard, R.C. (1983).
-# "Algorithms for Computation of Fundamental Properties of Seawater".
-# Unesco Techical Papers in Marine Science.
 
 
 def calc_density(temp, salt):
+    """
+    Compute density of sea water according to Fofonoff, N.P. & Millard, R.C. (1983).
+    "Algorithms for Computation of Fundamental Properties of Seawater".
+    Unesco Techical Papers in Marine Science.
+
+    :param temp: Temperature in degrees Celcius
+    :param salt: Salinity in PSU
+    :returns: Sea water density in kg/m^3
+    """
     T68 = temp * 1.00024
 
     a0 = 999.842594
@@ -33,3 +39,13 @@ def calc_density(temp, salt):
                           salt ** (1 / 2)) + d0 * salt ** 2
 
     return dens_ST
+
+
+def viscosity(temp, salt):
+    """Calculate dynamic viscosity of sea water
+
+    :param temp: Temperature in degrees Celcius
+    :param salt: Salinity in PSU
+    :returns: Viscosity of seawater in kg m^-1 s^-1
+    """
+    return 0.001 * (1.7915 + temp * (-0.0538 + temp * 0.0007) + 0.0023 * salt)
