@@ -74,7 +74,7 @@ output_variables:
 
     # Variable names
     particle: [release_time, group_id]
-    instance: [pid, X, Y, Z, lon, lat, temp, salt, age, number, egg_buoy]
+    instance: [pid, X, Y, Z, lon, lat, temp, salt, age, number, egg_buoy, weight]
 
     # --- Output format for standard variables ---
 
@@ -141,7 +141,7 @@ output_variables:
     age:
         ncformat: f4
         long_name: particle age in degree-days
-        units: Celcius days
+        units: degree_Celcius days
         standard_name: integral_of_sea_water_temperature_wrt_time
 
     # Output format for the egg buoyancy
@@ -149,6 +149,12 @@ output_variables:
         ncformat: f4
         long_name: egg buoyancy
         units: '1e-3'
+
+    # Output format for the weight
+    weight:
+        ncformat: f4
+        long_name: larvae weight
+        units: 'mg'
 
     group_id: {ncformat: i4, long_name: particle group id}
     number: {ncformat: f4, long_name: number of individuals in instance}

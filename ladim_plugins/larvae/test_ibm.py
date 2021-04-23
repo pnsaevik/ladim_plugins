@@ -44,8 +44,8 @@ class Test_weight_to_length:
         assert L.tolist() == [5.108959666553063, 9.934365412170125, 18.295002538937236]
 
 
-# def test_snapshot():
-#    import ladim_plugins.tests.test_examples
-#    import os
-#    os.chdir(os.path.dirname(ladim_plugins.tests.test_examples.__file__))
-#    ladim_plugins.tests.test_examples.test_output_matches_snapshot('larvae')
+def test_snapshot():
+    import ladim_plugins.tests.test_examples
+    import os
+    os.chdir(os.path.dirname(ladim_plugins.tests.test_examples.__file__))
+    ladim_plugins.tests.test_examples.test_output_matches_snapshot('larvae')
