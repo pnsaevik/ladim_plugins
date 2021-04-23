@@ -1,2 +1,2 @@
 from .light import light
-from .density import calc_density as density
+from .eos import calc_density as density
