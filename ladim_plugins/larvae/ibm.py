@@ -84,25 +84,28 @@ class IBM:
             state['number'] *= np.exp(-(self.mortality / 86400) * self.dt)
 
         # --- Ageing ---
+        is_egg = state.age <= self.hatch_day
         state['age'] += state.temp * state.dt / 86400
-        is_egg = state.age < self.hatch_day
 
         # --- Larvae growth ---
-        state['weight'][~is_egg] += self.growth(state.temp, state.weight[~is_egg], self.dt)
-        state['weight'][is_egg] = self.init_larvae_weight
+        temp_larvae = state.temp[~is_egg]
+        weight = np.maximum(state['weight'][~is_egg], self.init_larvae_weight)
+        state['weight'][~is_egg] = weight + self.growth(temp_larvae, weight, self.dt)
 
         # --- Egg sinking velocity ---
         W = np.zeros(is_egg.shape, dtype=np.float32)
+        T, S = state.temp[is_egg], state.salt[is_egg]
         W[is_egg] = sinkvel_egg(
-            mu_w=viscosity(state.temp, state.salt),
-            dens_w=density(state.temp, state.salt),
-            dens_egg=density(state.temp[is_egg], state.egg_buoy[is_egg]),
+            mu_w=viscosity(T, S),
+            dens_w=density(T, S),
+            dens_egg=density(T, state.egg_buoy[is_egg]),
             diam_egg=self.egg_diam,
         )
 
         # --- Larvae swimming velocity ---
-        lon, lat = grid.lonlat(state.X, state.Y)
-        Eb = light(state.timestamp, lon, lat, depth=state.Z, extinction_coef=self.k)
+        lon, lat = grid.lonlat(state.X[~is_egg], state.Y[~is_egg])
+        Z_larvae = state.Z[~is_egg]
+        Eb = light(state.timestamp, lon, lat, depth=Z_larvae, extinction_coef=self.k)
         length = 0.001 * self.length(state.weight[~is_egg])
         W[~is_egg] = self.swim_speed * length * np.sign(Eb - self.desired_light)
 
