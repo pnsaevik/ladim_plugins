@@ -170,7 +170,7 @@ def sinkvel_egg(mu_w, dens_w, dens_egg, diam_egg):
     return np.where(diam_egg <= dmax, small_W, large_W)
 
 
-def cod_egg_bouy(n):
+def cod_egg_buoy(n):
     """
     Cod egg buoyancy according to Stenevik, E. K., S. Sundby, and A. L. Agnalt (2008).
     "Buoyancy and vertical distribution of Norwegian coastal cod (Gadus morhua) eggs from
