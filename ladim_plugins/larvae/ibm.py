@@ -16,7 +16,7 @@ class IBM:
         # diff = 0  ==>  No vertical diffusion
         # diff = 1e-2  ==> Wave-induced mixing
         # diff = 1e-5  ==> Stratified water
-        self.D = config['ibm'].get('vertical_diffusion', 0)
+        self.D = config['ibm'].get('vertical_mixing', 0)
 
         # --- Species-specific parameters ---
         #
@@ -41,13 +41,13 @@ class IBM:
             ),
             saithe=dict(
                 egg_diam=0.0011,
-                hatch_day=93.7,
+                hatch_day=60,
                 mortality=0.17,
-                swim_speed=0.1,
+                swim_speed=0.2,
                 light=1,
                 init_larvae_weight=9.3e-2,
-                min_depth=0,
-                max_depth=1000,
+                min_depth=30,
+                max_depth=60,
                 growth=growth_cod_larvae,
                 length=weight_to_length,
             ),
