@@ -1,1 +1,1 @@
-from .ibm import IBM, cod_egg_buoy
+from .ibm import IBM
