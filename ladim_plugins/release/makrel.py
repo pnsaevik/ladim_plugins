@@ -374,15 +374,24 @@ def main():
     
     Sample makrel.yaml file:
     
+    # Required attributes
     num: 5                                      # Number of particles
     date: [2000-01-01 01:00, 2000-02-01 01:00]  # Start and stop dates
-    location: [5, 60]                           # Release location
+    location: [5, 60]                           # Release location (lon, lat)
     depth: [0, 10]                              # Release depth range
-    attrs:                                      
-        region: 0                               # Constant-valued attribute
-        age: [0, 0, 0, 3, 3]                    # Vector-valued attribute
-        id: numpy.arange                        # Function-valued attribute
-        health: numpy.random.randn              # Function-valued attribute
+
+    # Additional attributes
+    region: 0                                   # Constant-valued attribute
+    age: [0, 0, 0, 3, 3]                        # Vector-valued attribute
+    id: numpy.arange                            # Function-valued attribute
+    weight:                                     # Gaussian distribution
+      distribution: gaussian
+      mean: 40
+      std: 10
+    length:                                     # Exponential distribution
+      distribution: exponential
+      mean: 10
+    
     
     # Alternative: Release polygon
     # location: [[5, 6, 6, 5], [60, 60, 61, 61]]
@@ -393,7 +402,7 @@ def main():
     # Alternative: Metric offset from center location
     # location: 
     #   center: [5, 60]
-    #   offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]
+    #   offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]  # 100m x 100m square
     
     """)
     elif len(sys.argv) == 2:
