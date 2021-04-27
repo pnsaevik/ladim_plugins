@@ -30,7 +30,6 @@ ibm:
 
     # egg_diam: 0.0014            # Egg diameter [m]
     # hatch_day: 93.7             # Hatch day [degree days]
-    # mortality: 0.17             # Mortality [1/days], exponential decay rate
     # swim_speed: 0.1             # Vertical swimming speed [body lengths/second]
     # light: 1                    # Desired light level [µmol photons/s]
     # min_depth: 0                # Minimum depth [m]

@@ -30,7 +30,6 @@ class IBM:
             cod=dict(
                 egg_diam=0.0014,  # Egg diameter [m]
                 hatch_day=93.7,   # Hatch day [degree days]
-                mortality=0.17,   # Mortality [1/days], exponential decay rate
                 swim_speed=0.1,   # Vertical swimming speed [body lengths/second]
                 light=1,          # Desired light level [µmol photons/s]
                 min_depth=0,      # Minimum depth [m]
@@ -42,7 +41,6 @@ class IBM:
             saithe=dict(
                 egg_diam=0.0011,
                 hatch_day=60,
-                mortality=0.17,
                 swim_speed=0.2,
                 light=1,
                 init_larvae_weight=9.3e-2,
@@ -63,7 +61,6 @@ class IBM:
 
         self.egg_diam = read_species_param('egg_diam')
         self.hatch_day = read_species_param('hatch_day')
-        self.mortality = read_species_param('mortality')
         self.init_larvae_weight = read_species_param('init_larvae_weight')
         self.swim_speed = read_species_param('swim_speed')
         self.desired_light = read_species_param('light')
@@ -78,10 +75,6 @@ class IBM:
         # --- Update forcing ---
         state['temp'] = forcing.field(state.X, state.Y, state.Z, 'temp')
         state['salt'] = forcing.field(state.X, state.Y, state.Z, 'salt')
-
-        # --- Mortality ---
-        if self.mortality:
-            state['number'] *= np.exp(-(self.mortality / 86400) * self.dt)
 
         # --- Ageing ---
         is_egg = state.age <= self.hatch_day
