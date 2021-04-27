@@ -1,35 +1,168 @@
 # Seed for random number generator (optional)
 seed: 0
 
-# Column order (optional, default is date, longitude, latitude, depth, *attrs)
-columns: [date, longitude, latitude, depth, group_id]
+# Column order
+columns:
+  - date
+  - longitude
+  - latitude
+  - depth
+  - group_id
+  - species_id
+  - swim_speed
+  - weight
+  - sink_vel
+  - sink_vel2
+  - seq
 
 groups:
-# First group of particles (beware the leading hyphen "-" on group_id)
-- num: 2  # Number of particles to release
-  # [yyyy-mm-dd hh:mm:ss] Time of release. Single entry or range [start, stop]
+# -----------------------------------------------------------------------
+# First group of particles (beware the leading hyphen "-")
+- num: 3  # Number of particles to release
+  # --- Time of release ---
+  # Single entry or range [start, stop]
+  # Format: YYYY-MM-DD hh:mm:ss
   date: 2000-01-01 00:00
-  location:                                   # Release area
-      center: [5, 60]                         # latitude, longitude of release center
-      offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]  # metric offset (polygon) relative to release center
-  depth: [0, 10]    # [m] Depth of particles (single number or range)
-  attrs:
-    group_id: 1
 
-# Second group of particles (beware the leading hyphen "-" on group_id)
-- group_id: 2
-  num: 3  # Number of particles to release
-  # [yyyy-mm-dd hh:mm:ss] Time of release. Single entry or range [start, stop]
-  date: [2000-01-01 00:00, 2000-01-02 00:00]
-  depth: [0, 10]    # [m] Depth of particles (single number or range [start, stop])
+  # --- Release location. Can be either of three forms: ---
 
-  # Location can also be specified as a polygonal area
+  # 1. Single location [lon, lat]
+  location: [5, 60]
+
+  # 2. Single polygon [[lon_1, lon_2, ...], [lat_1, lat_2, ...]]
+  # location:
+  #   - [6, 7, 7, 6]      # Longitude coordinates
+  #   - [60, 60, 61, 61]  # Latitude coordinates
+
+  # 3. Multiple polygons [[[lo1A, lo2A, ...], [lo1B, lo2B, ...], ...], [[la1A, la2A, ...], [la1B, la2B, ...], ...]]
+  # location:
+  #  -
+  #   - [6, 7, 7, 6]      # Longitude coordinates, polygon A
+  #   - [8, 9, 9, 8]      # Longitude coordinates, polygon B
+  #  -
+  #   - [60, 60, 61, 61]  # Latitude coordinates, polygon A
+  #   - [70, 70, 71, 71]  # Latitude coordinates, polygon B
+
+  # 4. Polygon specified by metric offset from central location
+  # location:
+  #     center: [5, 60]  # Longitude, latitude of center position
+  #     offset:
+  #       - [-50, 50, 50, -50]  # Polygon X coordinates (metric offset in longitude direction)
+  #       - [-50, -50, 50, 50]  # Polygon Y coordinates (metric offset in latitude direction)
+
+  # 5. GIS polygon, in the form of a GeoJSON file (WGS84 projection)
+  # location: release_area.geojson
+
+  # --- Release depth, in meters. Can be either of the following forms: ---
+
+  # 1. No depth specified, defaults to 0
+
+  # 2. Single number. All particles are given the same depth.
+  depth: 5
+
+  # 3. Explicit list. Length must be equal to number of particles.
+  # depth: [0, 5, 10]
+
+  # 4. Range [start, stop]. Particles are given a random depth within the range.
+  # depth: [0, 10]
+
+  # 5. Gaussian distribution
+  # depth:
+  #  distribution: gaussian  # Required keyword for normal distribution
+  #  mean: 5  # Mean value of distribution
+  #  std:  1  # Standard deviation of distribution
+  #  min:  0  # (Optional) No samples below this level
+  #  max:  9  # (Optional) No samles above this level
+
+  # 6. Exponential distribution
+  # depth:
+  #  distribution: exponential  # Required keyword for exponential distribution
+  #  mean: 5  # Mean value of distribution
+  #  max: 10  # (Optional) No samples above this level
+
+  # 7. Piecewise linear distribution
+  # depth:
+  #   distribution: piecewise  # Required keyword for piecewise linear distribution
+  #   knots: [0, 1, 2, 3]      # Depth values
+  #   cdf: [0, .5, .7, 1]      # Cumulative probability for each knot value
+  #                            # Must start with 0 and end with 1
+  #                            # Must be strictly monotonically increasing
+  #   degree: 1  # (Optional) Degree of spline. Defaults to 1 (piecewise linear).
+
+  # 8. External function
+  # depth: numpy.arange  # Name of external function, which must have size as its sole argument
+
+  # --- Additional attributes ---
+  # Additional attributes use the same format as the depth (see above)
+
+  # Single number
+  group_id: 1
+
+  # Explicit list
+  species_id: [101, 104, 104]
+
+  # Uniform range
+  swim_speed: [.1, .2]
+
+  # Gaussian distribution
+  weight:
+    distribution: gaussian
+    mean: 5
+    std: 1
+    min: 4
+    max: 6
+
+  # Exponential distribution
+  sink_vel:
+    distribution: exponential
+    mean: 0.01
+    max: 0.1
+
+  # Piecewise linear distribution
+  sink_vel2:
+    distribution: piecewise
+    knots: [0, 0.01, 0.05, 0.1]
+    cdf: [0, .5, .8, 1]
+
+  # External function
+  seq: numpy.arange
+
+# -----------------------------------------------------------------------
+# Second group of particles (beware the leading hyphen "-")
+# Omitted attributes have default value 0
+- num: 3
+  date: [2000-01-01 00:00, 2000-01-01 00:02]
   location:
     - [6, 7, 7, 6]      # Longitude coordinates
     - [60, 60, 61, 61]  # Latitude coordinates
 
+# -----------------------------------------------------------------------
+# Third group of particles (beware the leading hyphen "-")
+# Omitted attributes have default value 0
+- num: 3
+  date: [2000-01-01 00:00, 2000-01-01 00:02]
+  location:
+  -  # Polygon A
+    - [6, 7, 7, 6]      # Longitude coordinates, polygon A
+    - [8, 9, 9, 8]      # Longitude coordinates, polygon B
+  -  # Polygon B
+    - [60, 60, 61, 61]  # Latitude coordinates, polygon A
+    - [70, 70, 71, 71]  # Latitude coordinates, polygon B
 
+# -----------------------------------------------------------------------
+# Fourth group of particles (beware the leading hyphen "-")
+# Omitted attributes have default value 0
+- num: 3
+  date: [2000-01-01 00:00, 2000-01-01 00:02]
+  location:
+      center: [5, 60]  # Longitude, latitude of center position
+      offset:
+        - [-10, 10, 10, -10]  # Polygon X coordinates (metric offset in longitude direction)
+        - [-50, -50, 50, 50]  # Polygon Y coordinates (metric offset in latitude direction)
 
-  # A third option is to load polygons from a file. See attached sample file.
-  # location:
-  #   file: release_area.geojson
+# -----------------------------------------------------------------------
+# Fifth group of particles (beware the leading hyphen "-")
+# Omitted attributes have default value 0
+# - num: 3
+#   date: [2000-01-01 00:00, 2000-01-01 00:02]
+#   location: release_area.geojson  # GeoJSON file containing GIS polygon (WGS84 projection)

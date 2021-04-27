@@ -21,6 +21,7 @@ Name                                                   | Description
 [nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
 [mine](ladim_plugins/mine)                   | Sinking particles from mining activity 
 [utils](ladim_plugins/utils)                 | General utility functions for IBMs
+[larvae](ladim_plugins/larvae)               | General larvae model
 
 
 ## Installation
@@ -83,7 +84,7 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
-**Version x.x.x** (): Added `salmon_lice`, `mine` and `utils` modules.
+**Version x.x.x** (): Added `salmon_lice`, `mine`, `larvae` and `utils` modules.
 
 **Version 1.3.0** (Oct 2020): Added `release` and `nk800met` modules.
 
