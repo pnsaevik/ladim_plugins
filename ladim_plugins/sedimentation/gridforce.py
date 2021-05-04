@@ -9,7 +9,7 @@ class Grid(ladim.gridforce.ROMS.Grid):
         from scipy.ndimage import map_coordinates
         i = X - self.i0
         j = Y - self.j0
-        return map_coordinates(self.H, [j, i], order=0)
+        return map_coordinates(self.H, [j, i], order=1)
 
 
 class Forcing(ladim.gridforce.ROMS.Forcing):
