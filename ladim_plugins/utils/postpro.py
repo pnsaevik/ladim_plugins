@@ -88,4 +88,18 @@ def main():
         description='Convert output data from LADiM to raster format.',
     )
 
+    parser.add_argument("ladim_file", help="output file from LADiM")
+    parser.add_argument(
+        "grid_file",
+        help="NetCDF file containing bin edges. Any coordinate variable in the file "
+             "which match the name of a LADiM variable is used.")
+    parser.add_argument("raster_file", help="output raster file name, netCDF format")
+    parser.add_argument("--weights", nargs='+', metavar='varname', help="weighting variables")
+
     args = parser.parse_args()
+
+    with xr.open_dataset(args.ladim_file) as ladim_dset:
+        with xr.open_dataset(args.grid_file) as grid_dset:
+            raster = ladim_raster(ladim_dset, grid_dset)
+
+    raster.to_netcdf(args.raster_file)
