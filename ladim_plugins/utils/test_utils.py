@@ -1,5 +1,7 @@
 from ladim_plugins import utils
 import numpy as np
+import xarray as xr
+import pytest
 
 
 class Test_light:
@@ -40,3 +42,28 @@ class Test_viscosity:
     def test_changes_with_salinity(self):
         mu = utils.viscosity(temp=10, salt=np.array([0, 40]))
         assert mu.tolist() == [0.0013235000000000002, 0.0014155000000000003]
+
+
+class Test_ladim_raster:
+    @pytest.fixture(scope='class')
+    def dset(self):
+        return xr.Dataset(
+            data_vars=dict(
+                lon=xr.Variable('particle_instance', [5, 5, 6, 6, 5, 6]),
+                lat=xr.Variable('particle_instance', [60, 60, 60, 61, 60, 62]),
+                particle_count=xr.Variable('particle_count', [4, 2]),
+            ),
+            coords=dict(
+                time=np.array(['2000-01-02', '2000-01-03']).astype('datetime64[D]'),
+            ),
+        )
+
+    def test_returns_bincount_when_default_variables(self, dset):
+        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
+
+        raster = utils.ladim_raster(dset, grid_dset)
+
+        assert raster.bincount.values.tolist() == [
+            [[2, 1], [0, 1], [0, 0]],
+            [[1, 0], [0, 0], [0, 1]],
+        ]

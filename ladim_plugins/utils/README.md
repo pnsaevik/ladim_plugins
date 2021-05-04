@@ -33,12 +33,12 @@ in kg m^-3.
 
 Converts ladim output files to alternative formats.
 
-Usage from command line: `ladim_convert <args> <inputfile> <outputfile>`
+Usage from command line: `ladim_raster <args> <inputfile> <outputfile>`
 
-Run `ladim_convert --help` to get an overview of arguments.
+Run `ladim_raster --help` to get an overview of arguments.
 
-Usage from python: `out = ladim_convert(inputfile, **kwargs)`
+Usage from python: `out = ladim_raster(inputfile, **kwargs)`
 
-where `out` is an `xarray` dataset. Run `help(ladim_convert)` for detailed documentation.
+where `out` is an `xarray` dataset. Run `help(ladim_raster)` for detailed documentation.
 
 (Added May 2021 by Pål Næverlid Sævik)
