@@ -3,11 +3,19 @@ import numpy as np
 
 
 def ladim_raster(input_dset, grid_dset, weights=(None,)):
+    # Add edge info to grid dataset, if not present already
+    grid_dset = _add_edge_info(grid_dset)
+
+    def get_edg(dset, varname):
+        """Get bin edges of a 1D coordinate with contiguous cells"""
+        bndname = dset[varname].attrs['bounds']
+        return dset[bndname].values[:, 0].tolist() + [dset[bndname].values[-1, 1]]
+
     # Compute histogram data
     raster = from_particles(
         particles=input_dset,
         bin_keys=[v for v in grid_dset.coords],
-        bin_edges=[_edges(grid_dset[v].values) for v in grid_dset.coords],
+        bin_edges=[get_edg(grid_dset, v) for v in grid_dset.coords],
         vdims=weights,
     )
 
@@ -17,7 +25,28 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
         new_raster = new_raster.assign_coords(time=raster.coords['time'])
     _assign_georeference_to_data_vars(new_raster)
 
+    # CF conventions attribute
+    new_raster.attrs['Conventions'] = "CF-1.8"
+
     return new_raster
+
+
+def _add_edge_info(dset):
+    """Add edge information to dataset coordinates, if not already present"""
+    dset_new = dset.copy()
+    coords_without_bounds = [v for v in dset.coords if 'bounds' not in dset[v].attrs]
+    for var_name in coords_without_bounds:
+        bounds_name = var_name + '_bounds'
+        edges_values = _edges(dset[var_name].values)
+        bounds_var = xr.Variable(
+            dims=dset[var_name].dims + ('bounds_dim', ),
+            data=np.stack([edges_values[:-1], edges_values[1:]], axis=-1),
+        )
+
+        dset_new[var_name].attrs['bounds'] = bounds_name
+        dset_new[bounds_name] = bounds_var
+
+    return dset_new
 
 
 def _edges(a):

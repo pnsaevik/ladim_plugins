@@ -58,6 +58,14 @@ class Test_ladim_raster:
             ),
         )
 
+    def test_adds_bin_edge_info_to_output(self, ladim_dset):
+        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
+        raster = utils.ladim_raster(ladim_dset, grid_dset)
+        assert raster.lat.attrs['bounds'] == 'lat_bounds'
+        assert raster.lat_bounds.values.tolist() == [
+            [59.5, 60.5], [60.5, 61.5], [61.5, 62.5],
+        ]
+
     def test_returns_bincount_when_default_variables(self, ladim_dset):
         grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
 
