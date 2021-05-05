@@ -21,9 +21,9 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
     # Add edge info to grid dataset, if not present already
     grid_dset = add_edge_info(grid_dset)
 
-    def get_edg(dset, varname):
+    def get_edg(dset, vname):
         """Get bin edges of a 1D coordinate with contiguous cells"""
-        bndname = dset[varname].attrs['bounds']
+        bndname = dset[vname].attrs['bounds']
         return dset[bndname].values[:, 0].tolist() + [dset[bndname].values[-1, 1]]
 
     # Add areal info to grid dataset, if not present already
