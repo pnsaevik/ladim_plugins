@@ -220,9 +220,13 @@ def main():
     parser.add_argument("--weights", nargs='+', metavar='varname', help="weighting variables")
 
     args = parser.parse_args()
+    if args.weights is None:
+        weights = (None, )
+    else:
+        weights = (None, ) + tuple(args.weights)
 
     with xr.open_dataset(args.ladim_file) as ladim_dset:
         with xr.open_dataset(args.grid_file) as grid_dset:
-            raster = ladim_raster(ladim_dset, grid_dset)
+            raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
 
     raster.to_netcdf(args.raster_file)
