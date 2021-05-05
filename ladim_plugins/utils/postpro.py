@@ -1,5 +1,6 @@
 import xarray as xr
 import numpy as np
+from ladim_plugins.release.makrel import metric_diff_to_degrees, degree_diff_to_metric
 
 
 def ladim_raster(input_dset, grid_dset, weights=(None,)):
@@ -10,6 +11,9 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
         """Get bin edges of a 1D coordinate with contiguous cells"""
         bndname = dset[varname].attrs['bounds']
         return dset[bndname].values[:, 0].tolist() + [dset[bndname].values[-1, 1]]
+
+    # Add areal info to grid dataset, if not present already
+    grid_dset = _add_area_info(grid_dset)
 
     # Compute histogram data
     raster = from_particles(
@@ -29,6 +33,47 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
     new_raster.attrs['Conventions'] = "CF-1.8"
 
     return new_raster
+
+
+def _add_area_info(dset):
+    """Add cell area information to dataset coordinates, if not already present"""
+    crs_varname = _get_crs_varname(dset)
+    crs_xcoord = _get_crs_xcoord(dset)
+    crs_ycoord = _get_crs_ycoord(dset)
+
+    # Do nothing if crs info is unavailable
+    if crs_varname is None:
+        return dset
+
+    # Do nothing if cell area exists
+    stdnames = [dset[v].attrs.get('standard_name', '') for v in dset.variables]
+    if "cell_area" in stdnames:
+        return dset
+
+    # Raise error if unknown crs mapping
+    if dset[crs_varname].attrs['grid_mapping_name'] != 'latitude_longitude':
+        raise NotImplementedError
+
+    lon_bounds = dset[dset[crs_xcoord].attrs['bounds']].values
+    lat_bounds = dset[dset[crs_ycoord].attrs['bounds']].values
+
+    lon_diff_m, lat_diff_m = degree_diff_to_metric(
+        lon_diff=np.diff(lon_bounds)[np.newaxis, :, 0],
+        lat_diff=np.diff(lat_bounds)[:, np.newaxis, 0],
+        reference_latitude=lat_bounds.mean(axis=-1)[:, np.newaxis],
+    )
+
+    cell_area = xr.Variable(
+        dims=(crs_ycoord, crs_xcoord),
+        data=lon_diff_m * lat_diff_m,
+        attrs=dict(
+            long_name="area of grid cell",
+            standard_name="cell_area",
+            units='m2',
+        ),
+    )
+
+    return dset.assign(cell_area=cell_area)
 
 
 def _add_edge_info(dset):

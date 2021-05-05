@@ -58,26 +58,9 @@ class Test_ladim_raster:
             ),
         )
 
-    def test_adds_bin_edge_info_to_output(self, ladim_dset):
-        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
-        raster = utils.ladim_raster(ladim_dset, grid_dset)
-        assert raster.lat.attrs['bounds'] == 'lat_bounds'
-        assert raster.lat_bounds.values.tolist() == [
-            [59.5, 60.5], [60.5, 61.5], [61.5, 62.5],
-        ]
-
-    def test_returns_bincount_when_default_variables(self, ladim_dset):
-        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
-
-        raster = utils.ladim_raster(ladim_dset, grid_dset)
-
-        assert raster.bincount.values.tolist() == [
-            [[2, 1], [0, 1], [0, 0]],
-            [[1, 0], [0, 0], [0, 1]],
-        ]
-
-    def test_copies_wgs84_georeference_from_grid_dataset(self, ladim_dset):
-        grid_dset = xr.Dataset(
+    @pytest.fixture(scope='class')
+    def wgs84_dset(self):
+        return xr.Dataset(
             data_vars=dict(
                 crs=xr.Variable(
                     dims=(), data=0,
@@ -96,6 +79,31 @@ class Test_ladim_raster:
             )
         )
 
+    def test_adds_bin_edge_info_to_output(self, ladim_dset):
+        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
         raster = utils.ladim_raster(ladim_dset, grid_dset)
+        assert raster.lat.attrs['bounds'] == 'lat_bounds'
+        assert raster.lat_bounds.values.tolist() == [
+            [59.5, 60.5], [60.5, 61.5], [61.5, 62.5],
+        ]
 
+    def test_returns_bincount_when_default_variables(self, ladim_dset):
+        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
+        raster = utils.ladim_raster(ladim_dset, grid_dset)
+        assert raster.bincount.values.tolist() == [
+            [[2, 1], [0, 1], [0, 0]],
+            [[1, 0], [0, 0], [0, 1]],
+        ]
+
+    def test_copies_wgs84_georeference_from_grid_dataset(self, ladim_dset, wgs84_dset):
+        raster = utils.ladim_raster(ladim_dset, wgs84_dset)
         assert raster.bincount.attrs['grid_mapping'] == 'crs'
+
+    def test_adds_area_info_if_not_present(self, ladim_dset, wgs84_dset):
+        raster = utils.ladim_raster(ladim_dset, wgs84_dset)
+
+        assert raster.cell_area.values.tolist() == [
+            [6190827534.65317, 6190827534.65317],
+            [6003046562.36359, 6003046562.36359],
+            [5813411740.18686, 5813411740.18686],
+        ]
