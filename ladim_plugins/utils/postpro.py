@@ -3,19 +3,32 @@ import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 
 
-def ladim_raster(input_dset, grid_dset, weights=(None,)):
+def ladim_raster(particle_dset, grid_dset, weights=(None,)):
     """
     Convert LADiM output data to raster format.
 
-    :param input_dset: Output file from LADiM
-    :param grid_dset: NetCDF file containing bin centers. Any coordinate variable in the
-        file which match the name of a LADiM variable is used. Bin edges are assumed to
-        be halfway between bin centers, if not specified otherwise by a `bounds`
-        attribute. If the dataset includes a CF-compliant grid mapping, the output
-        dataset will also include the area of the grid cells.
+    :param particle_dset: Particle file from LADiM (file name or xarray dataset)
+
+    :param grid_dset: NetCDF file containing bin centers (file name or xarray dataset).
+
+        * Any coordinate variable in the grid file which match the name of a variable
+          in the LADiM file is used as bin centers, in the order which they appear in the
+          grid file.
+
+        * Bin edges are assumed to be halfway between bin centers, if not specified
+          otherwise by a `bounds` attribute.
+
+        * If the dataset includes a CF-compliant grid mapping, the output dataset will
+          include a variable `cell_area` containing the area of the grid cells.
+
+        * If the dataset includes a CF-compliant grid mapping, and the LADiM file has
+          lon/lat attributes, the particle coordinates will be transformed before mapping
+          to the rasterized grid.
+
     :param weights: A tuple containing parameters to be summed up. If `None` is one of
         the parameters, a variable named `bincount` is created which contains the sum
         of particles within each cell.
+
     :return: An `xarray` dataset containing the rasterized data.
     """
     # Add edge info to grid dataset, if not present already
@@ -29,9 +42,12 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
     # Add areal info to grid dataset, if not present already
     grid_dset = add_area_info(grid_dset)
 
+    # Convert projection of ladim dataset, if necessary
+    particle_dset = change_ladim_crs(particle_dset, grid_dset)
+
     # Compute histogram data
     raster = from_particles(
-        particles=input_dset,
+        particles=particle_dset,
         bin_keys=[v for v in grid_dset.coords],
         bin_edges=[get_edg(grid_dset, v) for v in grid_dset.coords],
         vdims=weights,
@@ -44,8 +60,8 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
     _assign_georeference_to_data_vars(new_raster)
 
     # Copy attrs from ladim dataset
-    for varname in set(new_raster.variables).intersection(input_dset.variables):
-        for k, v in input_dset[varname].attrs.items():
+    for varname in set(new_raster.variables).intersection(particle_dset.variables):
+        for k, v in particle_dset[varname].attrs.items():
             if k not in new_raster[varname].attrs:
                 new_raster[varname].attrs[k] = v
 
@@ -53,6 +69,70 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
     new_raster.attrs['Conventions'] = "CF-1.8"
 
     return new_raster
+
+
+def change_ladim_crs(ladim_dset, grid_dset):
+    """Add crs coordinates to ladim dataset, taken from a grid dataset"""
+    from pyproj import Transformer
+
+    crs_varname = _get_crs_varname(grid_dset)
+    crs_xcoord = _get_crs_xcoord(grid_dset)
+    crs_ycoord = _get_crs_ycoord(grid_dset)
+
+    # Abort if there is no grid mapping
+    if any(v is None for v in [crs_xcoord, crs_ycoord, crs_varname]):
+        return ladim_dset
+
+    target_crs = get_projection(grid_dset[crs_varname].attrs)
+    transformer = Transformer.from_crs("epsg:4326", target_crs)
+    x, y = transformer.transform(ladim_dset.lat.values, ladim_dset.lon.values)
+
+    return ladim_dset.assign(**{
+        crs_xcoord: xr.Variable(ladim_dset.lon.dims, x),
+        crs_ycoord: xr.Variable(ladim_dset.lat.dims, y),
+    })
+
+
+def get_projection(grid_opts):
+    from pyproj import CRS
+
+    std_grid_opts = dict(
+        false_easting=0,
+        false_northing=0,
+    )
+
+    proj4str_dict = dict(
+        latitude_longitude="+proj=latlon",
+        polar_stereographic=(
+            "+proj=stere +ellps=WGS84 "
+            "+lat_0={latitude_of_projection_origin} "
+            "+lat_ts={standard_parallel} "
+            "+lon_0={straight_vertical_longitude_from_pole} "
+            "+x_0={false_easting} "
+            "+y_0={false_northing} "
+        ),
+        transverse_mercator=(
+            "+proj=tmerc +ellps=WGS84 "
+            "+lat_0={latitude_of_projection_origin} "
+            "+lon_0={longitude_of_central_meridian} "
+            "+k_0={scale_factor_at_central_meridian} "
+            "+x_0={false_easting} "
+            "+y_0={false_northing} "
+        ),
+        orthographic=(
+            "+proj=ortho +ellps=WGS84 "
+            "+lat_0={latitude_of_projection_origin} "
+            "+lon_0={longitude_of_projection_origin} "
+            "+x_0={false_easting} "
+            "+y_0={false_northing} "
+        ),
+    )
+
+    proj4str_template = proj4str_dict[grid_opts['grid_mapping_name']]
+    proj4str = proj4str_template.format(**std_grid_opts, **grid_opts)
+    return CRS.from_proj4(proj4str)
+
+    pass
 
 
 def add_area_info(dset):
@@ -70,22 +150,32 @@ def add_area_info(dset):
     if "cell_area" in stdnames:
         return dset
 
-    # Raise error if unknown crs mapping
-    if dset[crs_varname].attrs['grid_mapping_name'] != 'latitude_longitude':
-        raise NotImplementedError
+    x_bounds = dset[dset[crs_xcoord].attrs['bounds']].values
+    y_bounds = dset[dset[crs_ycoord].attrs['bounds']].values
+    x_diff = np.diff(x_bounds)[np.newaxis, :, 0]
+    y_diff = np.diff(y_bounds)[:, np.newaxis, 0]
+    grdmap = dset[crs_varname].attrs['grid_mapping_name']
+    metric_projections = [
+        'polar_stereographic', 'stereographic', 'orthographic', 'mercator',
+        'transverse_mercator', 'oblique_mercator',
+    ]
 
-    lon_bounds = dset[dset[crs_xcoord].attrs['bounds']].values
-    lat_bounds = dset[dset[crs_ycoord].attrs['bounds']].values
+    # Compute cell area, or raise error if unknown mapping
+    if grdmap == 'latitude_longitude':
+        lon_diff_m, lat_diff_m = degree_diff_to_metric(
+            lon_diff=x_diff, lat_diff=y_diff,
+            reference_latitude=y_bounds.mean(axis=-1)[:, np.newaxis],
+        )
+        cell_area_data = lon_diff_m * lat_diff_m
 
-    lon_diff_m, lat_diff_m = degree_diff_to_metric(
-        lon_diff=np.diff(lon_bounds)[np.newaxis, :, 0],
-        lat_diff=np.diff(lat_bounds)[:, np.newaxis, 0],
-        reference_latitude=lat_bounds.mean(axis=-1)[:, np.newaxis],
-    )
+    elif grdmap in metric_projections:
+        cell_area_data = x_diff * y_diff
+    else:
+        raise NotImplementedError(f'Unknown grid mapping: {grdmap}')
 
     cell_area = xr.Variable(
         dims=(crs_ycoord, crs_xcoord),
-        data=lon_diff_m * lat_diff_m,
+        data=cell_area_data,
         attrs=dict(
             long_name="area of grid cell",
             standard_name="cell_area",

@@ -79,6 +79,31 @@ class Test_ladim_raster:
             )
         )
 
+    @pytest.fixture(scope='class')
+    def ortho_dset(self):
+        return xr.Dataset(
+            data_vars=dict(
+                crs=xr.Variable(
+                    dims=(), data=0,
+                    attrs=dict(
+                        grid_mapping_name='orthographic',
+                        longitude_of_projection_origin=5,
+                        latitude_of_projection_origin=61,
+                    ),
+                )
+            ),
+            coords=dict(
+                y=xr.Variable(
+                    'y', [-120000, 0, 120000],
+                    attrs=dict(standard_name='projection_y_coordinate'),
+                ),
+                x=xr.Variable(
+                    'x', [0, 60000],
+                    attrs=dict(standard_name='projection_x_coordinate'),
+                ),
+            )
+        )
+
     def test_adds_bin_edge_info_to_output(self, ladim_dset):
         grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
         raster = utils.ladim_raster(ladim_dset, grid_dset)
@@ -130,3 +155,15 @@ class Test_ladim_raster:
         ]
 
         assert raster.mass.attrs['units'] == 'kg'
+
+    def test_can_compute_area_of_orthographic_gridfile(self, ladim_dset, ortho_dset):
+        raster = utils.ladim_raster(ladim_dset, ortho_dset)
+        assert raster.cell_area.values.tolist() == [[7200000000] * 2] * 3
+
+    def test_can_convert_to_orthographic_projection(self, ladim_dset, ortho_dset):
+        raster = utils.ladim_raster(ladim_dset, ortho_dset)
+
+        assert raster.bincount.values.tolist() == [
+            [[2, 1], [0, 1], [0, 0]],
+            [[1, 0], [0, 0], [0, 1]],
+        ]
