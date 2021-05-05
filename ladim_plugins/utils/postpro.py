@@ -73,6 +73,11 @@ def ladim_raster(particle_dset, grid_dset, weights=(None,)):
 
 def change_ladim_crs(ladim_dset, grid_dset):
     """Add crs coordinates to ladim dataset, taken from a grid dataset"""
+
+    # Abort if there is no lat/lon coordinates in the ladim dataset
+    if 'lat' not in ladim_dset.variables or 'lon' not in ladim_dset.variables:
+        return ladim_dset
+
     from pyproj import Transformer
 
     crs_varname = _get_crs_varname(grid_dset)
