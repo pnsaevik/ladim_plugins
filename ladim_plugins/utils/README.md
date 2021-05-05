@@ -31,14 +31,15 @@ in kg m^-3.
 
 ## Post processing
 
-Converts ladim output files to alternative formats.
+Converts ladim output files to netCDF raster format.
 
-Usage from command line: `ladim_raster <args> <inputfile> <outputfile>`
+Usage from command line: `ladim_raster <args>`
 
 Run `ladim_raster --help` to get an overview of arguments.
 
-Usage from python: `out = ladim_raster(inputfile, **kwargs)`
+Usage from python: `out = ladim_plugins.utils.ladim_raster(inputfile, **kwargs)`
 
-where `out` is an `xarray` dataset. Run `help(ladim_raster)` for detailed documentation.
+where `out` is an `xarray` dataset. Run `help(ladim_plugins.utils.ladim_raster)`
+for detailed documentation.
 
 (Added May 2021 by Pål Næverlid Sævik)

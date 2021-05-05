@@ -4,6 +4,20 @@ from ladim_plugins.release.makrel import degree_diff_to_metric
 
 
 def ladim_raster(input_dset, grid_dset, weights=(None,)):
+    """
+    Convert LADiM output data to raster format.
+
+    :param input_dset: Output file from LADiM
+    :param grid_dset: NetCDF file containing bin centers. Any coordinate variable in the
+        file which match the name of a LADiM variable is used. Bin edges are assumed to
+        be halfway between bin centers, if not specified otherwise by a `bounds`
+        attribute. If the dataset includes a CF-compliant grid mapping, the output
+        dataset will also include the area of the grid cells.
+    :param weights: A tuple containing parameters to be summed up. If `None` is one of
+        the parameters, a variable named `bincount` is created which contains the sum
+        of particles within each cell.
+    :return: An `xarray` dataset containing the rasterized data.
+    """
     # Add edge info to grid dataset, if not present already
     grid_dset = add_edge_info(grid_dset)
 
@@ -208,15 +222,15 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
 def main():
     import argparse
     parser = argparse.ArgumentParser(
-        description='Convert output data from LADiM to raster format.',
+        description='Convert LADiM output data to netCDF raster format.',
     )
 
     parser.add_argument("ladim_file", help="output file from LADiM")
     parser.add_argument(
         "grid_file",
-        help="NetCDF file containing bin edges. Any coordinate variable in the file "
+        help="netCDF file containing the bins. Any coordinate variable in the file "
              "which match the name of a LADiM variable is used.")
-    parser.add_argument("raster_file", help="output raster file name, netCDF format")
+    parser.add_argument("raster_file", help="output file name")
     parser.add_argument("--weights", nargs='+', metavar='varname', help="weighting variables")
 
     args = parser.parse_args()
