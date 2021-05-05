@@ -1,2 +1,2 @@
-from .ibm import IBM, sinkvel
+from .ibm import IBM, sinkvel, get_settled_particles
 from .gridforce import Grid, Forcing
