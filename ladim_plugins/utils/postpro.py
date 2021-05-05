@@ -29,6 +29,12 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
         new_raster = new_raster.assign_coords(time=raster.coords['time'])
     _assign_georeference_to_data_vars(new_raster)
 
+    # Copy attrs from ladim dataset
+    for varname in set(new_raster.variables).intersection(input_dset.variables):
+        for k, v in input_dset[varname].attrs.items():
+            if k not in new_raster[varname].attrs:
+                new_raster[varname].attrs[k] = v
+
     # CF conventions attribute
     new_raster.attrs['Conventions'] = "CF-1.8"
 

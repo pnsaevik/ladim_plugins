@@ -107,3 +107,26 @@ class Test_ladim_raster:
             [6003046562.36359, 6003046562.36359],
             [5813411740.18686, 5813411740.18686],
         ]
+
+    def test_can_use_weights(self, ladim_dset, wgs84_dset):
+        ladim_dset['mass'] = xr.Variable(
+            dims='particle_instance',
+            data=np.arange(10, 16),
+            attrs=dict(
+                units='kg',
+            )
+        )
+
+        raster = utils.ladim_raster(ladim_dset, wgs84_dset, weights=(None, 'mass', ))
+
+        assert raster.bincount.values.tolist() == [
+            [[2, 1], [0, 1], [0, 0]],
+            [[1, 0], [0, 0], [0, 1]],
+        ]
+
+        assert raster.mass.values.tolist() == [
+            [[21, 12], [0, 13], [0, 0]],
+            [[14, 0], [0, 0], [0, 15]],
+        ]
+
+        assert raster.mass.attrs['units'] == 'kg'
