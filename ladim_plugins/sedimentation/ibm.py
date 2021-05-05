@@ -307,3 +307,20 @@ def sinkvel(n):
     cumprob_tab = np.array([.000, .662, .851, .883, .909, .937, 1])
     fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
     return fn(np.random.rand(n))
+
+
+def get_settled_particles(dset):
+    # Find indices of last recorded timestep per particle
+    pid, right_index = np.unique(np.flip(dset['pid'].values), return_index=True)
+    pinst = len(dset['pid']) - right_index - 1
+
+    # Construct xarray
+    import xarray as xr
+    pid_vars = {k: xr.Variable('pid', v[pid])
+                for k, v in dset.variables.items()
+                if v.dims == ('particle',)}
+    pinst_vars = {k: xr.Variable('pid', v[pinst])
+                  for k, v in dset.variables.items()
+                  if v.dims == ('particle_instance',)}
+    all_vars = {**dict(pid=pid), **pid_vars, **pinst_vars}
+    return xr.Dataset(all_vars).assign_coords(pid=pid)
