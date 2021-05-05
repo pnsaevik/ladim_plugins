@@ -1,11 +1,11 @@
 import xarray as xr
 import numpy as np
-from ladim_plugins.release.makrel import metric_diff_to_degrees, degree_diff_to_metric
+from ladim_plugins.release.makrel import degree_diff_to_metric
 
 
 def ladim_raster(input_dset, grid_dset, weights=(None,)):
     # Add edge info to grid dataset, if not present already
-    grid_dset = _add_edge_info(grid_dset)
+    grid_dset = add_edge_info(grid_dset)
 
     def get_edg(dset, varname):
         """Get bin edges of a 1D coordinate with contiguous cells"""
@@ -13,7 +13,7 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
         return dset[bndname].values[:, 0].tolist() + [dset[bndname].values[-1, 1]]
 
     # Add areal info to grid dataset, if not present already
-    grid_dset = _add_area_info(grid_dset)
+    grid_dset = add_area_info(grid_dset)
 
     # Compute histogram data
     raster = from_particles(
@@ -35,7 +35,7 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
     return new_raster
 
 
-def _add_area_info(dset):
+def add_area_info(dset):
     """Add cell area information to dataset coordinates, if not already present"""
     crs_varname = _get_crs_varname(dset)
     crs_xcoord = _get_crs_xcoord(dset)
@@ -76,7 +76,7 @@ def _add_area_info(dset):
     return dset.assign(cell_area=cell_area)
 
 
-def _add_edge_info(dset):
+def add_edge_info(dset):
     """Add edge information to dataset coordinates, if not already present"""
     dset_new = dset.copy()
     coords_without_bounds = [v for v in dset.coords if 'bounds' not in dset[v].attrs]
