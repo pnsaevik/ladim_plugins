@@ -3,6 +3,7 @@ import numpy as np
 
 
 def ladim_raster(input_dset, grid_dset, weights=(None,)):
+    # Compute histogram data
     raster = from_particles(
         particles=input_dset,
         bin_keys=[v for v in grid_dset.coords],
@@ -10,13 +11,55 @@ def ladim_raster(input_dset, grid_dset, weights=(None,)):
         vdims=weights,
     )
 
-    new_raster = grid_dset.assign(raster.data_vars)
+    # Merge histogram data and grid data
+    new_raster = grid_dset.assign({v: raster.variables[v] for v in raster.data_vars})
+    if 'time' in raster.coords:
+        new_raster = new_raster.assign_coords(time=raster.coords['time'])
+    _assign_georeference_to_data_vars(new_raster)
+
     return new_raster
 
 
 def _edges(a):
     mid = 0.5 * (a[:-1] + a[1:])
     return np.concatenate([mid[:1] - (a[1] - a[0]), mid, mid[-1:] + a[-1] - a[-2]])
+
+
+def _assign_georeference_to_data_vars(dset):
+    crs_varname = _get_crs_varname(dset)
+    crs_xcoord = _get_crs_xcoord(dset)
+    crs_ycoord = _get_crs_ycoord(dset)
+
+    for v in dset.data_vars:
+        if crs_xcoord in dset[v].coords and crs_ycoord in dset[v].coords:
+            dset[v].attrs['grid_mapping'] = crs_varname
+
+
+def _get_crs_varname(dset):
+    for v in dset.variables:
+        if 'grid_mapping_name' in dset[v].attrs:
+            return v
+    return None
+
+
+def _get_crs_xcoord(dset):
+    for v in dset.coords:
+        if 'standard_name' not in dset[v].attrs:
+            continue
+        s = dset[v].attrs['standard_name']
+        if s == 'projection_x_coordinate' or s == 'grid_longitude' or s == 'longitude':
+            return v
+    return None
+
+
+def _get_crs_ycoord(dset):
+    for v in dset.coords:
+        if 'standard_name' not in dset[v].attrs:
+            continue
+        s = dset[v].attrs['standard_name']
+        if s == 'projection_y_coordinate' or s == 'grid_latitude' or s == 'latitude':
+            return v
+    return None
 
 
 def from_particles(particles, bin_keys, bin_edges, vdims=(None,),

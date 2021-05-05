@@ -46,7 +46,7 @@ class Test_viscosity:
 
 class Test_ladim_raster:
     @pytest.fixture(scope='class')
-    def dset(self):
+    def ladim_dset(self):
         return xr.Dataset(
             data_vars=dict(
                 lon=xr.Variable('particle_instance', [5, 5, 6, 6, 5, 6]),
@@ -58,12 +58,36 @@ class Test_ladim_raster:
             ),
         )
 
-    def test_returns_bincount_when_default_variables(self, dset):
+    def test_returns_bincount_when_default_variables(self, ladim_dset):
         grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
 
-        raster = utils.ladim_raster(dset, grid_dset)
+        raster = utils.ladim_raster(ladim_dset, grid_dset)
 
         assert raster.bincount.values.tolist() == [
             [[2, 1], [0, 1], [0, 0]],
             [[1, 0], [0, 0], [0, 1]],
         ]
+
+    def test_copies_wgs84_georeference_from_grid_dataset(self, ladim_dset):
+        grid_dset = xr.Dataset(
+            data_vars=dict(
+                crs=xr.Variable(
+                    dims=(), data=0,
+                    attrs=dict(grid_mapping_name='latitude_longitude'),
+                )
+            ),
+            coords=dict(
+                lat=xr.Variable(
+                    'lat', [60, 61, 62],
+                    attrs=dict(standard_name='latitude'),
+                ),
+                lon=xr.Variable(
+                    'lon', [5, 6],
+                    attrs=dict(standard_name='longitude'),
+                ),
+            )
+        )
+
+        raster = utils.ladim_raster(ladim_dset, grid_dset)
+
+        assert raster.bincount.attrs['grid_mapping'] == 'crs'
