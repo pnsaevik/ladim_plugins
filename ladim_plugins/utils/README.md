@@ -27,8 +27,19 @@ Usage: `rho = density(salt, temp)`
 
 Salinity is given in PSU and temperature is given in degrees Celcius. Return value is given
 in kg m^-3.
- 
 
-## History
 
-Created by Pål Næverlid Sævik (2021)
+## Post processing
+
+Converts ladim output files to netCDF raster format.
+
+Usage from command line: `ladim_raster <args>`
+
+Run `ladim_raster --help` to get an overview of arguments.
+
+Usage from python: `out = ladim_plugins.utils.ladim_raster(inputfile, **kwargs)`
+
+where `out` is an `xarray` dataset. Run `help(ladim_plugins.utils.ladim_raster)`
+for detailed documentation.
+
+(Added May 2021 by Pål Næverlid Sævik)
