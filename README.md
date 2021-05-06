@@ -82,7 +82,7 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
-**Version 1.4.0** (): Added `salmon_lice` and `utils` modules. 
+**Version 1.4.0** (May 2021): Added `salmon_lice` and `utils` modules. 
 Improvements made to `sedimentation` and `release` modules.
 
 **Version 1.3.0** (Oct 2020): Added `release` and `nk800met` modules.
