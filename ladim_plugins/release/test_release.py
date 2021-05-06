@@ -9,7 +9,8 @@ def conf0() -> dict:
     return dict(
         date='2000-01-01 01:02:03',
         num=2,
-        location=[5, 60]
+        location=[5, 60],
+        seed=0,
     )
 
 
@@ -38,7 +39,64 @@ class Test_make_release:
         with pytest.raises(FileNotFoundError):
             make_release("this_is_no_file_name")
 
-    def test_can_add_attributes(self, conf0):
+    def test_can_add_numeric_attribute(self, conf0):
+        conf0['attrs'] = dict(
+            first=0,
+        )
+        r = make_release(conf0)
+        assert all(k in r.keys() for k in conf0['attrs'].keys())
+        assert r['first'] == [0, 0]
+
+    def test_can_add_ranged_attribute(self, conf0):
+        conf0['attrs'] = dict(
+            second=[1, 2],
+        )
+        r = make_release(conf0)
+        assert all(k in r.keys() for k in conf0['attrs'].keys())
+        assert r['second'] == [1, 2]
+
+    def test_can_add_callable_attribute(self, conf0):
+        conf0['attrs'] = dict(
+            third=lambda num: np.arange(num) + 10,
+        )
+        r = make_release(conf0)
+        assert all(k in r.keys() for k in conf0['attrs'].keys())
+        assert r['third'] == [10, 11]
+
+    def test_can_add_stringfunction_attribute(self, conf0):
+        conf0['attrs'] = dict(
+            fourth="numpy.arange",
+        )
+        r = make_release(conf0)
+        assert r['fourth'] == [0, 1]
+
+    def test_can_add_gaussian_attribute(self, conf0):
+        conf0['new_attr'] = dict(
+            distribution='gaussian',
+            mean=100,
+            std=10,
+        )
+        r = make_release(conf0)
+        assert r['new_attr'] == [117.64052345967664, 104.00157208367223]
+
+    def test_can_add_exponential_attribute(self, conf0):
+        conf0['new_attr'] = dict(
+            distribution='exponential',
+            mean=100,
+        )
+        r = make_release(conf0)
+        assert r['new_attr'] == [79.587450816311, 125.59307629658379]
+
+    def test_can_add_piecewise_random_attribute(self, conf0):
+        conf0['new_attr'] = dict(
+            distribution='piecewise',
+            knots=[10, 11, 12, 13],
+            cdf=[0, .1, .9, 1],
+        )
+        r = make_release(conf0)
+        assert r['new_attr'] == [11.561016879909156, 11.768986707965524]
+
+    def test_can_add_multiple_attributes(self, conf0):
         conf0['attrs'] = dict(
             first=0,
             second=[1, 2],
@@ -85,8 +143,6 @@ class Test_make_release:
         ]
 
     def test_can_set_depth(self, conf0):
-        np.random.seed(0)
-
         r = make_release(conf0)
         assert r['depth'] == [0, 0]
 
@@ -97,7 +153,7 @@ class Test_make_release:
         conf0['depth'] = [3, 6]
         conf0['num'] = 3
         r = make_release(conf0)
-        assert r['depth'] == [6, 3, 4.5]
+        assert r['depth'] == [4.646440511781974, 5.145568099117258, 4.8082901282149315]
 
     def test_can_print_to_file(self, conf0):
         import io
@@ -111,8 +167,6 @@ class Test_make_release:
         )
 
     def test_can_use_polygon_as_sampling_area(self, conf0):
-        np.random.seed(0)
-
         conf0['num'] = 5
         conf0['location'] = [[1, 0, 1], [0, 0, 1]]
 
@@ -142,18 +196,18 @@ class Test_make_release:
 
         result = make_release(conf0)
         assert result['latitude'] == [
-            10.279093103873562,
-            0.6788795301189603,
-            10.194233074072574,
-            0.7683521354018671,
-            10.27429140657797,
+            0.5623808488506793,
+            10.033517868984402,
+            0.5401824381239879,
+            0.11074060120630969,
+            0.45447757702366465
         ]
         assert result['longitude'] == [
-            10.758615624322356,
-            0.10590760718779213,
-            10.473600419346658,
-            0.4179802079248929,
-            10.736918177128958,
+            0.6458941130666561,
+            10.471105080247096,
+            0.8917730007820798,
+            0.9636627605010293,
+            0.6165584811742223,
         ]
 
     def test_can_use_geojson_as_sampling_area(self, conf0):
@@ -200,33 +254,31 @@ class Test_make_release:
         result = make_release(conf0)
 
         assert result['latitude'] == [
-            0.2881989094015015,
-            0.8337908471860672,
-            0.05999750359194067,
-            0.16505472944482502,
-            10.392169331284531,
-            4.948557330140221,
-            4.623566958688373,
-            10.365725942042666,
-            0.7238489893061836,
-            10.347209682994508,
+            4.2296566196845715,
+            4.328053483969628,
+            4.029523923346864,
+            4.293874185420884,
+            4.18931048406682,
+            4.272949678970935,
+            4.163571684849372,
+            10.167380154452061,
+            10.22184324905015,
+            0.28467408823734275,
         ]
         assert result['longitude'] == [
-            0.6350588736035638,
-            0.004700432322112369,
-            0.4181496705614657,
-            0.4143685882263688,
-            10.917471828996119,
-            2.6749527709916476,
-            2.0384254264727346,
-            10.690973619783644,
-            0.6827982579307039,
-            10.5688642009686,
+            2.7917250380826646,
+            2.4711050802470957,
+            2.431955438906068,
+            2.925596638292661,
+            2.928963941802113,
+            2.087129299701541,
+            2.979781602559674,
+            10.222711237402478,
+            10.699994927300079,
+            0.4146619399905236,
         ]
 
     def test_can_use_offset_polygon_as_sampling_area(self, conf0):
-        np.random.seed(0)
-
         conf0['location'] = dict(
             center=[0, 60],
             offset=[

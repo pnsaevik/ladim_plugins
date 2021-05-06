@@ -12,7 +12,7 @@ def make_release(config, fname=None):
     # Create release params
     import pandas as pd
     frames = [pd.DataFrame(make_single_release(c)) for c in config['groups']]
-    frame = pd.concat(frames)
+    frame = pd.concat(frames).fillna(0)
 
     # Make column selection if specified
     if 'columns' in config:
@@ -32,7 +32,7 @@ def load_config(config):
             config_str = config_file.read()
 
     # Is this a stream?
-    elif hasattr(config, 'read'):
+    elif hasattr(config, 'read') and callable(config.read):
         config_str = config.read()
 
     if config_str is not None:
@@ -81,16 +81,21 @@ def load_config(config):
 
 
 def make_single_release(conf):
+    # Enumerate explicit and implicit attributes
+    special_keys = ['num', 'date', 'location', 'attrs']
+    attrs_default = dict(depth=0.0)
+    attrs_explicit = conf.get('attrs', dict())
+    attrs_implicit = {k: v for k, v in conf.items() if k not in special_keys}
+    attrs_all = {**attrs_default, **attrs_implicit, **attrs_explicit}
+
+    # Compute parameter values
     num = conf['num']
     release_time = date_range(conf['date'], num)
     lon, lat = get_location(conf['location'], num)
-    attrs = get_attrs(conf.get('attrs', dict()), num)
+    attrs = get_attrs(attrs_all, num)
 
-    r = dict()
-    r['date'] = release_time
-    r['longitude'] = lon
-    r['latitude'] = lat
-    r['depth'] = get_depth(conf.get('depth', 0), num)
+    # Assemble return value
+    r = dict(date=release_time, longitude=lon, latitude=lat)
     return {**r, **attrs}
 
 
@@ -161,6 +166,9 @@ def get_attrs(attrs_conf, num):
 
 
 def get_attr(v, num):
+    if hasattr(v, '__len__') and len(v) == 2 and num != 2:
+        v = dict(distribution='uniform', min=v[0], max=v[1])
+
     if isinstance(v, str):
         import importlib
         mod_name, fn_name = v.rsplit('.', 1)
@@ -173,7 +181,31 @@ def get_attr(v, num):
     if not hasattr(v, '__len__'):
         v = [v] * num
 
+    if isinstance(v, dict) and 'distribution' in v:
+        v = get_distribution(v, num)
+
     return list(v)
+
+
+def get_distribution(v, num):
+    if v['distribution'] == 'uniform':
+        return np.random.uniform(v['min'], v['max'], num)
+
+    elif v['distribution'] == 'gaussian':
+        r = np.random.normal(v['mean'], v['std'], num)
+        minimum = v.get('min', -np.inf)
+        maximum = v.get('max', np.inf)
+        return np.clip(minimum, maximum, r)
+    elif v['distribution'] == 'exponential':
+        return np.random.exponential(v['mean'], num)
+    elif v['distribution'] == 'piecewise':
+        from scipy.interpolate import InterpolatedUnivariateSpline
+        knots = np.array(v['knots'])
+        cdf = np.array(v['cdf'])
+        fn = InterpolatedUnivariateSpline(cdf, knots, k=1)
+        return fn(np.random.rand(num))
+    else:
+        raise ValueError(f'Unknown distribution: {v["distribution"]}')
 
 
 def get_depth(depth_span, num):
@@ -342,15 +374,24 @@ def main():
     
     Sample makrel.yaml file:
     
+    # Required attributes
     num: 5                                      # Number of particles
     date: [2000-01-01 01:00, 2000-02-01 01:00]  # Start and stop dates
-    location: [5, 60]                           # Release location
+    location: [5, 60]                           # Release location (lon, lat)
     depth: [0, 10]                              # Release depth range
-    attrs:                                      
-        region: 0                               # Constant-valued attribute
-        age: [0, 0, 0, 3, 3]                    # Vector-valued attribute
-        id: numpy.arange                        # Function-valued attribute
-        health: numpy.random.randn              # Function-valued attribute
+
+    # Additional attributes
+    region: 0                                   # Constant-valued attribute
+    age: [0, 0, 0, 3, 3]                        # Vector-valued attribute
+    id: numpy.arange                            # Function-valued attribute
+    weight:                                     # Gaussian distribution
+      distribution: gaussian
+      mean: 40
+      std: 10
+    length:                                     # Exponential distribution
+      distribution: exponential
+      mean: 10
+    
     
     # Alternative: Release polygon
     # location: [[5, 6, 6, 5], [60, 60, 61, 61]]
@@ -361,7 +402,7 @@ def main():
     # Alternative: Metric offset from center location
     # location: 
     #   center: [5, 60]
-    #   offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]
+    #   offset: [[-50, 50, 50, -50], [-50, -50, 50, 50]]  # 100m x 100m square
     
     """)
     elif len(sys.argv) == 2:

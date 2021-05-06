@@ -14,7 +14,7 @@ files:
 gridforce:
     # Module name is mandatory.
     # The other items are module dependent
-    module: ladim.gridforce.ROMS
+    module: ladim_plugins.sedimentation
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
 
 

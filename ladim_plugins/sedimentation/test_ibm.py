@@ -305,3 +305,32 @@ class Test_vertical_mixing:
 
         assert np.any(state.Z != 10)
         assert np.any(state.Z == 10)
+
+
+class Test_get_settled_particles:
+    def test_selects_settled_particles(self):
+        import xarray as xr
+        ladim_dset = xr.Dataset(
+            data_vars=dict(
+                X=xr.Variable('particle_instance', np.arange(6)),
+                Y=xr.Variable('particle_instance', np.arange(10, 16)),
+                Z=xr.Variable('particle_instance', np.arange(20, 26)),
+                pid=xr.Variable('particle_instance', [0, 1, 2, 4, 0, 1]),
+                group_id=xr.Variable('particle', [0, 1, 0, 2, 1]),
+                particle_count=xr.Variable('time', [4, 2]),
+            ),
+            coords=dict(
+                time=xr.Variable(
+                    'time',
+                    np.array(["2000-01-01", "2000-01-02"]).astype('datetime64[D]')
+                ),
+            )
+        )
+
+        settled_dset = ibm.get_settled_particles(ladim_dset)
+
+        assert list(settled_dset.data_vars) == ['group_id', 'X', 'Y', 'Z']
+        assert settled_dset.pid.values.tolist() == [0, 1, 2, 4]
+        assert settled_dset.X.dims == ('pid', )
+        assert settled_dset.X.values.tolist() == [4, 5, 2, 3]
+        assert settled_dset.group_id.values.tolist() == [0, 1, 0, 1]

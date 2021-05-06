@@ -2,13 +2,16 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_plugins',
-    version='1.3.1',
+    version='1.4.0',
     packages=find_packages(),
     package_data={'': [
         '*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp', '*.geojson',
     ]},
     entry_points={
-        'console_scripts': ['makrel=ladim_plugins.release.makrel:main'],
+        'console_scripts': [
+            'makrel=ladim_plugins.release.makrel:main',
+            'ladim_raster=ladim_plugins.utils.postpro:main',
+        ],
     },
     url='https://github.com/pnsaevik/ladim_plugins',
     license='MIT',
@@ -31,6 +34,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
 
         "Operating System :: OS Independent",
     ],

@@ -19,6 +19,7 @@ Name                                                   | Description
 [lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
 [release](ladim_plugins/release)             | General module for creating release files
 [nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
+[utils](ladim_plugins/utils)                 | General utility functions for IBMs
 
 
 ## Installation
@@ -80,6 +81,9 @@ contents of `out.nc` / `out.rls`.
 
 
 ## History
+
+**Version 1.4.0** (): Added `salmon_lice` and `utils` modules. 
+Improvements made to `sedimentation` and `release` modules.
 
 **Version 1.3.0** (Oct 2020): Added `release` and `nk800met` modules.
 
