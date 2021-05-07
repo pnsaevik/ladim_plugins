@@ -17,6 +17,16 @@ gridforce:
 
 ibm:
     module: ladim_plugins.shrimp
+
+    # Stage-specific parameters (one parameter for each stage)
+    stage_duration: [12, 12, 12, 12, 12]  # Development stage duration [days]
+    maxdepth_day:   [40, 40, 200, 200, 200]  # Maximum preferred depth at daytime [m]
+    maxdepth_night: [40, 40, 100, 100, 100]  # Maximum preferred depth at nighttime [m]
+    mindepth_day:   [0,   0, 100, 100, 100]  # Minimum preferred depth at daytime [m]
+    mindepth_night: [0,   0,   0,   0,   0]  # Minimum preferred depth at nighttime [m]
+    vertical_mixing: [0.001, 0.001, 0.001, 0.001, 0.001]  # Random vertical mixing coefficient [m2/s]
+    vertical_speed: [0.001, 0.001, 0.001, 0.001, 0.001]  # Vertical speed if outside preferred depth range [m/s]
+
     variables:
         - number
         - temp
