@@ -20,11 +20,11 @@ ibm:
 
     # Stage-specific parameters (one parameter for each stage)
     stage_duration: [12, 12, 12, 12, 12]  # Development stage duration [days]
+    mindepth_day:   [0,   0, 150, 150, 150]  # Minimum preferred depth at daytime [m]
     maxdepth_day:   [40, 40, 200, 200, 200]  # Maximum preferred depth at daytime [m]
-    maxdepth_night: [40, 40, 100, 100, 100]  # Maximum preferred depth at nighttime [m]
-    mindepth_day:   [0,   0, 100, 100, 100]  # Minimum preferred depth at daytime [m]
     mindepth_night: [0,   0,   0,   0,   0]  # Minimum preferred depth at nighttime [m]
-    vertical_mixing: [0.001, 0.001, 0.001, 0.001, 0.001]  # Random vertical mixing coefficient [m2/s]
+    maxdepth_night: [40, 40,  50,  50,  50]  # Maximum preferred depth at nighttime [m]
+    vertical_mixing: [0.01, 0.01, 0.01, 0.01, 0.01]  # Random vertical mixing coefficient [m2/s]
     vertical_speed: [0.001, 0.001, 0.001, 0.001, 0.001]  # Vertical speed if outside preferred depth range [m/s]
 
     variables:
@@ -133,6 +133,6 @@ output_variables:
 
 numerics:
     # Model time step, [value, unit]
-    dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
+    dt: [60, s]     # usually 120 on NorFjords160, 600 on NorKyst800, 1800 SVIM [4km]
     advection: RK4  # either EF, RK2 or RK4 (recommended)
-    diffusion: 0    # [m*2/s] usually 0.1 on 160m NorFjords, 1 on 800m NorKyst
+    diffusion: 0.1    # [m*2/s] usually 0.1 on 160m NorFjords, 1 on 800m NorKyst

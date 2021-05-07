@@ -71,8 +71,8 @@ class Test_diel_migration:
         assert depth_day.tolist() == [0, 27, 92, 212, 273, 224, 112, 52, 8, 0]
 
 
-def test_snapshot():
-    import ladim_plugins.tests.test_examples
-    import os
-    os.chdir(os.path.dirname(ladim_plugins.tests.test_examples.__file__))
-    ladim_plugins.tests.test_examples.test_output_matches_snapshot('shrimp')
+# def test_snapshot():
+#     import ladim_plugins.tests.test_examples
+#     import os
+#     os.chdir(os.path.dirname(ladim_plugins.tests.test_examples.__file__))
+#     ladim_plugins.tests.test_examples.test_output_matches_snapshot('shrimp')
