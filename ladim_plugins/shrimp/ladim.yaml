@@ -25,7 +25,7 @@ ibm:
     mindepth_night: [0,   0,   0,   0,   0]  # Minimum preferred depth at nighttime [m]
     maxdepth_night: [40, 40,  50,  50,  50]  # Maximum preferred depth at nighttime [m]
     vertical_mixing: [0.01, 0.01, 0.01, 0.01, 0.01]  # Random vertical mixing coefficient [m2/s]
-    vertical_speed: [0.001, 0.001, 0.001, 0.001, 0.001]  # Vertical speed if outside preferred depth range [m/s]
+    vertical_speed: [0.002, 0.002, 0.002, 0.002, 0.002]  # Vertical speed if outside preferred depth range [m/s]
 
     variables:
         - number
