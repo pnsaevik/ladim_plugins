@@ -21,9 +21,8 @@ ibm:
         - number
         - temp
         - salt
-        - weight
         - age
-        - stadium
+        - stage
 
 
 particle_release:
@@ -36,9 +35,8 @@ particle_release:
     - Z              # Depth of release location [m]
     - group_id       # Custom id used to group particles in post processing
     - number         # Number of actual larvae per simulation particle
-    - weight         # Larva weight [mg]
     - age            # Larva age (days)
-    - stadium        # Larva stadium
+    - stage        # Larva stage
 
     # Converters (if not float)
     mult: int
@@ -54,7 +52,7 @@ output_variables:
 
     # Variable names
     particle: [release_time, group_id]
-    instance: [pid, Z, lon, lat, temp, salt, age, number, stadium, weight]
+    instance: [pid, Z, lon, lat, temp, salt, age, number, stage]
 
     # --- Output format for standard variables ---
 
@@ -111,19 +109,13 @@ output_variables:
     age:
         ncformat: f4
         long_name: larva age
-        units: days
+        units: seconds
 
-    # Output format for age
-    stadium:
+    # Output format for stage
+    stage:
         ncformat: f4
-        long_name: larva stadium
+        long_name: larva stage
         units: '1'
-
-    # Output format for the weight
-    weight:
-        ncformat: f4
-        long_name: larvae weight
-        units: 'kg'
 
     group_id: {ncformat: i4, long_name: particle group id}
     number: {ncformat: f4, long_name: number of individuals in instance}
