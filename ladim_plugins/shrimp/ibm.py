@@ -13,8 +13,8 @@ class IBM:
 
         self.maxdepth_day = np.array(config['ibm']['maxdepth_day'])  # [m]
         self.maxdepth_ngh = np.array(config['ibm']['maxdepth_night'])  # [m]
-        self.mindepth_day = np.array(config['ibm']['maxdepth_day'])  # [m]
-        self.mindepth_ngh = np.array(config['ibm']['maxdepth_night'])  # [m]
+        self.mindepth_day = np.array(config['ibm']['mindepth_day'])  # [m]
+        self.mindepth_ngh = np.array(config['ibm']['mindepth_night'])  # [m]
 
         self.dt = config['dt']
 
