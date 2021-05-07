@@ -24,6 +24,26 @@ class Test_light:
         assert Eb.tolist() == [1484.063211499949, 545.9563449096972, 200.84611506938265]
 
 
+class Test_sunheight:
+    def test_changes_with_latitude(self):
+        th = utils.sunheight(time='2000-01-01T12', lon=5, lat=[0, 60])
+        assert th.tolist() == [66.44491189864459, 6.851047571507612]
+
+    def test_changes_with_longitude(self):
+        th = utils.sunheight(time='2000-01-01T12', lon=[0, 20], lat=60)
+        assert th.tolist() == [6.952091891443051, 5.3530578528301085]
+
+    def test_changes_with_time(self):
+        th1 = utils.sunheight(time='2000-01-01T12', lon=5, lat=60)
+        th2 = utils.sunheight(time='2000-01-01T00', lon=5, lat=60)
+        assert [th1, th2] == [6.851047571507612, -52.881361749893784]
+
+    def test_changes_with_date(self):
+        th1 = utils.sunheight(time='2000-01-01T12', lon=5, lat=60)
+        th2 = utils.sunheight(time='2000-06-01T12', lon=5, lat=60)
+        assert [th1, th2] == [6.851047571507612, 51.93618150751681]
+
+
 class Test_density:
     def test_changes_with_temperature(self):
         rho = utils.density(temp=np.array([0, 50]), salt=30)

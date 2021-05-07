@@ -90,3 +90,49 @@ def surface_light(dtime, lon, lat):
     slight[I4] = 1.15e-5
 
     return slight
+
+
+def sunheight(time, lon, lat):
+    RAD_PER_DEG = np.pi / 180.0
+    DEG_PER_RAD = 180 / np.pi
+
+    dtime = np.datetime64(time).astype(object)
+    lon = np.array(lon)
+    lat = np.array(lat)
+
+    time_tuple = dtime.timetuple()
+    # day of year, original does not consider leap years
+    yday = time_tuple.tm_yday
+    # hours in UTC (as output from oceanographic model)
+    hours = time_tuple.tm_hour
+
+    phi = lat * RAD_PER_DEG
+
+    # Compute declineation = delta
+    a0 = 0.3979
+    a1 = 0.9856 * RAD_PER_DEG  # day-1
+    a2 = 1.9171 * RAD_PER_DEG
+    a3 = 0.98112
+    sindelta = a0 * np.sin(a1 * (yday - 80) + a2 * (np.sin(a1 * yday) - a3))
+    cosdelta = (1 - sindelta ** 2) ** 0.5
+
+    # True Sun Time [degrees](=0 with sun in North, 15 deg/hour
+    # b0 = 0.4083
+    # b1 = 1.7958
+    # b2 = 2.4875
+    # b3 = 1.0712 * rad   # day-1
+    # TST = (hours*15 + lon - b0*np.cos(a1*(yday-80)) -
+    #        b1*np.cos(a1*(yday-80)) + b2*np.sin(b3*(yday-80)))
+
+    # TST = 15 * hours  # Recover values from the fortran code
+
+    # Simplified formula
+    # correct at spring equinox (yday=80) neglecting +/- 3 deg = 12 min
+    TST = hours * 15 + lon
+
+    # Sun height  [degrees]
+    # sinheight = sindelta*sin(phi) - cosdelta*cos(phi)*cos(15*hours*rad)
+    sinheight = sindelta * np.sin(phi) - cosdelta * np.cos(phi) * np.cos(TST * RAD_PER_DEG)
+    height = np.arcsin(sinheight) * DEG_PER_RAD
+
+    return height
