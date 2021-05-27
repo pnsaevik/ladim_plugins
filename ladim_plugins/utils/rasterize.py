@@ -1,6 +1,10 @@
 import xarray as xr
 import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def ladim_raster(particle_dset, grid_dset, weights=(None,)):
@@ -54,12 +58,14 @@ def ladim_raster(particle_dset, grid_dset, weights=(None,)):
     )
 
     # Merge histogram data and grid data
+    logger.info("Copy attributes from grid dataset")
     new_raster = grid_dset.assign({v: raster.variables[v] for v in raster.data_vars})
     if 'time' in raster.coords:
         new_raster = new_raster.assign_coords(time=raster.coords['time'])
     _assign_georeference_to_data_vars(new_raster)
 
     # Copy attrs from ladim dataset
+    logger.info("Copy attributes from particle dataset")
     for varname in set(new_raster.variables).intersection(particle_dset.variables):
         for k, v in particle_dset[varname].attrs.items():
             if k not in new_raster[varname].attrs:
@@ -91,6 +97,8 @@ def change_ladim_crs(ladim_dset, grid_dset):
     target_crs = get_projection(grid_dset[crs_varname].attrs)
     transformer = Transformer.from_crs("epsg:4326", target_crs)
     x, y = transformer.transform(ladim_dset.lat.values, ladim_dset.lon.values)
+
+    logger.info(f'Reproject particle coordinates from lat/lon to "{target_crs.to_proj4()}"')
 
     return ladim_dset.assign(**{
         crs_xcoord: xr.Variable(ladim_dset.lon.dims, x),
@@ -148,11 +156,17 @@ def add_area_info(dset):
 
     # Do nothing if crs info is unavailable
     if crs_varname is None:
+        logger.info(f'Ignoring cell area, grid file lacks projection information')
         return dset
 
     # Do nothing if cell area exists
     stdnames = [dset[v].attrs.get('standard_name', '') for v in dset.variables]
     if "cell_area" in stdnames:
+        cell_area_var = next(
+            v for v in dset.variables
+            if dset[v].attrs.get('standard_name', '') == "cell_area"
+        )
+        logger.info(f'Using cell area from variable {cell_area_var} in grid file')
         return dset
 
     x_bounds = dset[dset[crs_xcoord].attrs['bounds']].values
@@ -164,6 +178,8 @@ def add_area_info(dset):
         'polar_stereographic', 'stereographic', 'orthographic', 'mercator',
         'transverse_mercator', 'oblique_mercator',
     ]
+
+    logger.info(f'Computing cell area for grid mapping of type "{grdmap}"')
 
     # Compute cell area, or raise error if unknown mapping
     if grdmap == 'latitude_longitude':
@@ -194,7 +210,14 @@ def add_area_info(dset):
 def add_edge_info(dset):
     """Add edge information to dataset coordinates, if not already present"""
     dset_new = dset.copy()
+    coords_with_bounds = [v for v in dset.coords if 'bounds' in dset[v].attrs]
+    if coords_with_bounds:
+        logger.info(f'Coordinates with bin edges in grid file: {coords_with_bounds}')
+
     coords_without_bounds = [v for v in dset.coords if 'bounds' not in dset[v].attrs]
+    if coords_without_bounds:
+        logger.info(f'Coordinates with bin centers in grid file: {coords_without_bounds}')
+
     for var_name in coords_without_bounds:
         bounds_name = var_name + '_bounds'
         edges_values = _edges(dset[var_name].values)
@@ -261,6 +284,7 @@ def from_particles(particles, bin_keys, bin_edges, vdims=(None,),
             return from_particles(dset, bin_keys, bin_edges, vdims)
 
     if countvar_name in particles:
+        logger.info("Compute raster from sparse dataset")
         count = particles.variables[countvar_name].values
         indptr_name = particles.variables[bin_keys[0]].dims[0]
         indptr = np.cumsum(np.concatenate(([0], count)))
@@ -268,9 +292,11 @@ def from_particles(particles, bin_keys, bin_edges, vdims=(None,),
             {indptr_name: slice(indptr[tidx], indptr[tidx + 1])})
         tvals = particles[timevar_name].values
     elif timevar_name in particles.dims:
+        logger.info("Compute raster from dense dataset")
         slicefn = lambda tidx: particles.isel({timevar_name: tidx})
         tvals = particles.variables[timevar_name].values
     else:
+        logger.info("Compute raster from point cloud")
         slicefn = lambda tidx: particles
         tvals = None
 
@@ -286,13 +312,16 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
     # Get the histogram for each time slot and property
     field_list = []
     for tidx in range(len(tvals) if tvals is not None else 1):
+        logger.info(f"Load time index {tidx}")
         dset = slicefn(tidx)
         coords = [dset[k].values for k in bin_keys]
         weights = [None if w is None else dset[w].values for w in vdims]
+        logger.info(f"Compute histogram for time index {tidx}")
         vals = [np.histogramdd(coords, bin_edges, weights=w)[0] for w in weights]
         field_list.append(vals)
 
     # Collect each histogram into an xarray variable
+    logger.info("Merge histograms")
     field = np.array(field_list)
     xvars = {}
     for i, vdim in enumerate(vdims):
@@ -325,17 +354,59 @@ def main():
         "grid_file",
         help="netCDF file containing the bins. Any coordinate variable in the file "
              "which match the name of a LADiM variable is used.")
-    parser.add_argument("raster_file", help="output file name")
-    parser.add_argument("--weights", nargs='+', metavar='varname', help="weighting variables")
+
+    parser.add_argument(
+        "raster_file",
+        help="output file name",
+    )
+
+    parser.add_argument(
+        "--weights",
+        nargs='+',
+        metavar='varname',
+        help="weighting variables",
+        default=(),
+    )
 
     args = parser.parse_args()
-    if args.weights is None:
-        weights = (None, )
-    else:
-        weights = (None, ) + tuple(args.weights)
+    weights = (None, ) + tuple(args.weights)
 
-    with xr.open_dataset(args.ladim_file) as ladim_dset:
-        with xr.open_dataset(args.grid_file) as grid_dset:
+    # Initialize logger
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s: %(message)s',
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+    logger.info(f'Open grid file {args.grid_file}')
+    grid_dset = xr.load_dataset(args.grid_file)
+
+    # --- Use either single-file or multi-file approach ---
+
+    import glob
+    import os
+    ladim_files = sorted(glob.glob(args.ladim_file))
+
+    if len(ladim_files) == 0:
+        raise IOError(f'File "{ladim_files}" not found')
+
+    elif len(ladim_files) == 1:
+        logger.info(f'Open particle file {ladim_files[0]}')
+        with xr.open_dataset(ladim_files[0]) as ladim_dset:
             raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
+            logger.info(f'Save raster to {args.raster_file}')
+            raster.to_netcdf(args.raster_file)
 
-    raster.to_netcdf(args.raster_file)
+    else:
+        rfile_base, rfile_ext = os.path.splitext(args.raster_file)
+        rfiles = [f'{rfile_base}_{i:04}{rfile_ext}' for i in range(len(ladim_files))]
+        for ladim_file, raster_file in zip(ladim_files, rfiles):
+            logger.info(f'Open particle file {ladim_file}')
+            with xr.open_dataset(ladim_file) as ladim_dset:
+                raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
+                logger.info(f'Save raster to {raster_file}')
+                raster.to_netcdf(raster_file)
+
+
+if __name__ == '__main__':
+    main()
