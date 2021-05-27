@@ -449,14 +449,34 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
-    logger.info('Open grid file')
-    with xr.open_dataset(args.grid_file) as grid_dset:
-        logger.info('Open particle file')
-        with load_mfladim(args.ladim_file) as ladim_dset:
-            raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
+    logger.info(f'Open grid file {args.grid_file}')
+    grid_dset = xr.load_dataset(args.grid_file)
 
-    logger.info(f'Save raster to {args.raster_file}')
-    raster.to_netcdf(args.raster_file)
+    # --- Use either single-file or multi-file approach ---
+
+    import glob
+    import os
+    ladim_files = sorted(glob.glob(args.ladim_file))
+
+    if len(ladim_files) == 0:
+        raise IOError(f'File "{ladim_files}" not found')
+
+    elif len(ladim_files) == 1:
+        logger.info(f'Open particle file {ladim_files[0]}')
+        with xr.open_dataset(ladim_files[0]) as ladim_dset:
+            raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
+            logger.info(f'Save raster to {args.raster_file}')
+            raster.to_netcdf(args.raster_file)
+
+    else:
+        rfile_base, rfile_ext = os.path.splitext(args.raster_file)
+        rfiles = [f'{rfile_base}_{i:04}{rfile_ext}' for i in range(len(ladim_files))]
+        for ladim_file, raster_file in zip(ladim_files, rfiles):
+            logger.info(f'Open particle file {ladim_file}')
+            with xr.open_dataset(ladim_file) as ladim_dset:
+                raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
+                logger.info(f'Save raster to {raster_file}')
+                raster.to_netcdf(raster_file)
 
 
 if __name__ == '__main__':
