@@ -167,14 +167,3 @@ class Test_ladim_raster:
             [[2, 1], [0, 1], [0, 0]],
             [[1, 0], [0, 0], [0, 1]],
         ]
-
-
-class Test_load_mfladim:
-    def test_(self):
-        from ladim_plugins.utils.rasterize import load_mfladim
-        from pathlib import Path
-
-        files = 'S:\\anneds\\NY_SALT\\Raw2017\\raw_000*.nc'
-
-        with load_mfladim(files) as mfdset:
-            pass

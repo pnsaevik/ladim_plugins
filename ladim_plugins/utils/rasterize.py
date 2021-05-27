@@ -1,7 +1,6 @@
 import xarray as xr
 import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
-from contextlib import contextmanager
 import logging
 
 
@@ -342,77 +341,6 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
         dset = xr.Dataset(xvars, xcoords)
 
     return dset
-
-
-@contextmanager
-def load_mfladim(files):
-    """Load multipart ladim files as xarray dataset"""
-
-    import glob
-    file_names = sorted(glob.glob(files))
-
-    # --- Do single-file opening if only one file ---
-
-    if len(file_names) == 1:
-        yield xr.open_dataset(file_names[0])
-        return
-
-    # --- Check that the files follow a continuous, sequential ordering ---
-
-    with xr.open_dataset(file_names[0]) as dset:
-        instance_offset = dset.instance_offset.values.item()
-
-    for fname in file_names:
-        with xr.open_dataset(fname) as dset:
-            if dset.instance_offset.values.item() != instance_offset:
-                raise ValueError(
-                    f'In {fname}: Expected instance_offset == {instance_offset}, '
-                    f'found {dset.instance_offset.values.item()}'
-                )
-            instance_offset += len(dset.particle_instance)
-
-    # --- Open and merge data files. Close them afterwards. ---
-
-    dataset_particle_instance = None
-    dataset_time = None
-    dataset_first = None
-    dataset_merged = None
-
-    try:
-        dataset_first = xr.open_dataset(file_names[0])
-        dataset_particle = dataset_first.drop_dims(['particle_instance', 'time'])
-
-        dataset_particle_instance = xr.open_mfdataset(
-            paths=file_names,
-            concat_dim='particle_instance',
-            combine='nested',
-            preprocess=lambda d: d.drop_dims(['particle', 'time']),
-        )
-
-        dataset_time = xr.open_mfdataset(
-            paths=file_names,
-            concat_dim='time',
-            combine='nested',
-            preprocess=lambda d: d.drop_dims(['particle', 'particle_instance']),
-        )
-
-        dataset_merged = xr.merge([
-            dataset_particle,
-            dataset_particle_instance.drop_vars('instance_offset'),
-            dataset_time.drop_vars('instance_offset')
-        ])
-
-        yield dataset_merged
-
-    finally:
-        if dataset_merged:
-            dataset_merged.close()
-        if dataset_first:
-            dataset_first.close()
-        if dataset_particle_instance:
-            dataset_particle_instance.close()
-        if dataset_time:
-            dataset_time.close()
 
 
 def main():
