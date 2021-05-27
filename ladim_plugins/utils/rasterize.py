@@ -49,6 +49,12 @@ def ladim_raster(particle_dset, grid_dset, weights=(None,)):
     # Convert projection of ladim dataset, if necessary
     particle_dset = change_ladim_crs(particle_dset, grid_dset)
 
+    # Broadcast particle variables onto the particle_instance dimension
+    for v in grid_dset.coords:
+        if particle_dset[v].dims == ('particle', ):
+            logger.info(f'Broadcasting variable {v} to particle_instance')
+            particle_dset[v] = particle_dset[v].isel(particle=particle_dset['pid'])
+
     # Compute histogram data
     raster = from_particles(
         particles=particle_dset,
