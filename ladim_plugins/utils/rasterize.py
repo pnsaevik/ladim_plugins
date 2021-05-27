@@ -2,6 +2,10 @@ import xarray as xr
 import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 from contextlib import contextmanager
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def ladim_raster(particle_dset, grid_dset, weights=(None,)):
@@ -397,14 +401,22 @@ def main():
         "grid_file",
         help="netCDF file containing the bins. Any coordinate variable in the file "
              "which match the name of a LADiM variable is used.")
-    parser.add_argument("raster_file", help="output file name")
-    parser.add_argument("--weights", nargs='+', metavar='varname', help="weighting variables")
+
+    parser.add_argument(
+        "raster_file",
+        help="output file name",
+    )
+
+    parser.add_argument(
+        "--weights",
+        nargs='+',
+        metavar='varname',
+        help="weighting variables",
+        default=(),
+    )
 
     args = parser.parse_args()
-    if args.weights is None:
-        weights = (None, )
-    else:
-        weights = (None, ) + tuple(args.weights)
+    weights = (None, ) + tuple(args.weights)
 
     with xr.open_dataset(args.grid_file) as grid_dset:
         with load_mfladim(args.ladim_file) as ladim_dset:
