@@ -313,10 +313,11 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
     # Get the histogram for each time slot and property
     field_list = []
     for tidx in range(len(tvals) if tvals is not None else 1):
-        logger.info(f"Compute histogram for time index {tidx}")
+        logger.info(f"Load time index {tidx}")
         dset = slicefn(tidx)
         coords = [dset[k].values for k in bin_keys]
         weights = [None if w is None else dset[w].values for w in vdims]
+        logger.info(f"Compute histogram for time index {tidx}")
         vals = [np.histogramdd(coords, bin_edges, weights=w)[0] for w in weights]
         field_list.append(vals)
 
