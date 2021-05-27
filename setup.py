@@ -10,7 +10,7 @@ setup(
     entry_points={
         'console_scripts': [
             'makrel=ladim_plugins.release.makrel:main',
-            'ladim_raster=ladim_plugins.utils.postpro:main',
+            'ladim_raster=ladim_plugins.utils.rasterize:main',
         ],
     },
     url='https://github.com/pnsaevik/ladim_plugins',
