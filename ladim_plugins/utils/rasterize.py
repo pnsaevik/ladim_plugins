@@ -368,6 +368,54 @@ def merge_ladim(ladim_datasets):
     return xr.merge([dataset_particle, dataset_particle_instance, dataset_time])
 
 
+def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
+    """An iterator for loading chunks of a multipart ladim dataset
+
+    The function returns an iterator of chunks, where each chunk represents a time step
+    of ladim data. Alternatively, each time step can be broken into even smaller chunks
+    using the max_rows argument. The data is returned as a dict of numpy arrays.
+
+    Variables can be either time-indexed, particle-indexed or particle_instance-indexed.
+    In all cases, the output data is particle_instance-indexed.
+
+    :param ladim_datasets: A sequence of xarray datasets
+    :param varnames: Variable names to extract from the ladim datasets
+    :param max_rows: Maximum number of rows per chunk
+    :returns: A dict of numpy arrays, each of equal size
+    """
+
+    dim_inst = 'particle_instance'
+    dim_time = 'time'
+    dim_part = 'particle'
+    var_pidx = 'pid'
+    var_pcnt = 'particle_count'
+
+    for dset in ladim_datasets:
+        varnames_time = [v for v in varnames if dset[v].dims == (dim_time,)]
+        varnames_part = [v for v in varnames if dset[v].dims == (dim_part,)]
+        varnames_inst = [v for v in varnames if dset[v].dims == (dim_inst,)]
+
+        idx_inst_prev = 0
+
+        for idx_time in range(dset.dims[dim_time]):
+            cum_pinst = idx_inst_prev + dset[var_pcnt][idx_time].values.item()
+            while idx_inst_prev < cum_pinst:
+                idx_inst_next = min(idx_inst_prev + max_rows, cum_pinst)
+                idx_inst = range(idx_inst_prev, idx_inst_next)
+                idx_part = dset[var_pidx][idx_inst].values
+                data_part = {v: dset[v].isel({dim_part: idx_part}).values for v in varnames_part}
+                data_inst = {v: dset[v].isel({dim_inst: idx_inst}).values for v in varnames_inst}
+                data_time = {
+                    v: np.broadcast_to(
+                        dset[v].isel({dim_time: idx_time}).values,
+                        (idx_inst_next - idx_inst_prev),
+                    )
+                    for v in varnames_time
+                }
+                yield {**data_time, **data_part, **data_inst}
+                idx_inst_prev = idx_inst_next
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(

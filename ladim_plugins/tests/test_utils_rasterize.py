@@ -4,7 +4,7 @@ import xarray as xr
 import numpy as np
 
 
-class Test_merge_ladim:
+class Test_ladim_chunks:
     @pytest.fixture(scope='class')
     def data(self):
         ladim_0 = xr.Dataset(
@@ -17,7 +17,7 @@ class Test_merge_ladim:
                 farmid=xr.Variable(dims='particle', data=[101, 102, 101, 102, 101]),
                 pid=xr.Variable(
                     dims='particle_instance',
-                    data=[1, 1, 2, 1, 2, 3, 2, 3, 4, 5],
+                    data=[0, 0, 1, 0, 1, 2, 1, 2, 3, 4],
                 ),
                 X=xr.Variable(
                     dims='particle_instance',
@@ -38,8 +38,50 @@ class Test_merge_ladim:
 
         return [ladim_0, ladim_1, ladim_2]
 
-    def test_correct_result(self, data):
-        ladim_0, ladim_1, ladim_2 = data
-        ladim_new = rasterize.merge_ladim([ladim_1, ladim_2])
-        assert str(ladim_new) == str(ladim_0)
+    def test_number_of_chunks_equals_number_of_time_slots_if_unlimited_rows(self, data):
+        _, ladim_1, ladim_2 = data
+        chunks = rasterize.ladim_chunks([ladim_1, ladim_2], ['X'])
+        num_chunks = sum(1 for _ in chunks)
+        assert num_chunks == len(ladim_1.time) + len(ladim_2.time)
 
+    def test_number_of_chunks_increases_if_small_maxrow(self, data):
+        _, ladim_1, ladim_2 = data
+        chunks = rasterize.ladim_chunks([ladim_1, ladim_2], ['X'], max_rows=2)
+        num_chunks = sum(1 for _ in chunks)
+        assert num_chunks > len(ladim_1.time) + len(ladim_2.time)
+
+    def test_chunks_of_merged_and_separated_datasets_are_equivalent(self, data):
+        ladim_0, ladim_1, ladim_2 = data
+        chunks_12 = rasterize.ladim_chunks([ladim_1, ladim_2], ['X'])
+        chunks_0 = rasterize.ladim_chunks([ladim_0], ['X'])
+        for chunk_0, chunk_12 in zip(chunks_0, chunks_12):
+            assert chunk_0['X'].tolist() == chunk_12['X'].tolist()
+
+    def test_returns_dict_of_ndarrays(self, data):
+        _, ladim_1, ladim_2 = data
+        varnames = ['X', 'farmid', 'time']
+        chunk = next(rasterize.ladim_chunks([ladim_1, ladim_2], varnames))
+        assert isinstance(chunk, dict)
+        assert set(chunk.keys()) == set(varnames)
+        assert all(isinstance(v, np.ndarray) for v in chunk.values())
+
+    def test_chunks_have_correct_size(self, data):
+        ladim_0, ladim_1, ladim_2 = data
+        chunks = rasterize.ladim_chunks([ladim_1, ladim_2], ['X'])
+        pcounts_expected = ladim_0.particle_count.values.tolist()
+        pcounts_actual = [len(chunk['X']) for chunk in chunks]
+        assert pcounts_actual == pcounts_expected
+
+    def test_broadcasts_particle_vars(self, data):
+        ladim_0, ladim_1, ladim_2 = data
+        chunks = rasterize.ladim_chunks([ladim_1, ladim_2], ['farmid'])
+        pcounts_expected = ladim_0.particle_count.values.tolist()
+        pcounts_actual = [len(chunk['farmid']) for chunk in chunks]
+        assert pcounts_actual == pcounts_expected
+
+    def test_broadcasts_time_vars(self, data):
+        ladim_0, ladim_1, ladim_2 = data
+        chunks = rasterize.ladim_chunks([ladim_1, ladim_2], ['time'])
+        pcounts_expected = ladim_0.particle_count.values.tolist()
+        pcounts_actual = [len(chunk['time']) for chunk in chunks]
+        assert pcounts_actual == pcounts_expected
