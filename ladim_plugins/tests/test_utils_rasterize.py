@@ -2,6 +2,8 @@ import pytest
 from ladim_plugins.utils import rasterize
 import xarray as xr
 import numpy as np
+import netCDF4 as nc
+from uuid import uuid4
 
 
 class Test_ladim_chunks:
@@ -85,3 +87,55 @@ class Test_ladim_chunks:
         pcounts_expected = ladim_0.particle_count.values.tolist()
         pcounts_actual = [len(chunk['time']) for chunk in chunks]
         assert pcounts_actual == pcounts_expected
+
+
+class Test_init_raster:
+    def test_adds_dimensions(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['x', 'y']
+            bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+            rasterize.init_raster(dset, bin_keys, bin_centers)
+            assert dset.dimensions['x'].size == 3
+            assert dset.dimensions['y'].size == 4
+
+    def test_adds_coords(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['x', 'y']
+            bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+            rasterize.init_raster(dset, bin_keys, bin_centers)
+            assert dset.variables['x'][:].tolist() == bin_centers[0]
+            assert dset.variables['y'][:].tolist() == bin_centers[1]
+
+    def test_adds_bounds(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['x', 'y']
+            bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+            rasterize.init_raster(dset, bin_keys, bin_centers)
+            assert dset.variables['x_bounds'][:, 0].tolist() == [0.5, 1.5, 2.5]
+            assert dset.variables['x_bounds'][:, 1].tolist() == [1.5, 2.5, 3.5]
+            assert dset.variables['x'].bounds == 'x_bounds'
+
+    def test_adds_bincount(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['x', 'y']
+            bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+            rasterize.init_raster(dset, bin_keys, bin_centers)
+            assert dset.variables['bincount'].dimensions == tuple(bin_keys)
+            assert np.sum(dset.variables['bincount'][:]) == 0
+
+    def test_can_add_weights(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['x', 'y']
+            bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+            rasterize.init_raster(dset, bin_keys, bin_centers, weights=('super', ))
+            assert dset.variables['super'].dimensions == tuple(bin_keys)
+
+    def test_can_copy_dtype_from_ladim_dset(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset_ladim:
+                dset_ladim.createVariable('z', np.int32, ())
+                bin_keys = ['x', 'y']
+                bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+                rasterize.init_raster(
+                    dset, bin_keys, bin_centers, weights=('z', ), dset_ladim=dset_ladim)
+                assert dset.variables['z'].dtype == dset_ladim.variables['z'].dtype

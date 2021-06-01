@@ -368,6 +368,33 @@ def merge_ladim(ladim_datasets):
     return xr.merge([dataset_particle, dataset_particle_instance, dataset_time])
 
 
+def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), dset_ladim=None):
+    bin_centers = [np.array(c) for c in bin_centers]
+
+    if not bin_edges:
+        bin_edges = [_edges(c) for c in bin_centers]
+
+    dset_raster.createDimension('bounds_dim', 2)
+
+    for k, c, e in zip(bin_keys, bin_centers, bin_edges):
+        dset_raster.createDimension(k, len(c))
+        dset_raster.createVariable(k, c.dtype, k)[:] = c
+        v = dset_raster.createVariable(k + '_bounds', np.float32, (k, 'bounds_dim'))
+        v[:] = np.stack([e[:-1], e[1:]], axis=-1)
+        dset_raster[k].bounds = v.name
+
+    dtypes = {k: np.float64 for k in weights}
+    dtypes['bincount'] = np.int32
+
+    if dset_ladim:
+        vars_ladim = dset_ladim.variables
+        dtypes_ladim = {v: vars_ladim[v].dtype for v in dtypes.keys() if v in vars_ladim}
+        dtypes = {**dtypes, **dtypes_ladim}
+
+    for n in weights + ('bincount', ):
+        dset_raster.createVariable(n, dtypes[n], bin_keys)[:] = 0
+
+
 def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
     """An iterator for loading chunks of a multipart ladim dataset
 
