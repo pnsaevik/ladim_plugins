@@ -165,13 +165,11 @@ class Test_update_raster:
 
     @pytest.fixture()
     def chunk(self):
-        return xr.Dataset(
-            data_vars=dict(
-                time=xr.Variable('dim0', [np.datetime64('2000')] * 10),
-                X=xr.Variable('dim0', np.arange(10)),
-                Y=xr.Variable('dim0', np.arange(10) * 10),
-                W=xr.Variable('dim0', np.ones(10) * 10),
-            ),
+        return dict(
+            time=np.array([np.datetime64('2000')] * 10),
+            X=np.arange(10),
+            Y=np.arange(10) * 10,
+            W=np.ones(10) * 10,
         )
 
     def test_correct_when_single_bin_key(self, raster, chunk):

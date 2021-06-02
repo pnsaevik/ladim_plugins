@@ -381,9 +381,9 @@ def update_raster(dset_raster, ladim_chunk, bin_keys, weight_var=None):
 
     bin_edge_keys = (dset_raster.variables[bin_key].bounds for bin_key in bin_keys)
     bin_edge_vars = (dset_raster.variables[bin_edge_key] for bin_edge_key in bin_edge_keys)
-    bin_edge_vals = [v[:, 0].tolist() + [v[1, 1]] for v in bin_edge_vars]
-    coords = [ladim_chunk.variables[v][:] for v in bin_keys]
-    weights = ladim_chunk.variables[weight_var][:] if weight_var else None
+    bin_edge_vals = [v[:, 0].tolist() + [v[-1, 1]] for v in bin_edge_vars]
+    coords = [ladim_chunk[v] for v in bin_keys]
+    weights = ladim_chunk[weight_var] if weight_var else None
     new_raster_val = np.histogramdd(coords, bin_edge_vals, weights=weights)[0]
     previous_raster_val = dset_raster.variables[raster_varname][:]
     dset_raster.variables[raster_varname][:] = previous_raster_val + new_raster_val
