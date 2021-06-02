@@ -433,14 +433,27 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
 
     raster_varname = weight_var if weight_var else 'bincount'
 
+    # --- Get bin edges from raster coordinate variable ---
     bin_edge_keys = (dset_raster[bin_key].bounds for bin_key in bin_keys)
     bin_edge_vars = (dset_raster[bin_edge_key] for bin_edge_key in bin_edge_keys)
     bin_edge_vals = [v[:, 0].tolist() + [v[-1, 1]] for v in bin_edge_vars]
+
+    # --- Get coordinates from chunk, possibly converting dates to numeric values ---
     coords = [_get_chunk_vals(v) for v in bin_keys]
     weights = chunk[weight_var] if weight_var else None
-    new_raster_val = np.histogramdd(coords, bin_edge_vals, weights=weights)[0]
-    previous_raster_val = dset_raster[raster_varname][:]
-    dset_raster[raster_varname][:] = previous_raster_val + new_raster_val
+
+    # --- Find minimum and maximum extent of coordinate data --
+    idx0 = [max(1, np.digitize(c.min(), v)) - 1 for c, v in zip(coords, bin_edge_vals)]
+    idx1 = [min(len(v), np.digitize(c.max(), v) + 1) for c, v in zip(coords, bin_edge_vals)]
+
+    # --- Construct histogram using only a subset of the bin edges
+    bins = [v[start:stop] for v, start, stop in zip(bin_edge_vals, idx0, idx1)]
+    new_raster_val = np.histogramdd(coords, bins, weights=weights)[0]
+
+    # --- Update a subset of the on-disk raster data ---
+    idx = [slice(start, stop - 1) for start, stop in zip(idx0, idx1)]
+    previous_raster_val = dset_raster[raster_varname][idx]
+    dset_raster[raster_varname][idx] = previous_raster_val + new_raster_val
 
 
 def _create_variable(dset, varname, datatype, dimensions, values):
