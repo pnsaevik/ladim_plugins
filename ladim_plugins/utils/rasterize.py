@@ -378,6 +378,45 @@ def merge_ladim(ladim_datasets):
     return xr.merge([dataset_particle, dataset_particle_instance, dataset_time])
 
 
+def dt64_to_num(dates, units, calendar):
+    """
+    date2num(dates, units, calendar=None)
+
+        Return numeric time values given a datetime64 array. The units
+        of the numeric time values are described by the **units** argument
+        and the **calendar** keyword. The datetime objects must
+        be in UTC with no time-zone offset.
+
+        The function encapsulates cftime.date2num, but allows numpy datetime64 inputs.
+
+        **dates**: A numpy datetime64 array.
+
+        **units**: a string of the form **<time units> since <reference time>**
+        describing the time units. **<time units>** can be days, hours, minutes,
+        seconds, milliseconds or microseconds. **<reference time>** is the time
+        origin. **months_since** is allowed *only* for the **360_day** calendar.
+
+        **calendar**: describes the calendar to be used in the time calculations.
+        All the values currently defined in the
+        [CF metadata convention](http://cfconventions.org)
+        Valid calendars **'standard', 'gregorian', 'proleptic_gregorian'
+        'noleap', '365_day', '360_day', 'julian', 'all_leap', '366_day'**.
+        Default is `None` which means the calendar associated with the rist
+        input datetime instance will be used.
+
+        returns a numpy array of integers
+    """
+    from cftime import date2num
+    import datetime
+    py_dates = dates.tolist()
+    py_datetime = [
+        d if hasattr(d, 'hour')
+        else datetime.datetime.combine(d, datetime.time())
+        for d in py_dates
+    ]
+    return np.array(date2num(py_datetime, units, calendar))
+
+
 def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     # Algorithm:
     # 1. Get bin_edges
@@ -385,17 +424,6 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     # 3. Construct a subset of bin_edges which includes the whole ladim chunk
     # 4. Construct a histogramdd
     # 5. Increment the appropriate slice in dset_raster with the histogramdd data
-
-    def dt64_to_num(dates, units, calendar):
-        from cftime import date2num
-        import datetime
-        py_dates = dates.tolist()
-        py_datetime = [
-            d if hasattr(d, 'hours')
-            else datetime.datetime.combine(d, datetime.time())
-            for d in py_dates
-        ]
-        return np.array(date2num(py_datetime, units, calendar))
 
     def _get_chunk_vals(bin_key):
         values = chunk[bin_key]

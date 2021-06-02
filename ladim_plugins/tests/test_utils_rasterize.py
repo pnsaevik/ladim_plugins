@@ -157,6 +157,35 @@ class Test_init_raster:
                 assert dset.variables['z'].dtype == dset_ladim.variables['z'].dtype
 
 
+class Test_dt64_to_num:
+    def test_correct_when_hour_accuracy(self):
+        dt64 = np.datetime64('2000') + np.arange(5) * np.timedelta64(1, 'h')
+        num = rasterize.dt64_to_num(
+            dates=dt64,
+            units='minutes since 2000-01-01',
+            calendar='standard',
+        )
+        assert num.tolist() == [0, 60, 120, 180, 240]
+
+    def test_correct_when_fractional_output(self):
+        dt64 = np.datetime64('2000') + 6 * np.arange(5) * np.timedelta64(1, 'h')
+        num = rasterize.dt64_to_num(
+            dates=dt64,
+            units='days since 2000-01-01',
+            calendar='standard',
+        )
+        assert num.tolist() == [0, .25, .5, .75, 1]
+
+    def test_correct_when_day_accuracy(self):
+        dt64 = np.datetime64('2000') + np.arange(5) * np.timedelta64(1, 'D')
+        num = rasterize.dt64_to_num(
+            dates=dt64,
+            units='hours since 2000-01-01',
+            calendar='standard',
+        )
+        assert num.tolist() == [0, 24, 48, 72, 96]
+
+
 class Test_update_raster:
     @pytest.fixture()
     def raster(self):
