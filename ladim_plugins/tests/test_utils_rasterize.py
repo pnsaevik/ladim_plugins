@@ -177,6 +177,11 @@ class Test_update_raster:
         rasterize.update_raster(raster, chunk, ['X'])
         assert raster.variables['bincount'][:].tolist() == [2, 4]
 
+    def test_correct_when_two_bin_keys(self, raster, chunk):
+        raster.createVariable('bincount', np.int32, ('X', 'Y'))[:] = 0
+        rasterize.update_raster(raster, chunk, ['X', 'Y'])
+        assert raster.variables['bincount'][:].tolist() == [[2, 0, 0], [1, 2, 1]]
+
     def test_increments_raster_when_multiple_calls(self, raster, chunk):
         raster.createVariable('bincount', np.int32, ('X', ))[:] = 0
         rasterize.update_raster(raster, chunk, ['X'])
