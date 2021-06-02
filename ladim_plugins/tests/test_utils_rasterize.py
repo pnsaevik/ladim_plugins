@@ -106,6 +106,13 @@ class Test_init_raster:
             assert dset.variables['x'][:].tolist() == bin_centers[0]
             assert dset.variables['y'][:].tolist() == bin_centers[1]
 
+    def test_adds_time_coord(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['time']
+            bin_centers = [np.array(['2000', '2001', '2003']).astype('datetime64')]
+            rasterize.init_raster(dset, bin_keys, bin_centers)
+            assert dset.variables['time'][:].tolist() == [0, 1, 3]
+
     def test_adds_bounds(self):
         with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
             bin_keys = ['x', 'y']

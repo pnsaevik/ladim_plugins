@@ -239,8 +239,18 @@ def add_edge_info(dset):
 
 
 def _edges(a):
-    mid = 0.5 * (a[:-1] + a[1:])
-    return np.concatenate([mid[:1] - (a[1] - a[0]), mid, mid[-1:] + a[-1] - a[-2]])
+    diff0 = a[1:] - a[:-1]
+    extended = np.concatenate([a[:1] - diff0[:1], a, a[-1:] + diff0[-1:]])
+    diff = extended[1:] - extended[:-1]
+    if np.issubdtype(a.dtype, np.integer):
+        half_diff = (0.5 * (diff + 1)).astype(a.dtype)
+    elif np.issubdtype(a.dtype, np.datetime64):
+        half_diff = (0.5 * (diff + np.array(1).astype(diff.dtype)))
+    else:
+        half_diff = 0.5 * diff
+    edges = extended[:-1] + half_diff
+
+    return edges
 
 
 def _assign_georeference_to_data_vars(dset):
@@ -389,6 +399,22 @@ def update_raster(dset_raster, ladim_chunk, bin_keys, weight_var=None):
     dset_raster.variables[raster_varname][:] = previous_raster_val + new_raster_val
 
 
+def _create_variable(dset, varname, datatype, dimensions, values):
+    if np.issubdtype(datatype, np.datetime64):
+        import re
+        v = dset.createVariable(varname, np.int64, dimensions)
+        datetime64_unit = re.match(r'.*\[(.*?)]', datatype.str).groups()[0]
+        netcdf4_unit = dict(
+            Y='years', M='months', D='days', h='hours', m='minutes', s='seconds',
+        )[datetime64_unit]
+        v.units = f'{netcdf4_unit} since {str(values[0])}'
+        v.calendar = 'standard'
+        integer_values = (values - values[0]).astype(np.int64)
+        v[:] = integer_values
+    else:
+        dset.createVariable(varname, datatype, dimensions)[:] = values
+
+
 def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), dset_ladim=None):
     bin_centers = [np.array(c) for c in bin_centers]
 
@@ -398,13 +424,12 @@ def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), 
     dset_raster.createDimension('bounds_dim', 2)
 
     for k, c, e in zip(bin_keys, bin_centers, bin_edges):
-        if np.issubdtype(c.dtype, np.integer):
-            e += 0.5  # This ensures "round to nearest" behaviour instead of "floor"
+        bnds_vals = np.stack([e[:-1], e[1:]], axis=-1)
+        bnds_name = k + '_bounds'
         dset_raster.createDimension(k, len(c))
-        dset_raster.createVariable(k, c.dtype, k)[:] = c
-        v = dset_raster.createVariable(k + '_bounds', c.dtype, (k, 'bounds_dim'))
-        v[:] = np.stack([e[:-1], e[1:]], axis=-1)
-        dset_raster[k].bounds = v.name
+        _create_variable(dset_raster, k, datatype=c.dtype, dimensions=k, values=c)
+        _create_variable(dset_raster, bnds_name, c.dtype, (k, 'bounds_dim'), bnds_vals)
+        dset_raster[k].bounds = bnds_name
 
     dtypes = {k: np.float64 for k in weights}
     dtypes['bincount'] = np.int32
