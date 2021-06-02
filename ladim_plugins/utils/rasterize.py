@@ -359,25 +359,6 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
     return dset
 
 
-def merge_ladim(ladim_datasets):
-    dataset_particle = ladim_datasets[0].drop_dims(['particle_instance', 'time'])
-    dataset_particle_instance = xr.combine_nested(
-        datasets=[
-            d.drop_dims(['particle', 'time']).drop_vars('instance_offset')
-            for d in ladim_datasets
-        ],
-        concat_dim='particle_instance',
-    )
-    dataset_time = xr.combine_nested(
-        datasets=[
-            d.drop_dims(['particle', 'particle_instance']).drop_vars('instance_offset')
-            for d in ladim_datasets
-        ],
-        concat_dim='time',
-    )
-    return xr.merge([dataset_particle, dataset_particle_instance, dataset_time])
-
-
 def dt64_to_num(dates, units, calendar):
     """
     date2num(dates, units, calendar=None)
