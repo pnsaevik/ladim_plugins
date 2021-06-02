@@ -194,6 +194,11 @@ class Test_update_raster:
         rasterize.update_raster(raster, chunk, ['X'])
         assert raster.variables['bincount'][:].tolist() == [2, 4]
 
+    def test_correct_when_single_bin_key_and_weights(self, raster, chunk):
+        raster.createVariable('W', np.float32, ('X', ))[:] = 0
+        rasterize.update_raster(raster, chunk, ['X'], weight_var='W')
+        assert raster.variables['W'][:].tolist() == [20, 40]
+
     def test_correct_when_two_bin_keys(self, raster, chunk):
         raster.createVariable('bincount', np.int32, ('X', 'Y'))[:] = 0
         rasterize.update_raster(raster, chunk, ['X', 'Y'])
