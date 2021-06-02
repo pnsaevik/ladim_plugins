@@ -160,6 +160,7 @@ class Test_update_raster:
             dset.variables['Y'].bounds = 'Y_bounds'
             dset.variables['time'].bounds = 'time_bounds'
             dset.variables['time'].units = 'hours since 2000-01-01T00'
+            dset.set_auto_maskandscale(False)
             yield dset
 
     @pytest.fixture()
@@ -177,3 +178,11 @@ class Test_update_raster:
         raster.createVariable('bincount', np.int32, ('X', ))[:] = 0
         rasterize.update_raster(raster, chunk, ['X'])
         assert raster.variables['bincount'][:].tolist() == [2, 4]
+
+    def test_increments_raster_when_multiple_calls(self, raster, chunk):
+        raster.createVariable('bincount', np.int32, ('X', ))[:] = 0
+        rasterize.update_raster(raster, chunk, ['X'])
+        double_first_val = 2 * raster.variables['bincount'][:]
+        rasterize.update_raster(raster, chunk, ['X'])
+        second_val = raster.variables['bincount'][:]
+        assert double_first_val.tolist() == second_val.tolist()

@@ -368,7 +368,7 @@ def merge_ladim(ladim_datasets):
     return xr.merge([dataset_particle, dataset_particle_instance, dataset_time])
 
 
-def update_raster(dset_raster, ladim_chunk, bin_keys, weights=()):
+def update_raster(dset_raster, ladim_chunk, bin_keys, weight_var=None):
     # Algorithm:
     # 1. Get bin_edges
     # 2. Do a quick survey of ladim_chunk to find max and min of each binning coordinate
@@ -376,7 +376,17 @@ def update_raster(dset_raster, ladim_chunk, bin_keys, weights=()):
     # 4. Construct a histogramdd
     # 5. Increment the appropriate slice in dset_raster with the histogramdd data
     # 6. Do this for all weights, including the bincount
-    pass
+
+    raster_varname = weight_var if weight_var else 'bincount'
+
+    bin_edge_keys = (dset_raster.variables[bin_key].bounds for bin_key in bin_keys)
+    bin_edge_vars = (dset_raster.variables[bin_edge_key] for bin_edge_key in bin_edge_keys)
+    bin_edge_vals = [v[:, 0].tolist() + [v[1, 1]] for v in bin_edge_vars]
+    coords = [ladim_chunk.variables[v][:] for v in bin_keys]
+    weights = ladim_chunk.variables[weight_var][:] if weight_var else None
+    new_raster_val = np.histogramdd(coords, bin_edge_vals, weights=weights)[0]
+    previous_raster_val = dset_raster.variables[raster_varname][:]
+    dset_raster.variables[raster_varname][:] = previous_raster_val + new_raster_val
 
 
 def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), dset_ladim=None):
@@ -404,6 +414,8 @@ def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), 
 
     for n in weights + ('bincount', ):
         dset_raster.createVariable(n, dtypes[n], bin_keys)[:] = 0
+
+    dset_raster.set_auto_maskandscale(False)
 
 
 def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
