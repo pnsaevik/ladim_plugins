@@ -176,6 +176,7 @@ class Test_update_raster:
             dset.variables['Y'].bounds = 'Y_bounds'
             dset.variables['time'].bounds = 'time_bounds'
             dset.variables['time'].units = 'hours since 2000-01-01T00'
+            dset.variables['time'].calendar = 'standard'
             dset.set_auto_maskandscale(False)
             yield dset
 
@@ -197,6 +198,11 @@ class Test_update_raster:
         raster.createVariable('bincount', np.int32, ('X', 'Y'))[:] = 0
         rasterize.update_raster(raster, chunk, ['X', 'Y'])
         assert raster.variables['bincount'][:].tolist() == [[2, 0, 0], [1, 2, 1]]
+
+    def test_correct_when_time_bin_key(self, raster, chunk):
+        raster.createVariable('bincount', np.int32, ('time', ))[:] = 0
+        rasterize.update_raster(raster, chunk, ['time'])
+        assert raster.variables['bincount'][:].tolist() == [0, 10, 0, 0]
 
     def test_increments_raster_when_multiple_calls(self, raster, chunk):
         raster.createVariable('bincount', np.int32, ('X', ))[:] = 0

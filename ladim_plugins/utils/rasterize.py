@@ -385,14 +385,30 @@ def update_raster(dset_raster, ladim_chunk, bin_keys, weight_var=None):
     # 3. Construct a subset of bin_edges which includes the whole ladim chunk
     # 4. Construct a histogramdd
     # 5. Increment the appropriate slice in dset_raster with the histogramdd data
-    # 6. Do this for all weights, including the bincount
+
+    def dt64_to_num(dates, units, calendar):
+        from cftime import date2num
+        import datetime
+        py_dates = dates.tolist()
+        py_datetime = [
+            d if hasattr(d, 'hours')
+            else datetime.datetime.combine(d, datetime.time())
+            for d in py_dates
+        ]
+        return np.array(date2num(py_datetime, units, calendar))
+
+    def _get_chunk_vals(bin_key):
+        values = ladim_chunk[bin_key]
+        if not np.issubdtype(values.dtype, np.datetime64):
+            return values
+        return dt64_to_num(values, dset_raster[bin_key].units, dset_raster[bin_key].calendar)
 
     raster_varname = weight_var if weight_var else 'bincount'
 
     bin_edge_keys = (dset_raster.variables[bin_key].bounds for bin_key in bin_keys)
     bin_edge_vars = (dset_raster.variables[bin_edge_key] for bin_edge_key in bin_edge_keys)
     bin_edge_vals = [v[:, 0].tolist() + [v[-1, 1]] for v in bin_edge_vars]
-    coords = [ladim_chunk[v] for v in bin_keys]
+    coords = [_get_chunk_vals(v) for v in bin_keys]
     weights = ladim_chunk[weight_var] if weight_var else None
     new_raster_val = np.histogramdd(coords, bin_edge_vals, weights=weights)[0]
     previous_raster_val = dset_raster.variables[raster_varname][:]
