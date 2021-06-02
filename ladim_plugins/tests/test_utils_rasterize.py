@@ -109,10 +109,19 @@ class Test_init_raster:
     def test_adds_bounds(self):
         with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
             bin_keys = ['x', 'y']
-            bin_centers = [[1, 2, 3], [4, 5, 6, 7]]
+            bin_centers = [[1., 2., 3.], [4., 5., 6., 7.]]
             rasterize.init_raster(dset, bin_keys, bin_centers)
             assert dset.variables['x_bounds'][:, 0].tolist() == [0.5, 1.5, 2.5]
             assert dset.variables['x_bounds'][:, 1].tolist() == [1.5, 2.5, 3.5]
+            assert dset.variables['x'].bounds == 'x_bounds'
+
+    def test_adds_integer_bounds_when_bincenter_is_integer(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            bin_keys = ['x']
+            bin_centers = [[1, 2, 3]]
+            rasterize.init_raster(dset, bin_keys, bin_centers)
+            assert dset.variables['x_bounds'][:, 0].tolist() == [1, 2, 3]
+            assert dset.variables['x_bounds'][:, 1].tolist() == [2, 3, 4]
             assert dset.variables['x'].bounds == 'x_bounds'
 
     def test_adds_bincount(self):

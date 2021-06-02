@@ -398,9 +398,11 @@ def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), 
     dset_raster.createDimension('bounds_dim', 2)
 
     for k, c, e in zip(bin_keys, bin_centers, bin_edges):
+        if np.issubdtype(c.dtype, np.integer):
+            e += 0.5  # This ensures "round to nearest" behaviour instead of "floor"
         dset_raster.createDimension(k, len(c))
         dset_raster.createVariable(k, c.dtype, k)[:] = c
-        v = dset_raster.createVariable(k + '_bounds', np.float32, (k, 'bounds_dim'))
+        v = dset_raster.createVariable(k + '_bounds', c.dtype, (k, 'bounds_dim'))
         v[:] = np.stack([e[:-1], e[1:]], axis=-1)
         dset_raster[k].bounds = v.name
 
