@@ -368,6 +368,17 @@ def merge_ladim(ladim_datasets):
     return xr.merge([dataset_particle, dataset_particle_instance, dataset_time])
 
 
+def update_raster(dset_raster, ladim_chunk, bin_keys, weights=()):
+    # Algorithm:
+    # 1. Get bin_edges
+    # 2. Do a quick survey of ladim_chunk to find max and min of each binning coordinate
+    # 3. Construct a subset of bin_edges which includes the whole ladim chunk
+    # 4. Construct a histogramdd
+    # 5. Increment the appropriate slice in dset_raster with the histogramdd data
+    # 6. Do this for all weights, including the bincount
+    pass
+
+
 def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), dset_ladim=None):
     bin_centers = [np.array(c) for c in bin_centers]
 

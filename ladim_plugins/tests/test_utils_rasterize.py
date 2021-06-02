@@ -139,3 +139,41 @@ class Test_init_raster:
                 rasterize.init_raster(
                     dset, bin_keys, bin_centers, weights=('z', ), dset_ladim=dset_ladim)
                 assert dset.variables['z'].dtype == dset_ladim.variables['z'].dtype
+
+
+class Test_update_raster:
+    @pytest.fixture()
+    def raster(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            dset.createDimension('X', 2)
+            dset.createDimension('Y', 3)
+            dset.createDimension('time', 4)
+            dset.createDimension('bnd', 2)
+            dset.createVariable('X', float, 'X')[:] = [2.5, 5.5]
+            dset.createVariable('Y', float, 'Y')[:] = [30, 55, 70]
+            dset.createVariable('time', float, 'time')[:] = [-1, 0, 1, 2]
+            dset.createVariable('X_bounds', float, ('X', 'bnd'))[:] = [[1.5, 3.5], [3.5, 7.5]]
+            dset.createVariable('Y_bounds', float, ('Y', 'bnd'))[:] = [[15, 45], [45, 65], [65, 75]]
+            dset.createVariable('time_bounds', float, ('time', 'bnd'))[:] = [
+                [-1.5, -.5], [-.5, .5], [.5, 1.5], [1.5, 2.5]]
+            dset.variables['X'].bounds = 'X_bounds'
+            dset.variables['Y'].bounds = 'Y_bounds'
+            dset.variables['time'].bounds = 'time_bounds'
+            dset.variables['time'].units = 'hours since 2000-01-01T00'
+            yield dset
+
+    @pytest.fixture()
+    def chunk(self):
+        return xr.Dataset(
+            data_vars=dict(
+                time=xr.Variable('dim0', [np.datetime64('2000')] * 10),
+                X=xr.Variable('dim0', np.arange(10)),
+                Y=xr.Variable('dim0', np.arange(10) * 10),
+                W=xr.Variable('dim0', np.ones(10) * 10),
+            ),
+        )
+
+    def test_correct_when_single_bin_key(self, raster, chunk):
+        raster.createVariable('bincount', np.int32, ('X', ))[:] = 0
+        rasterize.update_raster(raster, chunk, ['X'])
+        assert raster.variables['bincount'][:].tolist() == [2, 4]
