@@ -197,6 +197,37 @@ class Test_dt64_to_num:
         assert num.tolist() == [0, 24, 48, 72, 96]
 
 
+class Test_rasterize:
+    @pytest.fixture()
+    def raster(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            yield dset
+
+    def test_writes_bincount_to_raster(self, raster, multipart_ladim):
+        time_bins = np.datetime64('2000') + np.arange(4) * np.timedelta64(2, 'D')
+        X_bins = [1, 3, 4]
+
+        rasterize.rasterize(
+            raster=raster, particles=multipart_ladim[1:],
+            bin_keys=['time', 'X'], bin_centers=[time_bins, X_bins],
+        )
+
+        assert raster['bincount'][:].tolist() == [
+            [1, 0, 0], [2, 3, 0], [0, 2, 2], [0, 0, 0]]
+
+    def test_writes_weight_variables_to_raster(self, raster, multipart_ladim):
+        time_bins = np.datetime64('2000') + np.arange(4) * np.timedelta64(2, 'D')
+        X_bins = [1, 3, 4]
+
+        rasterize.rasterize(
+            raster=raster, particles=multipart_ladim[1:],
+            bin_keys=['time', 'X'], bin_centers=[time_bins, X_bins],
+            weights=('farmid', )
+        )
+
+        assert raster['farmid'][:].tolist() == [
+            [101, 0, 0], [202, 305, 0], [0, 203, 203], [0, 0, 0]]
+
 
 class Test_adaptive_histogram:
     @staticmethod

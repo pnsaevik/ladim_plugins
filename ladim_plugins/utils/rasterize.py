@@ -83,6 +83,14 @@ def ladim_raster(particle_dset, grid_dset, weights=(None,)):
     return new_raster
 
 
+def rasterize(raster, particles, bin_keys, bin_centers, weights=()):
+    init_raster(raster, bin_keys, bin_centers, weights=weights, dset_ladim=particles[0])
+
+    for chunk in ladim_chunks(particles, list(bin_keys) + list(weights)):
+        for weight_var in weights + (None, ):
+            update_raster(raster, chunk, bin_keys, weight_var)
+
+
 def change_ladim_crs(ladim_dset, grid_dset):
     """Add crs coordinates to ladim dataset, taken from a grid dataset"""
 
