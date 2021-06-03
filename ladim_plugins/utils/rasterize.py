@@ -425,18 +425,25 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     coords = [_get_chunk_vals(v) for v in bin_keys]
     weights = chunk[weight_var] if weight_var else None
 
-    # --- Find minimum and maximum extent of coordinate data --
-    idx0 = [max(1, np.digitize(c.min(), v)) - 1 for c, v in zip(coords, bin_edge_vals)]
-    idx1 = [min(len(v), np.digitize(c.max(), v) + 1) for c, v in zip(coords, bin_edge_vals)]
-
-    # --- Construct histogram using only a subset of the bin edges
-    bins = [v[start:stop] for v, start, stop in zip(bin_edge_vals, idx0, idx1)]
-    new_raster_val = np.histogramdd(coords, bins, weights=weights)[0]
-
-    # --- Update a subset of the on-disk raster data ---
-    idx = [slice(start, stop - 1) for start, stop in zip(idx0, idx1)]
+    # --- Update raster using adaptive histogram --
+    new_raster_val, idx = adaptive_histogram(coords, bin_edge_vals, weights=weights)
     previous_raster_val = dset_raster[raster_varname][idx]
     dset_raster[raster_varname][idx] = previous_raster_val + new_raster_val
+
+
+def adaptive_histogram(sample, bins, **kwargs):
+    idx = []
+    bins_subset = []
+    for coord, bin_edges in zip(sample, bins):
+        digitized_min = np.digitize(np.min(coord), bin_edges)
+        digitized_max = np.digitize(np.max(coord), bin_edges)
+        idx_start = max(0, digitized_min - 1)
+        idx_stop = min(len(bin_edges), digitized_max + 1)
+        idx.append(slice(idx_start, idx_stop - 1))
+        bins_subset.append(bin_edges[idx_start:idx_stop])
+
+    rasterized_data = np.histogramdd(sample, bins_subset, **kwargs)[0]
+    return rasterized_data, tuple(idx)
 
 
 def _create_variable(dset, varname, datatype, dimensions, values):

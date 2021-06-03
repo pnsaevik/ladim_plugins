@@ -196,6 +196,51 @@ class Test_dt64_to_num:
         assert num.tolist() == [0, 24, 48, 72, 96]
 
 
+
+class Test_adaptive_histogram:
+    @staticmethod
+    def assert_equals_histogramdd(sample, bins, **kwargs):
+        expected = np.histogramdd(sample, bins, **kwargs)[0]
+        actual = np.zeros_like(expected)
+        subset, idx = rasterize.adaptive_histogram(sample, bins, **kwargs)
+        actual[idx] += subset
+        assert actual.tolist() == expected.tolist()
+
+    def test_returns_truncated_histogram_if_subset_input(self):
+        bins = [[0, 1, 2, 3, 4, 5], [0, 1, 2]]
+        sample = [[1.5, 1.6, 1.7, 2.2, 2.3], [.1, .1, .1, .1, 1.2]]
+        values, idx = rasterize.adaptive_histogram(sample, bins)
+        assert idx == np.s_[1:3, 0:2]
+        assert values.shape == (2, 2)
+
+    def test_equals_histogramdd_if_full_input(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        expected = np.histogramdd(sample, bins)[0]
+        actual = rasterize.adaptive_histogram(sample, bins)[0]
+        assert actual.tolist() == expected.tolist()
+
+    def test_equals_histogramdd_if_full_input_and_weights(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        self.assert_equals_histogramdd(sample, bins, weights=sample[0])
+
+    def test_equals_histogramdd_if_subset_input(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[1.5, 1.6, 1.7]]
+        self.assert_equals_histogramdd(sample, bins)
+
+    def test_equals_histogramdd_if_on_bin_edges(self):
+        bins = [[0, 1, 2, 3, 4, 5, 6]]
+        sample = [[1.0, 2.0, 2.5, 2.6, 2.7, 3.0, 3.1, 3.2, 4.0]]
+        self.assert_equals_histogramdd(sample, bins)
+
+    def test_equals_histogramdd_if_outside_bin_edges(self):
+        bins = [[2, 3, 4]]
+        sample = [[1.0, 2.0, 2.5, 2.6, 2.7, 3.0, 3.1, 3.2, 4.0]]
+        self.assert_equals_histogramdd(sample, bins)
+
+
 class Test_update_raster:
     @pytest.fixture()
     def raster(self):
