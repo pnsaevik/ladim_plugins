@@ -448,16 +448,10 @@ def adaptive_histogram(sample, bins, **kwargs):
 
 def _create_variable(dset, varname, datatype, dimensions, values):
     if np.issubdtype(datatype, np.datetime64):
-        import re
-        v = dset.createVariable(varname, np.int64, dimensions)
-        datetime64_unit = re.match(r'.*\[(.*?)]', datatype.str).groups()[0]
-        netcdf4_unit = dict(
-            Y='years', M='months', D='days', h='hours', m='minutes', s='seconds',
-        )[datetime64_unit]
-        v.units = f'{netcdf4_unit} since {str(values[0])}'
+        v = dset.createVariable(varname, np.float64, dimensions)
+        v.units = f'milliseconds since 1970-01-01'
         v.calendar = 'standard'
-        integer_values = (values - values[0]).astype(np.int64)
-        v[:] = integer_values
+        v[:] = (values - np.datetime64('1970-01-01T00:00:00.000')) / np.timedelta64(1, 'ms')
     else:
         dset.createVariable(varname, datatype, dimensions)[:] = values
 

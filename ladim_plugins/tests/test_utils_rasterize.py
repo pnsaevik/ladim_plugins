@@ -112,7 +112,8 @@ class Test_init_raster:
             bin_keys = ['time']
             bin_centers = [np.array(['2000', '2001', '2003']).astype('datetime64')]
             rasterize.init_raster(dset, bin_keys, bin_centers)
-            assert dset.variables['time'][:].tolist() == [0, 1, 3]
+            assert dset.variables['time'][:].tolist() == [
+                946684800000, 978307200000, 1041379200000]
 
     def test_adds_bounds(self):
         with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
