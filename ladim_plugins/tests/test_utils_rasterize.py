@@ -168,6 +168,15 @@ class Test_dt64_to_num:
         )
         assert num.tolist() == [0, 60, 120, 180, 240]
 
+    def test_correct_when_nanosecond_accuracy(self):
+        dt64 = np.datetime64('2000') + np.arange(5) * np.timedelta64(1000000000, 'ns')
+        num = rasterize.dt64_to_num(
+            dates=dt64,
+            units='seconds since 2000-01-01',
+            calendar='standard',
+        )
+        assert num.tolist() == [0, 1, 2, 3, 4]
+
     def test_correct_when_fractional_output(self):
         dt64 = np.datetime64('2000') + 6 * np.arange(5) * np.timedelta64(1, 'h')
         num = rasterize.dt64_to_num(

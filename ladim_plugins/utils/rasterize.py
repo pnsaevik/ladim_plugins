@@ -389,6 +389,8 @@ def dt64_to_num(dates, units, calendar):
     """
     from cftime import date2num
     import datetime
+    if dates.dtype.str.endswith('[ns]'):
+        dates = dates.astype('datetime64[us]')
     py_dates = dates.tolist()
     py_datetime = [
         d if hasattr(d, 'hour')
