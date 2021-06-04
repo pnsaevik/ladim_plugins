@@ -517,6 +517,7 @@ def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
         idx_inst_prev = 0
 
         for idx_time in range(dset.dims[dim_time]):
+            logging.info(f'Load time step {idx_time}')
             cum_pinst = idx_inst_prev + dset[var_pcnt][idx_time].values.item()
             while idx_inst_prev < cum_pinst:
                 idx_inst_next = min(idx_inst_prev + max_rows, cum_pinst)
@@ -612,11 +613,15 @@ def _xr_iter(fnames):
 
 def rasterize(raster, particles):
     bin_keys = raster['bincount'].dimensions
-    weights = tuple(
-        v if v != 'bincount' else None
-        for v in raster.variables
+    logger.info(f"Bins: {', '.join(bin_keys)}")
+
+    variables = [
+        v for v in raster.variables
         if raster[v].dimensions == bin_keys
-    )
+    ]
+    logger.info(f"Variables: {', '.join(variables)}")
+
+    weights = tuple(v if v != 'bincount' else None for v in variables)
     ladim_vars = [v for v in weights if v] + list(bin_keys)
 
     for chunk in ladim_chunks(particles, ladim_vars):
@@ -636,6 +641,7 @@ def main():
     )
 
     import netCDF4 as nc
+    logger.info(f"Open raster file {args.raster_file}")
     with nc.Dataset(args.raster_file, 'a') as raster_dset:
         rasterize(raster_dset, particles=_xr_iter(args.ladim_file))
 
