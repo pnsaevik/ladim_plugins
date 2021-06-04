@@ -69,11 +69,11 @@ class Test_ladim_raster:
             ),
             coords=dict(
                 lat=xr.Variable(
-                    'lat', [60, 61, 62],
+                    'lat', [60., 61., 62.],
                     attrs=dict(standard_name='latitude'),
                 ),
                 lon=xr.Variable(
-                    'lon', [5, 6],
+                    'lon', [5., 6.],
                     attrs=dict(standard_name='longitude'),
                 ),
             )
@@ -94,18 +94,18 @@ class Test_ladim_raster:
             ),
             coords=dict(
                 y=xr.Variable(
-                    'y', [-120000, 0, 120000],
+                    'y', [-120000., 0., 120000.],
                     attrs=dict(standard_name='projection_y_coordinate'),
                 ),
                 x=xr.Variable(
-                    'x', [0, 60000],
+                    'x', [0., 60000.],
                     attrs=dict(standard_name='projection_x_coordinate'),
                 ),
             )
         )
 
     def test_adds_bin_edge_info_to_output(self, ladim_dset):
-        grid_dset = xr.Dataset(coords=dict(lat=[60, 61, 62], lon=[5, 6]))
+        grid_dset = xr.Dataset(coords=dict(lat=[60., 61., 62.], lon=[5., 6.]))
         raster = utils.ladim_raster(ladim_dset, grid_dset)
         assert raster.lat.attrs['bounds'] == 'lat_bounds'
         assert raster.lat_bounds.values.tolist() == [
