@@ -542,7 +542,7 @@ def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
                 idx_inst_prev = idx_inst_next
 
 
-def main():
+def parse_args(args):
     import argparse
     parser = argparse.ArgumentParser(
         description='Convert LADiM output data to netCDF raster format.',
@@ -567,7 +567,12 @@ def main():
         default=(),
     )
 
-    args = parser.parse_args()
+    return parser.parse_args(args)
+
+
+def main():
+    import sys
+    args = parse_args(sys.argv[1:])
     weights = (None, ) + tuple(args.weights)
 
     # Initialize logger
