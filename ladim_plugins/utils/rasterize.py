@@ -551,12 +551,10 @@ def parse_args(args):
             "unless a CF-compliant `bounds` attribute is supplied. The\n"
             "name of each coordinate must match a variable name in the\n"
             "LADiM file.\n\n"
-            "If a weighted sum is desired instead of a bin count, the\n"
-            "`bincount` variable should be renamed to match the name of\n"
-            "the weighting variable. For instance, if a weighted sum of\n"
-            "the LADiM variable `super` is desired, the `bincount`\n"
-            "variable in the raster dataset should be renamed `super`\n"
-            "before applying the script.\n\n"
+            "The script can also produce weighted sums in addition to bin\n"
+            "counts. For instance, to compute the weighted sum of the LADiM\n"
+            "variable `super`, the raster dataset should include a variable\n"
+            "named `super` having the same dimensions as `bincount`.\n\n"
             "Sample raster file:\n\n"
             "dimensions:\n"
             "  X = 500;\n"
@@ -568,6 +566,9 @@ def parse_args(args):
             '  float Y(Y) ;      // bin centers for Y coordinate\n'
             "  int time(time) ;  // one entry per time coordinate\n"
             '    time:units = "seconds since 1970-01-01" ;\n'
+            '  // Optional variable for computing weighted sum of the LADiM\n'
+            '  // variable `super`. Initialized to zero.\n'
+            '  float super(time, X, Y) ;\n'
         ),
     )
 
@@ -611,10 +612,15 @@ def _xr_iter(fnames):
 
 def rasterize(raster, particles):
     bin_keys = raster['bincount'].dimensions
-    weights = ()
+    weights = tuple(
+        v if v != 'bincount' else None
+        for v in raster.variables
+        if raster[v].dimensions == bin_keys
+    )
+    ladim_vars = [v for v in weights if v] + list(bin_keys)
 
-    for chunk in ladim_chunks(particles, list(bin_keys) + list(weights)):
-        for weight_var in weights + (None, ):
+    for chunk in ladim_chunks(particles, ladim_vars):
+        for weight_var in weights:
             update_raster(raster, chunk, bin_keys, weight_var)
 
 

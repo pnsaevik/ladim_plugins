@@ -24,6 +24,10 @@ def multipart_ladim():
                 dims='particle_instance',
                 data=[1, 1.1, 2, 1.2, 2.1, 3, 2.2, 3.1, 4, 5],
             ),
+            mass=xr.Variable(
+                dims='particle_instance',
+                data=[10, 11, 20, 12, 21, 30, 22, 31, 40, 50],
+            ),
             particle_count=xr.Variable(
                 dims='time',
                 data=[1, 2, 3, 4],
@@ -369,4 +373,15 @@ class Test_rasterize:
             [[0, 1, 0, 0, 0], [0, 0, 0, 0, 0]],
             [[0, 1, 0, 0, 0], [0, 0, 1, 0, 0]],
             [[0, 1, 0, 1, 0], [0, 0, 1, 0, 0]],
+        ]
+
+    def test_writes_to_weights(self, raster_data, multipart_ladim):
+        raster_data.createVariable('bincount', np.int32, ('time', 'farmid', 'X'))[:] = 0
+        raster_data.createVariable('mass', np.int32, ('time', 'farmid', 'X'))[:] = 0
+        rasterize.rasterize(raster_data, multipart_ladim[1:])
+
+        assert raster_data['mass'][:].tolist() == [
+            [[0, 10, 0,  0, 0], [0, 0,  0, 0, 0]],
+            [[0, 11, 0,  0, 0], [0, 0, 20, 0, 0]],
+            [[0, 12, 0, 30, 0], [0, 0, 21, 0, 0]],
         ]
