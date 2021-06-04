@@ -197,38 +197,6 @@ class Test_dt64_to_num:
         assert num.tolist() == [0, 24, 48, 72, 96]
 
 
-class Test_rasterize:
-    @pytest.fixture()
-    def raster(self):
-        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
-            yield dset
-
-    def test_writes_bincount_to_raster(self, raster, multipart_ladim):
-        time_bins = np.datetime64('2000') + np.arange(4) * np.timedelta64(2, 'D')
-        X_bins = [1, 3, 4]
-
-        rasterize.rasterize(
-            raster=raster, particles=multipart_ladim[1:],
-            bin_keys=['time', 'X'], bin_centers=[time_bins, X_bins],
-        )
-
-        assert raster['bincount'][:].tolist() == [
-            [1, 0, 0], [2, 3, 0], [0, 2, 2], [0, 0, 0]]
-
-    def test_writes_weight_variables_to_raster(self, raster, multipart_ladim):
-        time_bins = np.datetime64('2000') + np.arange(4) * np.timedelta64(2, 'D')
-        X_bins = [1, 3, 4]
-
-        rasterize.rasterize(
-            raster=raster, particles=multipart_ladim[1:],
-            bin_keys=['time', 'X'], bin_centers=[time_bins, X_bins],
-            weights=('farmid', )
-        )
-
-        assert raster['farmid'][:].tolist() == [
-            [101, 0, 0], [202, 305, 0], [0, 203, 203], [0, 0, 0]]
-
-
 class Test_adaptive_histogram:
     @staticmethod
     def assert_equals_histogramdd(sample, bins, **kwargs):
@@ -332,3 +300,73 @@ class Test_update_raster:
         rasterize.update_raster(raster, chunk, ['X'])
         second_val = raster.variables['bincount'][:]
         assert double_first_val.tolist() == second_val.tolist()
+
+
+class Test_parse_args:
+    def test_standard_syntax(self):
+        args = rasterize.parse_args(['myrasterfile.nc', 'myladimfile.nc'])
+        assert args.ladim_file == ['myladimfile.nc']
+        assert args.raster_file == 'myrasterfile.nc'
+
+    def test_accepts_multiple_ladimfiles(self):
+        args = rasterize.parse_args(['myrasterfile.nc', 'ladim1.nc', 'ladim2.nc'])
+        assert args.ladim_file == ['ladim1.nc', 'ladim2.nc']
+        assert args.raster_file == 'myrasterfile.nc'
+
+    def test_fails_when_no_ladimfile(self):
+        with pytest.raises(SystemExit):
+            rasterize.parse_args(['myrasterfile.nc'])
+
+    def test_expands_glob_patterns(self):
+        import os
+        import glob
+        thisdir = os.path.dirname(__file__)
+        pattern = os.path.join(thisdir, '*.py')
+        args = rasterize.parse_args(['myrasterfile.nc', 'ladim1.nc', pattern])
+
+        assert args.ladim_file[0] == 'ladim1.nc'
+        assert len(args.ladim_file) == 1 + len(glob.glob(pattern))
+
+
+class Test_rasterize:
+    @pytest.fixture()
+    def raster_data(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
+            dset.createDimension('X', 5)
+            dset.createVariable('X', np.float32, 'X')[:] = [0, 1, 2, 3, 4]
+            dset['X'].bounds = 'X_bounds'
+
+            dset.createDimension('bnd', 2)
+            v = dset.createVariable('X_bounds', np.float32, ('X', 'bnd'))
+            v[:, 0] = [0, 1, 2, 3, 4]
+            v[:, 1] = [1, 2, 3, 4, 5]
+
+            dset.createDimension('farmid', 2)
+            dset.createVariable('farmid', np.float32, 'farmid')[:] = [101, 102]
+            dset['farmid'].bounds = 'farmid_bounds'
+
+            v = dset.createVariable('farmid_bounds', np.float32, ('farmid', 'bnd'))
+            v[:, 0] = [101, 102]
+            v[:, 1] = [102, 103]
+
+            dset.createDimension('time', 3)
+            dset.createVariable('time', np.int32, 'time')[:] = [0, 1, 2]
+            dset['time'].units = 'days since 2000-01-01'
+            dset['time'].bounds = 'time_bounds'
+            dset['time'].calendar = 'standard'
+
+            v = dset.createVariable('time_bounds', np.int32, ('time', 'bnd'))
+            v[:, 0] = [0, 1, 2]
+            v[:, 1] = [1, 2, 3]
+
+            yield dset
+
+    def test_writes_to_bincount(self, raster_data, multipart_ladim):
+        raster_data.createVariable('bincount', np.int32, ('time', 'farmid', 'X'))[:] = 0
+        rasterize.rasterize(raster_data, multipart_ladim[1:])
+
+        assert raster_data['bincount'][:].tolist() == [
+            [[0, 1, 0, 0, 0], [0, 0, 0, 0, 0]],
+            [[0, 1, 0, 0, 0], [0, 0, 1, 0, 0]],
+            [[0, 1, 0, 1, 0], [0, 0, 1, 0, 0]],
+        ]

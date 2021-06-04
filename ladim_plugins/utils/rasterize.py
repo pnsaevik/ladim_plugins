@@ -2,6 +2,7 @@ import xarray as xr
 import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 import logging
+import glob
 
 
 logger = logging.getLogger(__name__)
@@ -81,14 +82,6 @@ def ladim_raster(particle_dset, grid_dset, weights=(None,)):
     new_raster.attrs['Conventions'] = "CF-1.8"
 
     return new_raster
-
-
-def rasterize(raster, particles, bin_keys, bin_centers, weights=()):
-    init_raster(raster, bin_keys, bin_centers, weights=weights, dset_ladim=particles[0])
-
-    for chunk in ladim_chunks(particles, list(bin_keys) + list(weights)):
-        for weight_var in weights + (None, ):
-            update_raster(raster, chunk, bin_keys, weight_var)
 
 
 def change_ladim_crs(ladim_dset, grid_dset):
@@ -545,35 +538,89 @@ def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
 def parse_args(args):
     import argparse
     parser = argparse.ArgumentParser(
-        description='Convert LADiM output data to netCDF raster format.',
+        prog='ladim_raster',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Convert LADiM output data to netCDF raster format.",
+        epilog=(
+            "The script requires a pre-defined netCDF raster file with a\n"
+            "variable named `bincount`, initialized to zero. The script\n"
+            "populates this variable with particle count data from the\n"
+            "LADiM file.\n\n"
+            "The coordinates of `bincount` define the center of each\n"
+            "bin. The bin edges are halfway between the bin centers,\n"
+            "unless a CF-compliant `bounds` attribute is supplied. The\n"
+            "name of each coordinate must match a variable name in the\n"
+            "LADiM file.\n\n"
+            "If a weighted sum is desired instead of a bin count, the\n"
+            "`bincount` variable should be renamed to match the name of\n"
+            "the weighting variable. For instance, if a weighted sum of\n"
+            "the LADiM variable `super` is desired, the `bincount`\n"
+            "variable in the raster dataset should be renamed `super`\n"
+            "before applying the script.\n\n"
+            "Sample raster file:\n\n"
+            "dimensions:\n"
+            "  X = 500;\n"
+            "  Y = 600;\n"
+            "  time = 10;\n"
+            "variables:\n"
+            '  int bincount(time, X, Y) ;  // Initialized to zero\n'
+            '  float X(X) ;      // bin centers for X coordinate\n'
+            '  float Y(Y) ;      // bin centers for Y coordinate\n'
+            "  int time(time) ;  // one entry per time coordinate\n"
+            '    time:units = "seconds since 1970-01-01" ;\n'
+        ),
     )
-
-    parser.add_argument("ladim_file", help="output file from LADiM")
-    parser.add_argument(
-        "grid_file",
-        help="netCDF file containing the bins. Any coordinate variable in the file "
-             "which match the name of a LADiM variable is used.")
 
     parser.add_argument(
         "raster_file",
-        help="output file name",
-    )
+        help="netCDF raster file")
 
     parser.add_argument(
-        "--weights",
+        "ladim_file",
         nargs='+',
-        metavar='varname',
-        help="weighting variables",
-        default=(),
+        help="output file(s) from LADiM, glob patterns allowed (*?[])",
     )
 
-    return parser.parse_args(args)
+    parsed_args = parser.parse_args(args)
+
+    # Expand glob patterns
+    parsed_args.ladim_file = _glob(parsed_args.ladim_file)
+    if len(parsed_args.ladim_file) == 0:
+        parser.print_usage()
+        print(f'error: No ladim_file found')
+        raise SystemExit(2)
+
+    return parsed_args
+
+
+def _glob(fnames):
+    g = []
+    for fname in fnames:
+        if set(fname).intersection(set('*?[]')):
+            g += sorted(glob.glob(fname))
+        else:
+            g.append(fname)
+    return g
+
+
+def _xr_iter(fnames):
+    for fname in fnames:
+        with xr.open_dataset(fname) as dset:
+            yield dset
+
+
+def rasterize(raster, particles):
+    bin_keys = raster['bincount'].dimensions
+    weights = ()
+
+    for chunk in ladim_chunks(particles, list(bin_keys) + list(weights)):
+        for weight_var in weights + (None, ):
+            update_raster(raster, chunk, bin_keys, weight_var)
 
 
 def main():
     import sys
     args = parse_args(sys.argv[1:])
-    weights = (None, ) + tuple(args.weights)
 
     # Initialize logger
     logging.basicConfig(
@@ -582,34 +629,9 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
-    logger.info(f'Open grid file {args.grid_file}')
-    grid_dset = xr.load_dataset(args.grid_file)
-
-    # --- Use either single-file or multi-file approach ---
-
-    import glob
-    import os
-    ladim_files = sorted(glob.glob(args.ladim_file))
-
-    if len(ladim_files) == 0:
-        raise IOError(f'File "{ladim_files}" not found')
-
-    elif len(ladim_files) == 1:
-        logger.info(f'Open particle file {ladim_files[0]}')
-        with xr.open_dataset(ladim_files[0]) as ladim_dset:
-            raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
-            logger.info(f'Save raster to {args.raster_file}')
-            raster.to_netcdf(args.raster_file)
-
-    else:
-        rfile_base, rfile_ext = os.path.splitext(args.raster_file)
-        rfiles = [f'{rfile_base}_{i:04}{rfile_ext}' for i in range(len(ladim_files))]
-        for ladim_file, raster_file in zip(ladim_files, rfiles):
-            logger.info(f'Open particle file {ladim_file}')
-            with xr.open_dataset(ladim_file) as ladim_dset:
-                raster = ladim_raster(ladim_dset, grid_dset, weights=weights)
-                logger.info(f'Save raster to {raster_file}')
-                raster.to_netcdf(raster_file)
+    import netCDF4 as nc
+    with nc.Dataset(args.raster_file, 'a') as raster_dset:
+        rasterize(raster_dset, particles=_xr_iter(args.ladim_file))
 
 
 if __name__ == '__main__':
