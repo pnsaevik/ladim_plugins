@@ -3,6 +3,7 @@ import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 import logging
 import glob
+import pandas as pd
 
 
 logger = logging.getLogger(__name__)
@@ -627,6 +628,33 @@ def rasterize(raster, particles):
     for chunk in ladim_chunks(particles, ladim_vars):
         for weight_var in weights:
             update_raster(raster, chunk, bin_keys, weight_var)
+
+
+def sparse_histogram(sample, bins, weights=None):
+    if weights is None:
+        weights = 1
+
+    included = np.ones(len(sample[0]), dtype=bool)
+    colnames = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[:len(sample)]
+
+    df = pd.DataFrame()
+
+    for i in range(len(sample)):
+        b = bins[i]
+        s = sample[i]
+        coords = np.searchsorted(b, s, side='right') - 1
+        included &= coords >= 0
+        included &= coords < len(b) - 1
+        df = df.assign(**{colnames[i]: coords})
+
+    df['weights'] = weights
+    df_filtered = df.iloc[included]
+    df_sum = df_filtered.groupby(list(colnames)).sum()
+
+    coords = df_sum.index.to_frame().values.T
+    vals = df_sum['weights'].values
+
+    return coords, vals
 
 
 def sparse_to_dense_chunks(coords, vals, max_size=None):

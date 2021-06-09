@@ -427,3 +427,33 @@ class Test_sparse_to_dense_chunks:
             actual[idx] += dense
 
         assert actual.tolist() == expected.tolist()
+
+
+class Test_sparse_histogram:
+    def test_correct_when_unweighted_onedim(self):
+        sample = [np.arange(10)]
+        bins = [[0, 2, 6, 7]]
+        coords, vals = rasterize.sparse_histogram(sample, bins)
+
+        dense = np.zeros(tuple(len(b) - 1 for b in bins))
+        dense[tuple(coords)] = vals
+        assert dense.tolist() == [2, 4, 1]
+
+    def test_correct_when_weighted_onedim(self):
+        sample = [np.arange(10)]
+        bins = [[0, 2, 6, 7]]
+        weights = np.arange(10)
+        coords, vals = rasterize.sparse_histogram(sample, bins, weights)
+
+        dense = np.zeros(tuple(len(b) - 1 for b in bins))
+        dense[tuple(coords)] = vals
+        assert dense.tolist() == [1, 14, 6]
+
+    def test_correct_when_unweighted_twodim(self):
+        sample = [np.arange(10), 10*np.arange(10)]
+        bins = [[2, 4, 6], [20, 40, 60, 80]]
+        coords, vals = rasterize.sparse_histogram(sample, bins)
+
+        dense = np.zeros(tuple(len(b) - 1 for b in bins))
+        dense[tuple(coords)] = vals
+        assert dense.tolist() == [[2, 0, 0], [0, 2, 0]]
