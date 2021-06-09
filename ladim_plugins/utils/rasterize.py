@@ -228,7 +228,7 @@ def add_edge_info(dset):
 
     for var_name in coords_without_bounds:
         bounds_name = var_name + '_bounds'
-        edges_values = _edges(dset[var_name].values)
+        edges_values = bin_edges_from_centers(dset[var_name].values)
         bounds_var = xr.Variable(
             dims=dset[var_name].dims + ('bounds_dim', ),
             data=np.stack([edges_values[:-1], edges_values[1:]], axis=-1),
@@ -240,7 +240,7 @@ def add_edge_info(dset):
     return dset_new
 
 
-def _edges(a):
+def bin_edges_from_centers(a):
     diff0 = a[1:] - a[:-1]
     extended = np.concatenate([a[:1] - diff0[:1], a, a[-1:] + diff0[-1:]])
     diff = extended[1:] - extended[:-1]
@@ -462,7 +462,7 @@ def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), 
     bin_centers = [np.array(c) for c in bin_centers]
 
     if not bin_edges:
-        bin_edges = [_edges(c) for c in bin_centers]
+        bin_edges = [bin_edges_from_centers(c) for c in bin_centers]
 
     dset_raster.createDimension('bounds_dim', 2)
 
