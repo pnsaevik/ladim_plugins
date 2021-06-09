@@ -511,24 +511,23 @@ def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
     var_pcnt = 'particle_count'
 
     for dset in ladim_datasets:
-        varnames_time = [v for v in varnames if dset[v].dims == (dim_time,)]
-        varnames_part = [v for v in varnames if dset[v].dims == (dim_part,)]
-        varnames_inst = [v for v in varnames if dset[v].dims == (dim_inst,)]
+        varnames_time = [v for v in varnames if dset[v].dimensions == (dim_time,)]
+        varnames_part = [v for v in varnames if dset[v].dimensions == (dim_part,)]
+        varnames_inst = [v for v in varnames if dset[v].dimensions == (dim_inst,)]
 
         idx_inst_prev = 0
 
-        for idx_time in range(dset.dims[dim_time]):
-            logging.info(f'Load time step {idx_time}')
-            cum_pinst = idx_inst_prev + dset[var_pcnt][idx_time].values.item()
+        for idx_time in range(dset.dimensions[dim_time].size):
+            cum_pinst = idx_inst_prev + dset[var_pcnt][idx_time]
             while idx_inst_prev < cum_pinst:
                 idx_inst_next = min(idx_inst_prev + max_rows, cum_pinst)
                 idx_inst = range(idx_inst_prev, idx_inst_next)
-                idx_part = dset[var_pidx][idx_inst].values
-                data_part = {v: dset[v].isel({dim_part: idx_part}).values for v in varnames_part}
-                data_inst = {v: dset[v].isel({dim_inst: idx_inst}).values for v in varnames_inst}
+                idx_part = dset[var_pidx][idx_inst]
+                data_part = {v: dset[v][idx_part] for v in varnames_part}
+                data_inst = {v: dset[v][idx_inst] for v in varnames_inst}
                 data_time = {
                     v: np.broadcast_to(
-                        dset[v].isel({dim_time: idx_time}).values,
+                        dset[v][idx_time],
                         (idx_inst_next - idx_inst_prev),
                     )
                     for v in varnames_time
