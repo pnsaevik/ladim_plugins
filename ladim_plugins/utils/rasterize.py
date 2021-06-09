@@ -629,6 +629,55 @@ def rasterize(raster, particles):
             update_raster(raster, chunk, bin_keys, weight_var)
 
 
+def sparse_to_dense_chunks(coords, vals, max_size=None):
+    """Chunkwise conversion of sparse matrix to dense matrix.
+
+    The function takes in a sparse matrix and converts it to chunks of dense
+    arrays. Specifically, the function returns tuples (A, idx) where A is
+    a dense submatrix and idx is a tuple of slices, such that the full matrix B
+    is recovered by
+
+    B[...] = 0
+    for A, idx in chunks:
+        B[idx] += A
+
+    The result is equivalent to
+
+    B[...] = 0
+    B[tuple(coords)] = vals
+
+    :param coords: An M x N array of coordinates
+    :param vals: A 1D array of lenght N, containing the array values
+    :param max_size: Maximal allowed number of element per chunk
+    :return: An iterator of tuples (A, idx) where A is a dense submatrix and
+        idx is the index relative to the full dense matrix.
+    """
+    if max_size is None:
+        max_size = np.inf
+
+    start_row = 0
+    while start_row < len(coords[0]):
+        # Find stop row
+        coords_min = np.minimum.accumulate(coords[:, start_row:None], axis=1)
+        coords_max = np.maximum.accumulate(coords[:, start_row:None], axis=1)
+        shapes = coords_max - coords_min + 1
+        chunk_sizes = np.prod(shapes, axis=0)
+        num_rows = np.searchsorted(chunk_sizes, max_size, side='right')
+        stop_row = num_rows + start_row
+
+        # Create histogram
+        shape = shapes[:, num_rows - 1]
+        offset = coords_min[:, num_rows - 1]
+        span = tuple(slice(off, off + shp) for shp, off in zip(shape, offset))
+        hist_idx = tuple(coords[:, start_row:stop_row] - offset[:, np.newaxis])
+        histogram = np.zeros(shape, dtype=vals.dtype)
+        histogram[hist_idx] = vals[start_row:stop_row]
+        yield histogram, span
+
+        # Move to next chunk
+        start_row = stop_row
+
+
 def main():
     import sys
     args = parse_args(sys.argv[1:])

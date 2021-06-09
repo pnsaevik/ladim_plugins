@@ -385,3 +385,45 @@ class Test_rasterize:
             [[0, 11, 0,  0, 0], [0, 0, 20, 0, 0]],
             [[0, 12, 0, 30, 0], [0, 0, 21, 0, 0]],
         ]
+
+
+class Test_sparse_to_dense_chunks:
+    def test_single_chunk_if_unrestricted(self):
+        coords = np.array([[1, 1, 3, 2, 3], [1, 2, 5, 4, 4]])
+        vals = np.array([1, 2, 3, 4, 5])
+        chunks = list(rasterize.sparse_to_dense_chunks(coords, vals))
+        assert len(chunks) == 1
+
+    def test_equals_numpy_indirection_when_single_chunk(self):
+        coords = np.array([[1, 1, 3, 2, 3], [1, 2, 5, 4, 4]])
+        vals = np.array([1, 2, 3, 4, 5])
+
+        expected = np.zeros((4, 6))
+        expected[tuple(coords)] = vals
+
+        actual = np.zeros_like(expected)
+        chunks = rasterize.sparse_to_dense_chunks(coords, vals)
+        for dense, idx in chunks:
+            actual[idx] += dense
+
+        assert actual.tolist() == expected.tolist()
+
+    def test_multiple_chunks_if_restricted(self):
+        coords = np.array([[1, 1, 1, 2, 3], [1, 4, 5, 4, 2]])
+        vals = np.array([1, 2, 3, 4, 5])
+        chunks = list(rasterize.sparse_to_dense_chunks(coords, vals, max_size=4))
+        assert len(chunks) > 1
+
+    def test_equals_numpy_indirection_when_multiple_chunks(self):
+        coords = np.array([[1, 1, 1, 2, 3], [1, 4, 5, 4, 2]])
+        vals = np.array([1, 2, 3, 4, 5])
+
+        expected = np.zeros((4, 6))
+        expected[tuple(coords)] = vals
+
+        actual = np.zeros_like(expected)
+        chunks = rasterize.sparse_to_dense_chunks(coords, vals, max_size=4)
+        for dense, idx in chunks:
+            actual[idx] += dense
+
+        assert actual.tolist() == expected.tolist()
