@@ -488,52 +488,69 @@ def init_raster(dset_raster, bin_keys, bin_centers, bin_edges=None, weights=(), 
     dset_raster.set_auto_maskandscale(False)
 
 
-def ladim_chunks(ladim_datasets, varnames, max_rows=10000000):
-    """An iterator for loading chunks of a multipart ladim dataset
+def csr_to_coo_chunks(counts, max_size):
+    idx_row_start = 0
+    idx_val_start = 0
 
-    The function returns an iterator of chunks, where each chunk represents a time step
-    of ladim data. Alternatively, each time step can be broken into even smaller chunks
-    using the max_rows argument. The data is returned as a dict of numpy arrays.
+    while idx_row_start < len(counts):
+        # Compute chunk size
+        cum_counts = np.cumsum(counts[idx_row_start:])
+        num_row = np.searchsorted(cum_counts, max_size, side='right')
+        num_row = max(1, num_row)  # Needs at least 1 chunk, even if it is large
+        num_val = cum_counts[num_row - 1]
 
-    Variables can be either time-indexed, particle-indexed or particle_instance-indexed.
-    In all cases, the output data is particle_instance-indexed.
+        # Define indices
+        idx_row = slice(idx_row_start, idx_row_start + num_row)
+        idx_val = slice(idx_val_start, idx_val_start + num_val)
+        yield idx_val, idx_row
 
-    :param ladim_datasets: A sequence of xarray datasets
+        # Increment counters
+        idx_val_start += num_val
+        idx_row_start += num_row
+
+
+def ladim_chunks(ladim_dset, varnames, max_size=None):
+    """Load ladim dataset as sparse matrix, chunk-wise.
+
+    The function loads particle data from a ladim dataset as variable-sized
+    chunks with a maximal size. Each chunk is a dict of equal-sized numpy
+    arrays. Variables with the dimension particle_instance are loaded as-is.
+    Variables with dimensions `time` and `particle` are broadcasted to the
+    `particle_instance` dimension.
+
+    :param ladim_dset: A ladim netCDF4 dataset
     :param varnames: Variable names to extract from the ladim datasets
-    :param max_rows: Maximum number of rows per chunk
-    :returns: A dict of numpy arrays, each of equal size
+    :param max_size: Maximum number of rows per chunk
+    :return: A dict of numpy arrays, each of equal size
     """
 
+    # Default input argument
+    if max_size is None:
+        max_size = np.inf
+
+    # Definitions
     dim_inst = 'particle_instance'
     dim_time = 'time'
     dim_part = 'particle'
-    var_pidx = 'pid'
-    var_pcnt = 'particle_count'
+    var_pidx = ladim_dset['pid']
+    var_pcnt = ladim_dset['particle_count']
 
-    for dset in ladim_datasets:
-        varnames_time = [v for v in varnames if dset[v].dimensions == (dim_time,)]
-        varnames_part = [v for v in varnames if dset[v].dimensions == (dim_part,)]
-        varnames_inst = [v for v in varnames if dset[v].dimensions == (dim_inst,)]
+    # Classify variables
+    vars_all = [(k, ladim_dset[k]) for k in varnames]
+    vars_time = {k: v for k, v in vars_all if v.dimensions == (dim_time,)}
+    vars_part = {k: v for k, v in vars_all if v.dimensions == (dim_part,)}
+    vars_inst = {k: v for k, v in vars_all if v.dimensions == (dim_inst,)}
 
-        idx_inst_prev = 0
+    # Load data
+    particle_count = var_pcnt[:]
 
-        for idx_time in range(dset.dimensions[dim_time].size):
-            cum_pinst = idx_inst_prev + dset[var_pcnt][idx_time]
-            while idx_inst_prev < cum_pinst:
-                idx_inst_next = min(idx_inst_prev + max_rows, cum_pinst)
-                idx_inst = range(idx_inst_prev, idx_inst_next)
-                idx_part = dset[var_pidx][idx_inst]
-                data_part = {v: dset[v][idx_part] for v in varnames_part}
-                data_inst = {v: dset[v][idx_inst] for v in varnames_inst}
-                data_time = {
-                    v: np.broadcast_to(
-                        dset[v][idx_time],
-                        (idx_inst_next - idx_inst_prev),
-                    )
-                    for v in varnames_time
-                }
-                yield {**data_time, **data_part, **data_inst}
-                idx_inst_prev = idx_inst_next
+    for idx_inst, idx_time in csr_to_coo_chunks(particle_count, max_size):
+        data_inst = {k: v[idx_inst] for k, v in vars_inst.items()}
+        data_part = {k: v[var_pidx[idx_inst]] for k, v in vars_part.items()}
+        data_time = {k: np.repeat(v[idx_time], particle_count[idx_time])
+                     for k, v in vars_time.items()}
+
+        yield {**data_time, **data_part, **data_inst}
 
 
 def parse_args(args):
@@ -624,9 +641,10 @@ def rasterize(raster, particles):
     weights = tuple(v if v != 'bincount' else None for v in variables)
     ladim_vars = [v for v in weights if v] + list(bin_keys)
 
-    for chunk in ladim_chunks(particles, ladim_vars):
-        for weight_var in weights:
-            update_raster(raster, chunk, bin_keys, weight_var)
+    for ladim_dset in particles:
+        for chunk in ladim_chunks(ladim_dset, ladim_vars):
+            for weight_var in weights:
+                update_raster(raster, chunk, bin_keys, weight_var)
 
 
 def sparse_histogram(sample, bins, weights=None):
