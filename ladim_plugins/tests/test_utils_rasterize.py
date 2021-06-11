@@ -501,9 +501,6 @@ class Test_parse_args:
         assert args.max_size == 1e10
         args_def = rasterize.parse_args(['myrasterfile.nc', 'ladim.nc'])
         assert args_def.max_size == 1e6
-        args_cst = rasterize.parse_args(['myrasterfile.nc', 'ladim.nc', '--max_size'])
-        assert args_cst.max_size == 1e6
-
 
 
 class Test_rasterize:

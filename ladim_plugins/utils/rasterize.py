@@ -664,15 +664,16 @@ def parse_args(args):
 
     parser.add_argument(
         "--max_size",
-        nargs="?",
-        default=1e6,
-        const=1e6,
+        nargs=1,
+        metavar='N',
+        default=[1e6],
         type=float,
         help=("max size of arrays loaded into memory (number of elements), "
               "defaults to 1e6")
     )
 
     parsed_args = parser.parse_args(args)
+    parsed_args.max_size = parsed_args.max_size[0]
 
     # Expand glob patterns
     parsed_args.ladim_file = _glob(parsed_args.ladim_file)
