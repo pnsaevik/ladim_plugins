@@ -464,6 +464,7 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
         new_size = dset_raster.dimensions[outer_dim].size
         bin_edge_vals[0] = get_cell_bounds(dset_raster, outer_dim)
         dset_raster[raster_varname][old_size:new_size] = 0
+        logger.info(f'Increased dimension {outer_dim} to {new_size}')
 
     # --- Get coordinates from chunk, possibly converting dates to numeric values ---
     coords = [_get_chunk_vals(v) for v in bin_keys]
@@ -473,6 +474,10 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     new_raster_val, idx = adaptive_histogram(coords, bin_edge_vals, weights=weights)
     previous_raster_val = dset_raster[raster_varname][idx]
     dset_raster[raster_varname][idx] = previous_raster_val + new_raster_val
+
+    str_idx = ','.join([f'{i.start}:{i.stop}' for i in idx])
+    vmax = np.max(new_raster_val)
+    logger.info(f'Updated {raster_varname}[{str_idx}], maxval={vmax} ')
 
 
 def adaptive_histogram(sample, bins, **kwargs):
@@ -685,6 +690,8 @@ def rasterize(raster, particles):
 
     for ladim_dset in particles:
         for chunk in ladim_chunks(ladim_dset, ladim_vars):
+            chunk_size = len(next(v for v in chunk.values()))
+            logger.info(f'Loaded {chunk_size} particles')
             for weight_var in weights:
                 update_raster(raster, chunk, bin_keys, weight_var)
 
