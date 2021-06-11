@@ -467,7 +467,7 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None, max_size=None):
         new_size = dset_raster.dimensions[outer_dim].size
         bin_edge_vals[0] = get_cell_bounds(dset_raster, outer_dim)
         dset_raster[raster_varname][old_size:new_size] = 0
-        logger.info(f'Increased dimension {outer_dim} to {new_size}')
+        logger.info(f'Increased dimension `{outer_dim}` to {new_size}')
 
     # --- Get coordinates from chunk, possibly converting dates to numeric values ---
     coords = [_get_chunk_vals(v) for v in bin_keys]
@@ -477,10 +477,11 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None, max_size=None):
     chunks = chunked_histogram(coords, bin_edge_vals, weights=weights, max_size=max_size)
     for new_raster_val, idx in chunks:
         previous_raster_val = dset_raster[raster_varname][idx]
-        dset_raster[raster_varname][idx] = previous_raster_val + new_raster_val
+        sum_raster_val = previous_raster_val + new_raster_val
+        dset_raster[raster_varname][idx] = sum_raster_val
 
         str_idx = ','.join([f'{i.start}:{i.stop}' for i in idx])
-        vmax = np.max(new_raster_val)
+        vmax = np.max(sum_raster_val)
         logger.info(f'Updated {raster_varname}[{str_idx}], maxval={vmax} ')
 
 
@@ -689,7 +690,7 @@ def _xr_iter(fnames):
             yield dset
 
 
-def rasterize(raster, particles):
+def rasterize(raster, particles, max_size=None):
     bin_keys = raster['bincount'].dimensions
     logger.info(f"Bins: {', '.join(bin_keys)}")
 
@@ -703,11 +704,11 @@ def rasterize(raster, particles):
     ladim_vars = [v for v in weights if v] + list(bin_keys)
 
     for ladim_dset in particles:
-        for chunk in ladim_chunks(ladim_dset, ladim_vars):
+        for chunk in ladim_chunks(ladim_dset, ladim_vars, max_size=max_size):
             chunk_size = len(next(v for v in chunk.values()))
             logger.info(f'Loaded {chunk_size} particles')
             for weight_var in weights:
-                update_raster(raster, chunk, bin_keys, weight_var)
+                update_raster(raster, chunk, bin_keys, weight_var, max_size=max_size)
 
 
 def sparse_histogram(sample, bins, weights=None):
