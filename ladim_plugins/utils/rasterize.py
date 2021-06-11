@@ -495,6 +495,16 @@ def adaptive_histogram(sample, bins, **kwargs):
     return rasterized_data, tuple(idx)
 
 
+def chunked_histogram(sample, bins, max_size=None, weights=None):
+    if max_size is None:
+        max_size = np.inf
+
+    coords, vals = sparse_histogram(sample, bins, weights)
+    chunks = sparse_to_dense_chunks(coords, vals, max_size)
+    for raster_data, idx in chunks:
+        yield raster_data, idx
+
+
 def _create_variable(dset, varname, datatype, dimensions, values):
     if np.issubdtype(datatype, np.datetime64):
         v = dset.createVariable(varname, np.float64, dimensions)

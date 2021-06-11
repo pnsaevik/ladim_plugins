@@ -302,6 +302,61 @@ class Test_adaptive_histogram:
         self.assert_equals_histogramdd(sample, bins)
 
 
+class Test_chunked_histogram:
+    @staticmethod
+    def assert_equals_histogramdd(sample, bins, max_size=None, weights=None):
+        expected = np.histogramdd(sample, bins, weights=weights)[0]
+        actual = np.zeros_like(expected)
+        chunks = rasterize.chunked_histogram(sample, bins, max_size, weights)
+        for subset, idx in chunks:
+            actual[idx] += subset
+        assert actual.tolist() == expected.tolist()
+
+    def test_single_chunk_if_unrestricted(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        chunks = rasterize.chunked_histogram(sample, bins)
+        assert len(list(chunks)) == 1
+
+    def test_equals_histogramdd_if_unrestricted(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        self.assert_equals_histogramdd(sample, bins)
+
+    def test_multiple_chunks_if_restricted(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        chunks = rasterize.chunked_histogram(sample, bins, max_size=2)
+        assert len(list(chunks)) > 1
+
+    def test_equals_histogramdd_if_restricted(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        self.assert_equals_histogramdd(sample, bins, max_size=2)
+
+    def test_returns_truncated_histogram_if_subset_input(self):
+        bins = [[0, 1, 2, 3, 4, 5], [0, 1, 2]]
+        sample = [[1.5, 1.6, 1.7, 2.2, 2.3], [.1, .1, .1, .1, 1.2]]
+        values, idx = next(rasterize.chunked_histogram(sample, bins))
+        assert idx == np.s_[1:3, 0:2]
+        assert values.shape == (2, 2)
+
+    def test_equals_histogramdd_if_full_input_and_weights(self):
+        bins = [[0, 1, 2, 3]]
+        sample = [[.5, 1.5, 1.6, 1.7, 2.2, 2.3]]
+        self.assert_equals_histogramdd(sample, bins, weights=sample[0])
+
+    def test_equals_histogramdd_if_on_bin_edges(self):
+        bins = [[0, 1, 2, 3, 4, 5, 6]]
+        sample = [[1.0, 2.0, 2.5, 2.6, 2.7, 3.0, 3.1, 3.2, 4.0]]
+        self.assert_equals_histogramdd(sample, bins)
+
+    def test_equals_histogramdd_if_outside_bin_edges(self):
+        bins = [[2, 3, 4]]
+        sample = [[1.0, 2.0, 2.5, 2.6, 2.7, 3.0, 3.1, 3.2, 4.2]]
+        self.assert_equals_histogramdd(sample, bins)
+
+
 class Test_extend_bins:
     @pytest.fixture()
     def dset(self):
