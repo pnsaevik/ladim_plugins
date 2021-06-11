@@ -402,6 +402,41 @@ def dt64_to_num(dates, units, calendar):
     return np.array(date2num(py_datetime, units, calendar))
 
 
+def get_cell_bounds(dset, varname):
+    v = dset[varname]
+    if hasattr(v, 'bounds'):
+        bnd = dset[v.bounds][:]
+        return np.concatenate([bnd[:, 0], bnd[-1:, 1]])
+    else:
+        return bin_edges_from_centers(v[:])
+
+
+def extend_bins(dset, varname, maxval):
+    # Algorithm:
+    # 1. Get cell bounds
+    # 2. Check if maxval exceeds cell bounds (or equals). If not, exit.
+    # 3. Compute width of last cell
+    # 4. Extend coordinate variable to encompass maxval
+
+    # Check if maxval is already within bounds
+    bounds = get_cell_bounds(dset, varname)
+    if maxval < bounds[-1]:
+        return
+
+    # Compute additional bounds based on width of last cell
+    width = bounds[-1] - bounds[-2]
+    num_extra = 1 + (maxval - bounds[-1]) // width
+    extra_bounds = bounds[-1] + width * np.arange(num_extra + 1)
+    extra_mid = 0.5 * (extra_bounds[:-1] + extra_bounds[1:])
+    extra_idx = slice(len(dset[varname]), len(dset[varname]) + len(extra_mid))
+    dset[varname][extra_idx] = extra_mid
+
+    # Compute additional explicit bounds, if they exist
+    if hasattr(dset[varname], 'bounds'):
+        extra_bounds_2d = np.array([extra_bounds[:-1], extra_bounds[1:]]).T
+        dset[dset[varname].bounds][extra_idx, :] = extra_bounds_2d
+
+
 def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     # Algorithm:
     # 1. Get bin_edges
@@ -419,9 +454,16 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     raster_varname = weight_var if weight_var else 'bincount'
 
     # --- Get bin edges from raster coordinate variable ---
-    bin_edge_keys = (dset_raster[bin_key].bounds for bin_key in bin_keys)
-    bin_edge_vars = (dset_raster[bin_edge_key] for bin_edge_key in bin_edge_keys)
-    bin_edge_vals = [v[:, 0].tolist() + [v[-1, 1]] for v in bin_edge_vars]
+    bin_edge_vals = [get_cell_bounds(dset_raster, k) for k in bin_keys]
+
+    # --- Expand outer dimension if necessary ---
+    outer_dim = bin_keys[0]
+    if dset_raster.dimensions[outer_dim].isunlimited():
+        old_size = dset_raster.dimensions[outer_dim].size
+        extend_bins(dset_raster, outer_dim, np.max(chunk[outer_dim]))
+        new_size = dset_raster.dimensions[outer_dim].size
+        bin_edge_vals[0] = get_cell_bounds(dset_raster, outer_dim)
+        dset_raster[raster_varname][old_size:new_size] = 0
 
     # --- Get coordinates from chunk, possibly converting dates to numeric values ---
     coords = [_get_chunk_vals(v) for v in bin_keys]

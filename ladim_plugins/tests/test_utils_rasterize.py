@@ -302,13 +302,59 @@ class Test_adaptive_histogram:
         self.assert_equals_histogramdd(sample, bins)
 
 
+class Test_extend_bins:
+    @pytest.fixture()
+    def dset(self):
+        with nc.Dataset(uuid4().hex, 'w', diskless=True) as d:
+            d.createDimension('bins', None)
+            d.createDimension('bnd', 2)
+            d.createVariable('bins', 'i', 'bins')[:] = [1, 3, 5]
+            d.createVariable('bins_b', 'i', ('bins', 'bnd'))[:] = [[0, 2], [2, 4], [4, 6]]
+            d['bins'].bounds = 'bins_b'
+            d.set_auto_maskandscale(False)
+            yield d
+
+    def test_does_nothing_if_maxval_inside_bounds_when_explicit_bounds(self, dset):
+        rasterize.extend_bins(dset, 'bins', 4)
+        assert dset.dimensions['bins'].size == 3
+
+    def test_does_nothing_if_maxval_inside_bounds_when_implicit_bounds(self, dset):
+        del dset['bins'].bounds
+        rasterize.extend_bins(dset, 'bins', 4)
+        assert dset.dimensions['bins'].size == 3
+
+    def test_expands_if_maxval_equals_right_bound_when_explicit_bounds(self, dset):
+        rasterize.extend_bins(dset, 'bins', 6)
+        assert dset.dimensions['bins'].size == 4
+        assert dset['bins'][:].tolist() == [1, 3, 5, 7]
+        assert dset['bins_b'][:].T.tolist() == [[0, 2, 4, 6], [2, 4, 6, 8]]
+
+    def test_expands_if_maxval_equals_right_bound_when_implicit_bounds(self, dset):
+        del dset['bins'].bounds
+        rasterize.extend_bins(dset, 'bins', 6)
+        assert dset.dimensions['bins'].size == 4
+        assert dset['bins'][:].tolist() == [1, 3, 5, 7]
+
+    def test_expands_if_large_maxval_when_explicit_bounds(self, dset):
+        rasterize.extend_bins(dset, 'bins', 11)
+        assert dset.dimensions['bins'].size == 6
+        assert dset['bins'][:].tolist() == [1, 3, 5, 7, 9, 11]
+        assert dset['bins_b'][:].T.tolist() == [[0, 2, 4, 6, 8, 10], [2, 4, 6, 8, 10, 12]]
+
+    def test_expands_if_large_maxval_when_implicit_bounds(self, dset):
+        del dset['bins'].bounds
+        rasterize.extend_bins(dset, 'bins', 11)
+        assert dset.dimensions['bins'].size == 6
+        assert dset['bins'][:].tolist() == [1, 3, 5, 7, 9, 11]
+
+
 class Test_update_raster:
     @pytest.fixture()
     def raster(self):
         with nc.Dataset(uuid4().hex, 'w', diskless=True) as dset:
             dset.createDimension('X', 2)
             dset.createDimension('Y', 3)
-            dset.createDimension('time', 4)
+            dset.createDimension('time', None)
             dset.createDimension('bnd', 2)
             dset.createVariable('X', float, 'X')[:] = [2.5, 5.5]
             dset.createVariable('Y', float, 'Y')[:] = [30, 55, 70]
@@ -328,7 +374,7 @@ class Test_update_raster:
     @pytest.fixture()
     def chunk(self):
         return dict(
-            time=np.array([np.datetime64('2000')] * 10),
+            time=np.zeros(10),
             X=np.arange(10),
             Y=np.arange(10) * 10,
             W=np.ones(10) * 10,
@@ -361,6 +407,13 @@ class Test_update_raster:
         rasterize.update_raster(raster, chunk, ['X'])
         second_val = raster.variables['bincount'][:]
         assert double_first_val.tolist() == second_val.tolist()
+
+    def test_expands_outer_dim_automatically(self, raster):
+        chunk = dict(time=np.arange(10))
+        assert raster['time'][:].tolist() == [-1, 0, 1, 2]
+        raster.createVariable('bincount', np.int32, ('time', ))[:] = 0
+        rasterize.update_raster(raster, chunk, ['time'])
+        assert raster.variables['bincount'][:].tolist() == [0] + [1] * 10
 
 
 class Test_parse_args:
