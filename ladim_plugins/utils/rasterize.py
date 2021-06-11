@@ -662,6 +662,16 @@ def parse_args(args):
         help="output file(s) from LADiM, glob patterns allowed (*?[])",
     )
 
+    parser.add_argument(
+        "--max_size",
+        nargs="?",
+        default=1e6,
+        const=1e6,
+        type=float,
+        help=("max size of arrays loaded into memory (number of elements), "
+              "defaults to 1e6")
+    )
+
     parsed_args = parser.parse_args(args)
 
     # Expand glob patterns
@@ -801,7 +811,12 @@ def main():
     import netCDF4 as nc
     logger.info(f"Open raster file {args.raster_file}")
     with nc.Dataset(args.raster_file, 'a') as raster_dset:
-        rasterize(raster_dset, particles=_xr_iter(args.ladim_file))
+        raster_dset.set_auto_maskandscale(False)
+        rasterize(
+            raster=raster_dset,
+            particles=_xr_iter(args.ladim_file),
+            max_size=args.max_size,
+        )
 
 
 if __name__ == '__main__':

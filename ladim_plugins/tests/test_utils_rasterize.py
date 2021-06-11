@@ -496,6 +496,15 @@ class Test_parse_args:
         assert args.ladim_file[0] == 'ladim1.nc'
         assert len(args.ladim_file) == 1 + len(glob.glob(pattern))
 
+    def test_accepts_max_size_argument(self):
+        args = rasterize.parse_args(['myrasterfile.nc', 'ladim.nc', '--max_size', '1e10'])
+        assert args.max_size == 1e10
+        args_def = rasterize.parse_args(['myrasterfile.nc', 'ladim.nc'])
+        assert args_def.max_size == 1e6
+        args_cst = rasterize.parse_args(['myrasterfile.nc', 'ladim.nc', '--max_size'])
+        assert args_cst.max_size == 1e6
+
+
 
 class Test_rasterize:
     @pytest.fixture()
