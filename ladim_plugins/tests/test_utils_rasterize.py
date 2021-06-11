@@ -508,7 +508,7 @@ class Test_rasterize:
             dset.createDimension('bnd', 2)
             v = dset.createVariable('X_bounds', np.float32, ('X', 'bnd'))
             v[:, 0] = [0, 1, 2, 3, 4]
-            v[:, 1] = [1, 2, 3, 4, 5]
+            v[:, 1] = [1, 2, 3, 4, 6]
 
             dset.createDimension('farmid', 2)
             dset.createVariable('farmid', np.float32, 'farmid')[:] = [101, 102]

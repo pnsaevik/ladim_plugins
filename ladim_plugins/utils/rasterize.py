@@ -437,13 +437,16 @@ def extend_bins(dset, varname, maxval):
         dset[dset[varname].bounds][extra_idx, :] = extra_bounds_2d
 
 
-def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
+def update_raster(dset_raster, chunk, bin_keys, weight_var=None, max_size=None):
     # Algorithm:
     # 1. Get bin_edges
     # 2. Do a quick survey of ladim_chunk to find max and min of each binning coordinate
     # 3. Construct a subset of bin_edges which includes the whole ladim chunk
     # 4. Construct a histogramdd
     # 5. Increment the appropriate slice in dset_raster with the histogramdd data
+
+    if max_size is None:
+        max_size = np.inf
 
     def _get_chunk_vals(bin_key):
         values = chunk[bin_key]
@@ -470,14 +473,15 @@ def update_raster(dset_raster, chunk, bin_keys, weight_var=None):
     coords = [_get_chunk_vals(v) for v in bin_keys]
     weights = chunk[weight_var] if weight_var else None
 
-    # --- Update raster using adaptive histogram --
-    new_raster_val, idx = adaptive_histogram(coords, bin_edge_vals, weights=weights)
-    previous_raster_val = dset_raster[raster_varname][idx]
-    dset_raster[raster_varname][idx] = previous_raster_val + new_raster_val
+    # --- Update raster using chunked histogram --
+    chunks = chunked_histogram(coords, bin_edge_vals, weights=weights, max_size=max_size)
+    for new_raster_val, idx in chunks:
+        previous_raster_val = dset_raster[raster_varname][idx]
+        dset_raster[raster_varname][idx] = previous_raster_val + new_raster_val
 
-    str_idx = ','.join([f'{i.start}:{i.stop}' for i in idx])
-    vmax = np.max(new_raster_val)
-    logger.info(f'Updated {raster_varname}[{str_idx}], maxval={vmax} ')
+        str_idx = ','.join([f'{i.start}:{i.stop}' for i in idx])
+        vmax = np.max(new_raster_val)
+        logger.info(f'Updated {raster_varname}[{str_idx}], maxval={vmax} ')
 
 
 def adaptive_histogram(sample, bins, **kwargs):
