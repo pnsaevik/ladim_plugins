@@ -42,7 +42,7 @@ setup(
     author_email='a5606@hi.no',
     description='Plugins for LADiM',
     install_requires=[
-        'numpy', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'pyproj',
+        'numpy!=1.21.0', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'pyproj',
         'triangle', 'scipy', 'cftime', 'ladim', 'skyfield', 'pandas', 'requests'
     ],
     python_requires='>=3.6',
