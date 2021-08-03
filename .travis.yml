@@ -9,6 +9,7 @@ install:
   - python --version
   - pip --version
   - pip install --upgrade setuptools numpy
+  - pip install typing-extensions
   - pip install git+https://github.com/bjornaa/ladim.git
   - pip install .
   - pip list
