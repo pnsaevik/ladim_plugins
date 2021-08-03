@@ -11,21 +11,42 @@ class IBM:
         self.land_collision = config["ibm"].get('land_collision', 'reposition')
 
     def update_ibm(self, grid, state, forcing):
-        # Vertical advection velocity
-        W = forcing.forcing.wvel(state.X, state.Y, state.Z)
-
-        # Vertical diffusion velocity
-        rand = np.random.normal(size=len(state.X))
-        W += rand * (2 * self.D / self.dt) ** 0.5
-
-        # Update vertical position, using reflexive boundary condition at top
-        state.Z += W * self.dt
-        state.Z[state.Z < 0] *= -1
-
-        # Reflexive boundary condition at bottom
         H = grid.sample_depth(state.X, state.Y)  # Water depth
-        below_seabed = state.Z > H
-        state.Z[below_seabed] = 2*H[below_seabed] - state.Z[below_seabed]
+
+        # --- Use Itô backwards scheme (LaBolle et al. 2000) for vertical diffusion ---
+
+        # Vertical advection
+        W_adv = forcing.forcing.wvel(state.X, state.Y, state.Z)
+        Z0 = state.Z + W_adv * self.dt
+
+        # Simple, constant diffusion
+        if not isinstance(self.D, str):
+            dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
+            diff_1 = self.D
+            Z1 = Z0 + np.sqrt(2 * diff_1) * dW  # Diffusive step
+            Z1[Z1 < 0] *= -1  # Reflexive boundary at top
+            below_seabed = Z1 > H
+            Z1[below_seabed] = 2 * H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
+            state.Z = Z1
+
+        # Itô backwards scheme (LaBolle et al. 2000)
+        else:
+            # Vertical diffusion, step 1
+            dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
+            diff_1 = forcing.forcing.field(state.X, state.Y, Z0, self.D)
+            Z1 = Z0 + np.sqrt(2 * diff_1) * dW  # Diffusive step
+            Z1[Z1 < 0] *= -1                    # Reflexive boundary at top
+            below_seabed = Z1 > H
+            Z1[below_seabed] = 2*H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
+
+            # Vertical diffusion, step 2
+            diff_2 = forcing.forcing.field(state.X, state.Y, Z1, self.D)
+            Z2 = Z0 + np.sqrt(2 * diff_2) * dW  # Diffusive step
+            Z2[Z2 < 0] *= -1                    # Reflexive boundary at top
+            below_seabed = Z2 > H
+            Z2[below_seabed] = 2*H[below_seabed] - Z2[below_seabed]  # Reflexive bottom
+
+            state.Z = Z2
 
         if self.land_collision == "reposition":
             # If particles have not moved: Assume they ended up on land.
