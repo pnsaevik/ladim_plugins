@@ -50,7 +50,8 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
-October 2020: Applied corrections to vertical velocity computation
+August 2021: Added variable vertical diffusion
 November 2020: Applied memory optimizations
+October 2020: Applied corrections to vertical velocity computation
 
 Created by Pål Næverlid Sævik (2020).

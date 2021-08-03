@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_plugins',
-    version='1.4.0',
+    version='1.5.0',
     packages=find_packages(),
     package_data={'': [
         '*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp', '*.geojson',
@@ -10,7 +10,7 @@ setup(
     entry_points={
         'console_scripts': [
             'makrel=ladim_plugins.release.makrel:main',
-            'ladim_raster=ladim_plugins.utils.postpro:main',
+            'ladim_raster=ladim_plugins.utils.rasterize:main',
         ],
     },
     url='https://github.com/pnsaevik/ladim_plugins',

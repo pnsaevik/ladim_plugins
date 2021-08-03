@@ -29,7 +29,7 @@ Salinity is given in PSU and temperature is given in degrees Celcius. Return val
 in kg m^-3.
 
 
-## Post processing
+## Rasterization
 
 Converts ladim output files to netCDF raster format.
 
