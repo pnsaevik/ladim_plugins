@@ -586,8 +586,9 @@ class Forcing:
         I = np.int32(X) - self._grid.i0
         J = np.int32(Y) - self._grid.j0
         K, A = z2s(self._grid.z_w, I, J, Z)
+        K_nearest = np.round(K - A).astype(np.int32)
         F = self[name]
-        return F[K, J, I]
+        return F[K_nearest, J, I]
 
     def compute_w(self, u_in, v_in):
         z_r = self._grid.z_r[np.newaxis, :, :, :]
