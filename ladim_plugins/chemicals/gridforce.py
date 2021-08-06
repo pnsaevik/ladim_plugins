@@ -57,6 +57,7 @@ class Grid:
                 ncid = Dataset(uuid.uuid4(), mode='r', memory=grid_file)
             else:
                 ncid = Dataset(grid_file)
+            ncid.set_auto_mask(False)
         except OSError:
             logging.error("Could not open grid file " + grid_file)
             raise SystemExit(1)
