@@ -581,6 +581,13 @@ class Forcing:
         F = self[name]
         return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
 
+    def field_w(self, X, Y, Z, name):
+        I = np.int32(X) - self._grid.i0
+        J = np.int32(Y) - self._grid.j0
+        K, A = z2s(self._grid.z_w, I, J, Z)
+        F = self[name]
+        return F[K, J, I]
+
     def compute_w(self, u_in, v_in):
         z_r = self._grid.z_r[np.newaxis, :, :, :]
         z_w = self._grid.z_w[np.newaxis, :, :, :]
