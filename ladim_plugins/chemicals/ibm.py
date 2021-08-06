@@ -12,6 +12,7 @@ class IBM:
 
     def update_ibm(self, grid, state, forcing):
         H = grid.sample_depth(state.X, state.Y)  # Water depth
+        MINIMUM_VERTDIFF = 0
 
         # --- Use Itô backwards scheme (LaBolle et al. 2000) for vertical diffusion ---
 
@@ -37,6 +38,7 @@ class IBM:
             # Vertical diffusion, step 1
             dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
             diff_1 = forcing.forcing.field_w(state.X, state.Y, Z0, self.D)
+            diff_1 = np.maximum(MINIMUM_VERTDIFF, diff_1)
             Z1 = Z0 + np.sqrt(2 * diff_1) * dW  # Diffusive step
             Z1[Z1 < 0] *= -1                    # Reflexive boundary at top
             below_seabed = Z1 > H
@@ -44,6 +46,7 @@ class IBM:
 
             # Vertical diffusion, step 2
             diff_2 = forcing.forcing.field_w(state.X, state.Y, Z1, self.D)
+            diff_2 = np.maximum(MINIMUM_VERTDIFF, diff_2)
             Z2 = Z0 + np.sqrt(2 * diff_2) * dW  # Diffusive step
             Z2[Z2 < 0] *= -1                    # Reflexive boundary at top
             below_seabed = Z2 > H
