@@ -23,20 +23,16 @@ class IBM:
         below_seabed = Z0 > H
         Z0[below_seabed] = 2 * H[below_seabed] - Z0[below_seabed]  # Reflexive bottom
 
+        # Stochastic differential
+        dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
+
         # Simple, constant diffusion
         if not isinstance(self.D, str):
-            dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
-            diff_1 = self.D
-            Z1 = Z0 + np.sqrt(2 * diff_1) * dW  # Diffusive step
-            Z1[Z1 < 0] *= -1  # Reflexive boundary at top
-            below_seabed = Z1 > H
-            Z1[below_seabed] = 2 * H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
-            state.Z = Z1
+            diff_2 = self.D
 
         # Itô backwards scheme (LaBolle et al. 2000)
         else:
-            # Vertical diffusion, step 1
-            dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
+            # Vertical diffusion, intermediate step
             diff_1 = forcing.forcing.field_w(state.X, state.Y, Z0, self.D)
             diff_1 = np.maximum(MINIMUM_VERTDIFF, diff_1)
             Z1 = Z0 + np.sqrt(2 * diff_1) * dW  # Diffusive step
@@ -44,15 +40,16 @@ class IBM:
             below_seabed = Z1 > H
             Z1[below_seabed] = 2*H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
 
-            # Vertical diffusion, step 2
+            # Use intermediate step to sample diffusion
             diff_2 = forcing.forcing.field_w(state.X, state.Y, Z1, self.D)
             diff_2 = np.maximum(MINIMUM_VERTDIFF, diff_2)
-            Z2 = Z0 + np.sqrt(2 * diff_2) * dW  # Diffusive step
-            Z2[Z2 < 0] *= -1                    # Reflexive boundary at top
-            below_seabed = Z2 > H
-            Z2[below_seabed] = 2*H[below_seabed] - Z2[below_seabed]  # Reflexive bottom
 
-            state.Z = Z2
+        # Diffusive step and reflective boundary conditions
+        Z2 = Z0 + np.sqrt(2 * diff_2) * dW  # Diffusive step
+        Z2[Z2 < 0] *= -1                    # Reflexive boundary at top
+        below_seabed = Z2 > H
+        Z2[below_seabed] = 2*H[below_seabed] - Z2[below_seabed]  # Reflexive bottom
+        state.Z = Z2
 
         if self.land_collision == "reposition":
             # If particles have not moved: Assume they ended up on land.
