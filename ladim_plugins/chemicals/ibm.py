@@ -18,6 +18,9 @@ class IBM:
         # Vertical advection
         W_adv = forcing.forcing.wvel(state.X, state.Y, state.Z)
         Z0 = state.Z + W_adv * self.dt
+        Z0[Z0 < 0] *= -1  # Reflexive boundary at top
+        below_seabed = Z0 > H
+        Z0[below_seabed] = 2 * H[below_seabed] - Z0[below_seabed]  # Reflexive bottom
 
         # Simple, constant diffusion
         if not isinstance(self.D, str):
