@@ -24,8 +24,6 @@ ibm:
     module: ladim_plugins.chemicals
     vertical_mixing: AKs  # Scalar [m*2/s] or variable name
     land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze'
-    variables:
-    - AKs
 
 particle_release:
     variables: [release_time, X, Y, Z, group_id]
