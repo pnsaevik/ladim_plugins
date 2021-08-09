@@ -582,11 +582,16 @@ class Forcing:
         F = self[name]
         return sample3D(F, X - i0, Y - j0, K, A, method="nearest")
 
-    def field_w(self, X, Y, Z, name):
+    def vertdiff(self, X, Y, Z, name):
+        MAXIMUM_K = len(self._grid.Cs_w) - 2
+        MINIMUM_K = 1
+
         I = np.int32(X) - self._grid.i0
         J = np.int32(Y) - self._grid.j0
         K, A = z2s(self._grid.z_w, I, J, Z)
         K_nearest = np.round(K - A).astype(np.int32)
+        K_nearest = np.minimum(MAXIMUM_K, K_nearest)
+        K_nearest = np.maximum(MINIMUM_K, K_nearest)
         F = self[name]
         return F[K_nearest, J, I]
 

@@ -33,7 +33,7 @@ class IBM:
         # Itô backwards scheme (LaBolle et al. 2000)
         else:
             # Vertical diffusion, intermediate step
-            diff_1 = forcing.forcing.field_w(state.X, state.Y, Z0, self.D)
+            diff_1 = forcing.forcing.vertdiff(state.X, state.Y, Z0, "AKs")
             diff_1 = np.maximum(MINIMUM_VERTDIFF, diff_1)
             Z1 = Z0 + np.sqrt(2 * diff_1) * dW  # Diffusive step
             Z1[Z1 < 0] *= -1                    # Reflexive boundary at top
@@ -41,7 +41,7 @@ class IBM:
             Z1[below_seabed] = 2*H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
 
             # Use intermediate step to sample diffusion
-            diff_2 = forcing.forcing.field_w(state.X, state.Y, Z1, self.D)
+            diff_2 = forcing.forcing.vertdiff(state.X, state.Y, Z1, "AKs")
             diff_2 = np.maximum(MINIMUM_VERTDIFF, diff_2)
 
         # Diffusive step and reflective boundary conditions
