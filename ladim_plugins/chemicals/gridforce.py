@@ -585,6 +585,7 @@ class Forcing:
     def vertdiff(self, X, Y, Z, name):
         MAXIMUM_K = len(self._grid.Cs_w) - 2
         MINIMUM_K = 1
+        MINIMUM_D = 0
 
         I = np.int32(X) - self._grid.i0
         J = np.int32(Y) - self._grid.j0
@@ -593,7 +594,7 @@ class Forcing:
         K_nearest = np.minimum(MAXIMUM_K, K_nearest)
         K_nearest = np.maximum(MINIMUM_K, K_nearest)
         F = self[name]
-        return F[K_nearest, J, I]
+        return np.maximum(MINIMUM_D, F[K_nearest, J, I])
 
     def compute_w(self, u_in, v_in):
         z_r = self._grid.z_r[np.newaxis, :, :, :]
