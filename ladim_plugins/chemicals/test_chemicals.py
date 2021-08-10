@@ -496,3 +496,100 @@ class Test_vertdiff:
         post_distribution = np.histogram(state.Z, bins=bins)[0]
         deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
         assert deviation < 0.1
+
+    def test_unstable_distribution_if_big_vertdiff_gradient(self):
+        np.random.seed(0)
+        num_particles = 10000
+        num_updates = 1
+        depth = 10
+        dx = 1
+        AKs = 0.01
+        dt = 100
+        vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    vertical_mixing='AKs',
+                ),
+            )
+        )
+
+        state = Stub()
+
+        forcing = Stub()
+        forcing.forcing = Stub()
+        forcing.forcing.wvel = lambda x, y, z: x*0
+        forcing.forcing.vertdiff = lambda x, y, z, n: vertdiff(z)
+
+        grid = Stub()
+        grid.sample_depth = lambda x, y: x*0 + depth
+
+        state.X = np.ones(num_particles)
+        state.Y = np.ones(num_particles)
+        state.Z = np.arange(num_particles) * depth / num_particles
+
+        bins = np.linspace(0, 1, 11) * depth
+        pre_distribution = np.histogram(state.Z, bins=bins)[0]
+
+        for i in range(num_updates):
+            ibm.update_ibm(grid, state, forcing)
+
+        post_distribution = np.histogram(state.Z, bins=bins)[0]
+        deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
+        assert deviation > 0.1
+
+    def test_stable_distribution_if_big_vertdiff_gradient_and_small_dt(self):
+        np.random.seed(0)
+        num_particles = 10000
+        num_updates = 1
+        depth = 10
+        dx = 1
+        AKs = 0.01
+        dt = 100
+        vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    vertical_mixing='AKs',
+                    vertdiff_dt=1,
+                ),
+            )
+        )
+
+        state = Stub()
+
+        forcing = Stub()
+        forcing.forcing = Stub()
+        forcing.forcing.wvel = lambda x, y, z: x*0
+        forcing.forcing.vertdiff = lambda x, y, z, n: vertdiff(z)
+
+        grid = Stub()
+        grid.sample_depth = lambda x, y: x*0 + depth
+
+        state.X = np.ones(num_particles)
+        state.Y = np.ones(num_particles)
+        state.Z = np.arange(num_particles) * depth / num_particles
+
+        bins = np.linspace(0, 1, 11) * depth
+        pre_distribution = np.histogram(state.Z, bins=bins)[0]
+
+        for i in range(num_updates):
+            ibm.update_ibm(grid, state, forcing)
+
+        post_distribution = np.histogram(state.Z, bins=bins)[0]
+        deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
+        assert deviation < 0.1
