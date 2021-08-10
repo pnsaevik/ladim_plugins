@@ -24,7 +24,7 @@ class IBM:
         Z0[below_seabed] = 2 * H[below_seabed] - Z0[below_seabed]  # Reflexive bottom
 
         # Stochastic differential
-        dW = np.random.normal(size=len(state.X)) * np.sqrt(self.dt)
+        dW = (np.random.rand(len(state.X)) * 2 - 1) * np.sqrt(3 * self.dt)
 
         # Simple, constant diffusion
         if not isinstance(self.D, str):

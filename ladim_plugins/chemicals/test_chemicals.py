@@ -75,8 +75,14 @@ class Test_ibm_land_collision:
         state.pid = np.int32([1, 2, 3, 4])
         ibm_chemicals.update_ibm(grid, state, forcing)
 
-        assert state.X.tolist() == [1.4636627435684204, 2, 3, 4]
-        assert state.Y.tolist() == [0.8834415078163147, 1, 1, 1]
+        assert state.X.tolist()[1:] == [2, 3, 4]
+        assert state.Y.tolist()[1:] == [1, 1, 1]
+
+        # Repositioned within same cell
+        assert state.X[0] != 1
+        assert state.Y[0] != 1
+        assert 0.5 < state.X[0] < 1.5
+        assert 0.5 < state.Y[0] < 1.5
 
 
 class Test_compute_w:
@@ -440,4 +446,3 @@ class Test_xy2ll:
 
         finally:
             pkg_resources.cleanup_resources()
-
