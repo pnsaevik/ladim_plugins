@@ -75,7 +75,7 @@ only a few time steps and a few particles at selected positions. In some cases
 it may also be necessary to specify somewhat unrealistic particle parameters
 to demonstrate certain features.
 
-The test is ran using the command `pytest -Wignore --pyargs ladim_plugins`. The
+The test is run using the command `pytest -Wignore --pyargs ladim_plugins`. The
 test succeeds if ladim is able to run the examples, and the output matches the
 contents of `out.nc` / `out.rls`.
 
