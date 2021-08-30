@@ -16,6 +16,14 @@ class IBM:
         self.state = None
         self.forcing = None
 
+        # Issue warning if parameters for vertical diffusion indicates numerical instability
+        if self.vertdiff_max < np.inf and self.vertdiff_dz > 0:
+            instability = 6 * self.vertdiff_max * self.vertdiff_dt / (self.vertdiff_dz ** 2)
+            if instability > 1:
+                import logging
+                logging.warning('Possible unstable vertical diffusion scheme')
+                logging.warning('Reduce time step, increase sampling distance or limit the diffusion coefficient')
+
     def update_ibm(self, grid, state, forcing):
         self.grid = grid
         self.state = state
