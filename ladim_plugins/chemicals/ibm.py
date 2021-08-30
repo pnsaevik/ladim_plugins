@@ -6,6 +6,8 @@ class IBM:
         self.D = config["ibm"].get('vertical_mixing', 0)  # Vertical mixing [m*2/s]
         self.dt = config['dt']
         self.vertdiff_dt = config["ibm"].get('vertdiff_dt', self.dt)  # Vertical diffusion timestep [s]
+        self.vertdiff_dz = config["ibm"].get('vertdiff_dz', 0)  # Spacing of vertical diffusion sampling [m]
+        self.vertdiff_max = config["ibm"].get('vertdiff_max', np.inf)  # Maximal vertical diffusion [m2/s]
         self.x = np.array([])
         self.y = np.array([])
         self.pid = np.array([])
@@ -22,7 +24,7 @@ class IBM:
         self.advect()
 
         if isinstance(self.D, str):
-            self.diffuse_ito()
+            self.diffuse_labolle()
         else:
             self.diffuse_const()
 
@@ -38,10 +40,21 @@ class IBM:
         self.reflect()
 
     # Itô backwards scheme (LaBolle et al. 2000) for vertical diffusion
-    def diffuse_ito(self):
+    def diffuse_labolle(self):
         x = self.state.X
         y = self.state.Y
         H = self.grid.sample_depth(x, y)
+
+        if self.vertdiff_dz:
+            def z_coarse(zz):
+                return (zz // self.vertdiff_dz) * self.vertdiff_dz + 0.5 * self.vertdiff_dz
+        else:
+            def z_coarse(zz):
+                return zz
+
+        def sample_K(xx, yy, zz):
+            kk = self.forcing.forcing.vertdiff(xx, yy, z_coarse(zz), self.D)
+            return np.minimum(kk, self.vertdiff_max)
 
         current_time = 0
         while current_time < self.dt:
@@ -54,17 +67,13 @@ class IBM:
             dW = (np.random.rand(len(z)) * 2 - 1) * np.sqrt(3 * ddt)
 
             # Vertical diffusion, intermediate step
-            diff_1 = self.forcing.forcing.vertdiff(x, y, z, self.D)
-            Z1 = z + np.sqrt(2 * diff_1) * dW  # Diffusive step
+            Z1 = z + np.sqrt(2 * sample_K(x, y, z)) * dW  # Diffusive step
             Z1[Z1 < 0] *= -1                    # Reflexive boundary at top
             below_seabed = Z1 > H
             Z1[below_seabed] = 2*H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
 
-            # Use intermediate step to sample diffusion
-            diff_2 = self.forcing.forcing.vertdiff(x, y, Z1, self.D)
-
             # Diffusive step and reflective boundary conditions
-            self.state.Z += np.sqrt(2 * diff_2) * dW  # Diffusive step
+            self.state.Z += np.sqrt(2 * sample_K(x, y, Z1)) * dW  # Diffusive step
             self.reflect()
 
     def diffuse_const(self):
