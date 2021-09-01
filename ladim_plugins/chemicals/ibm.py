@@ -55,7 +55,8 @@ class IBM:
 
         if self.vertdiff_dz:
             def z_coarse(zz):
-                return (zz // self.vertdiff_dz) * self.vertdiff_dz + 0.5 * self.vertdiff_dz
+                dz = self.vertdiff_dz
+                return np.maximum(0.25 * dz, ((zz - 0.5 * dz) // dz) * dz + dz)
         else:
             def z_coarse(zz):
                 return zz
