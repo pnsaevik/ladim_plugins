@@ -36,7 +36,9 @@ class Test_ibm_land_collision:
     def config(self):
         from ladim_plugins.tests.test_examples import get_config
         from ladim.configuration import configure
-        return configure(get_config('chemicals'))
+        conf = configure(get_config('chemicals'))
+        del conf['ibm']['horzdiff_type']
+        return conf
 
     @pytest.fixture()
     def grid(self, config):

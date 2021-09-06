@@ -8,6 +8,9 @@ class IBM:
         self.vertdiff_dt = config["ibm"].get('vertdiff_dt', self.dt)  # Vertical diffusion timestep [s]
         self.vertdiff_dz = config["ibm"].get('vertdiff_dz', 0)  # Spacing of vertical diffusion sampling [m]
         self.vertdiff_max = config["ibm"].get('vertdiff_max', np.inf)  # Maximal vertical diffusion [m2/s]
+        self.horzdiff_type = config["ibm"].get('horzdiff_type', None)
+        self.horzdiff_max = config["ibm"].get('horzdiff_max', np.inf)
+        self.horzdiff_min = config["ibm"].get('horzdiff_min', 0)
         self.x = np.array([])
         self.y = np.array([])
         self.pid = np.array([])
@@ -29,6 +32,9 @@ class IBM:
         self.state = state
         self.forcing = forcing
 
+        if self.land_collision == "reposition":
+            self.reposition()
+
         self.advect()
 
         if isinstance(self.D, str):
@@ -36,8 +42,11 @@ class IBM:
         else:
             self.diffuse_const()
 
+        if self.horzdiff_type == 'smagorinsky':
+            self.horzdiff()
+
         if self.land_collision == "reposition":
-            self.reposition()
+            self.store_position()
 
     def advect(self):
         # Vertical advection
@@ -46,6 +55,36 @@ class IBM:
         z = self.state.Z
         self.state.Z += self.dt * self.forcing.forcing.wvel(x, y, z)
         self.reflect()
+
+    def horzdiff(self):
+        # Itô backwards scheme (LaBolle et al. 2000) for horizontal diffusion
+        x = self.state.X
+        y = self.state.Y
+        z = self.state.Z
+        dt = self.dt
+        dx, dy = self.grid.sample_metric(x, y)
+
+        def compute_diff(xx, yy, zz):
+            K = self.forcing.forcing.horzdiff(xx, yy, zz)
+            K = np.maximum(self.horzdiff_min, np.minimum(self.horzdiff_max, K))
+            return np.sqrt(2 * K)
+
+        # X direction. Uniform stochastic differential. Predictor-corrector.
+        dWx = (np.random.rand(len(z)) * 2 - 1) * np.sqrt(3 * dt) / dx
+        diff1x = compute_diff(x, y, z)
+        x1 = x + diff1x * dWx
+        diff2x = compute_diff(x1, y, z)
+        x2 = x + diff2x * dWx
+
+        # Y direction. Uniform stochastic differential. Predictor-corrector.
+        dWy = (np.random.rand(len(z)) * 2 - 1) * np.sqrt(3 * dt) / dy
+        diff1y = compute_diff(x2, y, z)
+        y1 = y + diff1y * dWy
+        diff2y = compute_diff(x2, y1, z)
+        y2 = y + diff2y * dWy
+
+        self.state['X'] = x2
+        self.state['Y'] = y2
 
     # Itô backwards scheme (LaBolle et al. 2000) for vertical diffusion
     def diffuse_labolle(self):
@@ -114,6 +153,7 @@ class IBM:
         self.state.X[pidx_new_onland] = x_new
         self.state.Y[pidx_new_onland] = y_new
 
+    def store_position(self):
         self.x = self.state.X
         self.y = self.state.Y
         self.pid = self.state.pid
