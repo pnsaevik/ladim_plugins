@@ -587,14 +587,37 @@ class Forcing:
         MINIMUM_K = 1
         MINIMUM_D = 0
 
-        I = np.int32(X) - self._grid.i0
-        J = np.int32(Y) - self._grid.j0
+        I = np.int32(np.round(X)) - self._grid.i0
+        J = np.int32(np.round(Y)) - self._grid.j0
         K, A = z2s(self._grid.z_w, I, J, Z)
         K_nearest = np.round(K - A).astype(np.int32)
         K_nearest = np.minimum(MAXIMUM_K, K_nearest)
         K_nearest = np.maximum(MINIMUM_K, K_nearest)
         F = self[name]
         return np.maximum(MINIMUM_D, F[K_nearest, J, I])
+
+    def horzdiff(self, X, Y, Z):
+        # Compute horizontal diffusivity using Smagorinsky (1963)
+
+        jmax, imax = self._grid.H.shape
+
+        I = np.int32(np.round(X)) - self._grid.i0
+        J = np.int32(np.round(Y)) - self._grid.j0
+        I = np.maximum(0, np.minimum(imax - 1, I))
+        J = np.maximum(0, np.minimum(jmax - 1, J))
+        K, A = z2s(self._grid.z_r, I, J, Z)
+
+        u1 = (1 - A) * self['U'][K, J, I] + A * self['U'][K - 1, J, I]
+        u2 = (1 - A) * self['U'][K, J + 1, I] + A * self['U'][K - 1, J + 1, I]
+        v1 = (1 - A) * self['V'][K, J, I] + A * self['V'][K - 1, J, I]
+        v2 = (1 - A) * self['V'][K, J, I + 1] + A * self['V'][K - 1, J, I + 1]
+
+        dudy = u2 - u1
+        dvdx = v2 - v1
+
+        AHs = 0.04 * self._grid.dx[J, I] * np.abs(dudy + dvdx)
+
+        return AHs
 
     def compute_w(self, u_in, v_in):
         z_r = self._grid.z_r[np.newaxis, :, :, :]
