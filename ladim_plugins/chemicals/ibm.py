@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -33,6 +32,9 @@ class IBM:
         self.state = state
         self.forcing = forcing
 
+        if self.land_collision == "reposition":
+            self.reposition()
+
         self.advect()
 
         if isinstance(self.D, str):
@@ -44,7 +46,7 @@ class IBM:
             self.horzdiff()
 
         if self.land_collision == "reposition":
-            self.reposition()
+            self.store_position()
 
     def advect(self):
         # Vertical advection
@@ -67,19 +69,22 @@ class IBM:
             K = np.maximum(self.horzdiff_min, np.minimum(self.horzdiff_max, K))
             return np.sqrt(2 * K)
 
-        # Uniform stochastic differential
+        # X direction. Uniform stochastic differential. Predictor-corrector.
         dWx = (np.random.rand(len(z)) * 2 - 1) * np.sqrt(3 * dt) / dx
+        diff1x = compute_diff(x, y, z)
+        x1 = x + diff1x * dWx
+        diff2x = compute_diff(x1, y, z)
+        x2 = x + diff2x * dWx
+
+        # Y direction. Uniform stochastic differential. Predictor-corrector.
         dWy = (np.random.rand(len(z)) * 2 - 1) * np.sqrt(3 * dt) / dy
+        diff1y = compute_diff(x2, y, z)
+        y1 = y + diff1y * dWy
+        diff2y = compute_diff(x2, y1, z)
+        y2 = y + diff2y * dWy
 
-        # Vertical diffusion, predictor step
-        diff1 = compute_diff(x, y, z)
-        x1 = x + diff1 * dWx
-        y1 = y + diff1 * dWy
-
-        # Diffusive corrector step
-        diff2 = compute_diff(x1, y1, z)
-        self.state.X += diff2 * dWx
-        self.state.Y += diff2 * dWy
+        self.state['X'] = x2
+        self.state['Y'] = y2
 
     # Itô backwards scheme (LaBolle et al. 2000) for vertical diffusion
     def diffuse_labolle(self):
@@ -148,41 +153,7 @@ class IBM:
         self.state.X[pidx_new_onland] = x_new
         self.state.Y[pidx_new_onland] = y_new
 
+    def store_position(self):
         self.x = self.state.X
         self.y = self.state.Y
         self.pid = self.state.pid
-
-
-    def plotter(self):
-        i0 = self.grid.grid.i0
-        j0 = self.grid.grid.j0
-        zz = np.linspace(0, 20, 1001)
-
-        fig, ax = plt.subplots(1, 2)
-        self.ax = ax
-        self.fig = fig
-        fig.show()
-        AKs = np.log10(np.max(self.forcing.forcing.AKs, axis=0))
-        ax[0].pcolormesh(AKs)
-        line1 = ax[1].plot(np.logspace(-6, -1, 1001), zz)[0]
-        line2 = ax[1].plot(np.logspace(-6, -1, 1001), zz)[0]
-        ax[1].invert_yaxis()
-        ax[1].set_xscale('log')
-        ax[1].grid(True)
-
-        def onclick(event):
-            xx = np.int32(event.xdata + i0)
-            yy = np.int32(event.ydata + j0)
-            zz = np.linspace(0, self.grid.sample_depth(np.array([xx]), np.array([yy]))[0], 1001)
-            zz_coarse = np.maximum(1.25, ((zz-2.5) // 5) * 5 + 5)
-            kk = self.forcing.forcing.vertdiff([xx], [yy], zz, self.D)
-            kk_coarse = self.forcing.forcing.vertdiff([xx], [yy], zz_coarse, self.D)
-            line1.set_xdata(kk)
-            line1.set_ydata(zz)
-            line2.set_xdata(kk_coarse)
-            line2.set_ydata(zz)
-            ax[1].set_ylim(0, 40)
-            ax[1].invert_yaxis()
-            plt.pause(0.001)
-
-        cid = fig.canvas.mpl_connect('button_press_event', onclick)

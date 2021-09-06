@@ -616,6 +616,7 @@ class Forcing:
         dvdx = v2 - v1
 
         AHs = 0.04 * self._grid.dx[J, I] * np.abs(dudy + dvdx)
+        AHs[~self._grid.atsea(X, Y)] = 0
 
         return AHs
 
