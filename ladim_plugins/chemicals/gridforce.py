@@ -603,8 +603,8 @@ class Forcing:
 
         I = np.int32(np.round(X)) - self._grid.i0
         J = np.int32(np.round(Y)) - self._grid.j0
-        I = np.maximum(0, np.minimum(imax - 1, I))
-        J = np.maximum(0, np.minimum(jmax - 1, J))
+        I = np.maximum(0, np.minimum(imax - 2, I))
+        J = np.maximum(0, np.minimum(jmax - 2, J))
         K, A = z2s(self._grid.z_r, I, J, Z)
 
         u1 = (1 - A) * self['U'][K, J, I] + A * self['U'][K - 1, J, I]
@@ -616,7 +616,7 @@ class Forcing:
         dvdx = v2 - v1
 
         AHs = 0.04 * self._grid.dx[J, I] * np.abs(dudy + dvdx)
-        AHs[~self._grid.atsea(X, Y)] = 0
+        AHs[~self._grid.atsea(I + self._grid.i0, J + self._grid.j0)] = 0
 
         return AHs
 

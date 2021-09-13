@@ -608,3 +608,11 @@ class Test_horzdiff:
 
         a = chem_forcing.forcing.horzdiff(x, y, z)
         assert len(a) == len(x)
+
+    def test_no_error_when_outside_grid(self, chem_forcing):
+        x = np.zeros(5) - 1
+        y = np.zeros(5) + 100
+        z = (np.arange(5) - 1) * 100
+
+        a = chem_forcing.forcing.horzdiff(x, y, z)
+        assert len(a) == len(x)
