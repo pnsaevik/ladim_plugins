@@ -5,6 +5,27 @@ from contextlib import contextmanager
 from typing import Any
 
 
+@pytest.fixture(scope='module')
+def chem_config():
+    from ladim_plugins.tests.test_examples import get_config
+    from ladim.configuration import configure
+    conf = configure(get_config('chemicals'))
+    del conf['ibm']['horzdiff_type']
+    return conf
+
+
+@pytest.fixture(scope='module')
+def chem_grid(chem_config):
+    from ladim.gridforce import Grid
+    return Grid(chem_config)
+
+
+@pytest.fixture(scope='module')
+def chem_forcing(chem_config, chem_grid):
+    from ladim.gridforce import Forcing
+    return Forcing(chem_config, chem_grid)
+
+
 class Test_nearest_unmasked:
     def test_correct_when_all_unmasked(self):
         mask = np.zeros((4, 3))
@@ -33,40 +54,22 @@ class Test_nearest_unmasked:
 
 class Test_ibm_land_collision:
     @pytest.fixture()
-    def config(self):
-        from ladim_plugins.tests.test_examples import get_config
-        from ladim.configuration import configure
-        conf = configure(get_config('chemicals'))
-        del conf['ibm']['horzdiff_type']
-        return conf
-
-    @pytest.fixture()
-    def grid(self, config):
-        from ladim.gridforce import Grid
-        return Grid(config)
-
-    @pytest.fixture()
-    def forcing(self, config, grid):
-        from ladim.gridforce import Forcing
-        return Forcing(config, grid)
-
-    @pytest.fixture()
-    def state(self, config, grid):
+    def state(self, chem_config, chem_grid):
         from ladim.state import State
-        return State(config, grid)
+        return State(chem_config, chem_grid)
 
     @pytest.fixture()
-    def ibm_chemicals(self, config):
-        return IBM(config)
+    def ibm_chemicals(self, chem_config):
+        return IBM(chem_config)
 
-    def test_land_collision(self, ibm_chemicals, grid, state, forcing):
+    def test_land_collision(self, ibm_chemicals, chem_grid, state, chem_forcing):
         np.random.seed(0)
 
         state.X = np.float32([1, 1, 1])
         state.Y = np.float32([1, 1, 1])
         state.Z = np.float32([1, 1, 1])
         state.pid = np.int32([0, 1, 2])
-        ibm_chemicals.update_ibm(grid, state, forcing)
+        ibm_chemicals.update_ibm(chem_grid, state, chem_forcing)
 
         assert state.X.tolist() == [1, 1, 1]
         assert state.Y.tolist() == [1, 1, 1]
@@ -75,7 +78,7 @@ class Test_ibm_land_collision:
         state.Y = np.float32([1, 1, 1, 1])
         state.Z = np.float32([1, 1, 1, 1])
         state.pid = np.int32([1, 2, 3, 4])
-        ibm_chemicals.update_ibm(grid, state, forcing)
+        ibm_chemicals.update_ibm(chem_grid, state, chem_forcing)
 
         assert state.X.tolist()[1:] == [2, 3, 4]
         assert state.Y.tolist()[1:] == [1, 1, 1]
@@ -595,3 +598,21 @@ class Test_vertdiff:
         post_distribution = np.histogram(state.Z, bins=bins)[0]
         deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
         assert deviation < 0.1
+
+
+class Test_horzdiff:
+    def test_returns_float_vector(self, chem_forcing):
+        x = np.zeros(5)
+        y = np.zeros(5)
+        z = np.zeros(5)
+
+        a = chem_forcing.forcing.horzdiff(x, y, z)
+        assert len(a) == len(x)
+
+    def test_no_error_when_outside_grid(self, chem_forcing):
+        x = np.zeros(5) - 1
+        y = np.zeros(5) + 100
+        z = (np.arange(5) - 1) * 100
+
+        a = chem_forcing.forcing.horzdiff(x, y, z)
+        assert len(a) == len(x)
