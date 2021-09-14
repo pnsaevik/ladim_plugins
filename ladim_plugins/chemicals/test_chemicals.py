@@ -616,3 +616,34 @@ class Test_horzdiff:
 
         a = chem_forcing.forcing.horzdiff(x, y, z)
         assert len(a) == len(x)
+
+    def test_kill_particles_that_leaves_grid(self, chem_forcing, chem_grid):
+        np.random.seed(0)
+
+        dt = 1e6  # Large timestep to ensure some particles diffuse away
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    horzdiff_type='smagorinsky',
+                ),
+            )
+        )
+
+        state = Stub()
+        N = 100
+        state.X = np.ones(N)
+        state.Y = np.ones(N)
+        state.Z = np.ones(N)
+        state.alive = np.ones(N, dtype=bool)
+
+        ibm.update_ibm(chem_grid, state, chem_forcing)
+
+        assert np.all(chem_grid.ingrid(state.X, state.Y))
+        assert 0 < state.alive.sum() < N

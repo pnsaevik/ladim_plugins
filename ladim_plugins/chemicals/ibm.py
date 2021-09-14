@@ -83,8 +83,11 @@ class IBM:
         diff2y = compute_diff(x2, y1, z)
         y2 = y + diff2y * dWy
 
-        self.state['X'] = x2
-        self.state['Y'] = y2
+        # Kill particles trying to move out of grid
+        in_grid = self.grid.ingrid(x2, y2)
+        self.state['X'][in_grid] = x2[in_grid]
+        self.state['Y'][in_grid] = y2[in_grid]
+        self.state.alive[~in_grid] = False
 
     # Itô backwards scheme (LaBolle et al. 2000) for vertical diffusion
     def diffuse_labolle(self):
