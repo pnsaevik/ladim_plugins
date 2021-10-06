@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ladim_plugins',
-    version='1.5.2',
+    version='1.5.8',
     packages=find_packages(),
     package_data={'': [
         '*.nc', '*.md', '*.rls', '*.yaml', '*.m', '*.bsp', '*.geojson',

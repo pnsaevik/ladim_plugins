@@ -5,6 +5,27 @@ from contextlib import contextmanager
 from typing import Any
 
 
+@pytest.fixture(scope='module')
+def chem_config():
+    from ladim_plugins.tests.test_examples import get_config
+    from ladim.configuration import configure
+    conf = configure(get_config('chemicals'))
+    del conf['ibm']['horzdiff_type']
+    return conf
+
+
+@pytest.fixture(scope='module')
+def chem_grid(chem_config):
+    from ladim.gridforce import Grid
+    return Grid(chem_config)
+
+
+@pytest.fixture(scope='module')
+def chem_forcing(chem_config, chem_grid):
+    from ladim.gridforce import Forcing
+    return Forcing(chem_config, chem_grid)
+
+
 class Test_nearest_unmasked:
     def test_correct_when_all_unmasked(self):
         mask = np.zeros((4, 3))
@@ -33,38 +54,22 @@ class Test_nearest_unmasked:
 
 class Test_ibm_land_collision:
     @pytest.fixture()
-    def config(self):
-        from ladim_plugins.tests.test_examples import get_config
-        from ladim.configuration import configure
-        return configure(get_config('chemicals'))
-
-    @pytest.fixture()
-    def grid(self, config):
-        from ladim.gridforce import Grid
-        return Grid(config)
-
-    @pytest.fixture()
-    def forcing(self, config, grid):
-        from ladim.gridforce import Forcing
-        return Forcing(config, grid)
-
-    @pytest.fixture()
-    def state(self, config, grid):
+    def state(self, chem_config, chem_grid):
         from ladim.state import State
-        return State(config, grid)
+        return State(chem_config, chem_grid)
 
     @pytest.fixture()
-    def ibm_chemicals(self, config):
-        return IBM(config)
+    def ibm_chemicals(self, chem_config):
+        return IBM(chem_config)
 
-    def test_land_collision(self, ibm_chemicals, grid, state, forcing):
+    def test_land_collision(self, ibm_chemicals, chem_grid, state, chem_forcing):
         np.random.seed(0)
 
         state.X = np.float32([1, 1, 1])
         state.Y = np.float32([1, 1, 1])
         state.Z = np.float32([1, 1, 1])
         state.pid = np.int32([0, 1, 2])
-        ibm_chemicals.update_ibm(grid, state, forcing)
+        ibm_chemicals.update_ibm(chem_grid, state, chem_forcing)
 
         assert state.X.tolist() == [1, 1, 1]
         assert state.Y.tolist() == [1, 1, 1]
@@ -73,10 +78,16 @@ class Test_ibm_land_collision:
         state.Y = np.float32([1, 1, 1, 1])
         state.Z = np.float32([1, 1, 1, 1])
         state.pid = np.int32([1, 2, 3, 4])
-        ibm_chemicals.update_ibm(grid, state, forcing)
+        ibm_chemicals.update_ibm(chem_grid, state, chem_forcing)
 
-        assert state.X.tolist() == [1.4636627435684204, 2, 3, 4]
-        assert state.Y.tolist() == [0.8834415078163147, 1, 1, 1]
+        assert state.X.tolist()[1:] == [2, 3, 4]
+        assert state.Y.tolist()[1:] == [1, 1, 1]
+
+        # Repositioned within same cell
+        assert state.X[0] != 1
+        assert state.Y[0] != 1
+        assert 0.5 < state.X[0] < 1.5
+        assert 0.5 < state.Y[0] < 1.5
 
 
 class Test_compute_w:
@@ -441,3 +452,198 @@ class Test_xy2ll:
         finally:
             pkg_resources.cleanup_resources()
 
+
+class Test_vertdiff:
+    def test_stable_distribution_when_discontinuous_vertdiff(self):
+        np.random.seed(0)
+        num_particles = 10000
+        num_updates = 100
+        depth = 10
+        dx = 1
+        AKs = 0.001
+        dt = 100
+        vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    vertical_mixing='AKs',
+                ),
+            )
+        )
+
+        state = Stub()
+
+        forcing = Stub()
+        forcing.forcing = Stub()
+        forcing.forcing.wvel = lambda x, y, z: x*0
+        forcing.forcing.vertdiff = lambda x, y, z, n: vertdiff(z)
+
+        grid = Stub()
+        grid.sample_depth = lambda x, y: x*0 + depth
+
+        state.X = np.ones(num_particles)
+        state.Y = np.ones(num_particles)
+        state.Z = np.arange(num_particles) * depth / num_particles
+
+        bins = np.linspace(0, 1, 11) * depth
+        pre_distribution = np.histogram(state.Z, bins=bins)[0]
+
+        for i in range(num_updates):
+            ibm.update_ibm(grid, state, forcing)
+
+        post_distribution = np.histogram(state.Z, bins=bins)[0]
+        deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
+        assert deviation < 0.1
+
+    def test_unstable_distribution_if_big_vertdiff_gradient(self):
+        np.random.seed(0)
+        num_particles = 10000
+        num_updates = 1
+        depth = 10
+        dx = 1
+        AKs = 0.01
+        dt = 100
+        vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    vertical_mixing='AKs',
+                ),
+            )
+        )
+
+        state = Stub()
+
+        forcing = Stub()
+        forcing.forcing = Stub()
+        forcing.forcing.wvel = lambda x, y, z: x*0
+        forcing.forcing.vertdiff = lambda x, y, z, n: vertdiff(z)
+
+        grid = Stub()
+        grid.sample_depth = lambda x, y: x*0 + depth
+
+        state.X = np.ones(num_particles)
+        state.Y = np.ones(num_particles)
+        state.Z = np.arange(num_particles) * depth / num_particles
+
+        bins = np.linspace(0, 1, 11) * depth
+        pre_distribution = np.histogram(state.Z, bins=bins)[0]
+
+        for i in range(num_updates):
+            ibm.update_ibm(grid, state, forcing)
+
+        post_distribution = np.histogram(state.Z, bins=bins)[0]
+        deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
+        assert deviation > 0.1
+
+    def test_stable_distribution_if_big_vertdiff_gradient_and_small_dt(self):
+        np.random.seed(0)
+        num_particles = 10000
+        num_updates = 1
+        depth = 10
+        dx = 1
+        AKs = 0.01
+        dt = 100
+        vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    vertical_mixing='AKs',
+                    vertdiff_dt=1,
+                ),
+            )
+        )
+
+        state = Stub()
+
+        forcing = Stub()
+        forcing.forcing = Stub()
+        forcing.forcing.wvel = lambda x, y, z: x*0
+        forcing.forcing.vertdiff = lambda x, y, z, n: vertdiff(z)
+
+        grid = Stub()
+        grid.sample_depth = lambda x, y: x*0 + depth
+
+        state.X = np.ones(num_particles)
+        state.Y = np.ones(num_particles)
+        state.Z = np.arange(num_particles) * depth / num_particles
+
+        bins = np.linspace(0, 1, 11) * depth
+        pre_distribution = np.histogram(state.Z, bins=bins)[0]
+
+        for i in range(num_updates):
+            ibm.update_ibm(grid, state, forcing)
+
+        post_distribution = np.histogram(state.Z, bins=bins)[0]
+        deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
+        assert deviation < 0.1
+
+
+class Test_horzdiff:
+    def test_returns_float_vector(self, chem_forcing):
+        x = np.zeros(5)
+        y = np.zeros(5)
+        z = np.zeros(5)
+
+        a = chem_forcing.forcing.horzdiff(x, y, z)
+        assert len(a) == len(x)
+
+    def test_no_error_when_outside_grid(self, chem_forcing):
+        x = np.zeros(5) - 1
+        y = np.zeros(5) + 100
+        z = (np.arange(5) - 1) * 100
+
+        a = chem_forcing.forcing.horzdiff(x, y, z)
+        assert len(a) == len(x)
+
+    def test_kill_particles_that_leaves_grid(self, chem_forcing, chem_grid):
+        np.random.seed(0)
+
+        dt = 1e6  # Large timestep to ensure some particles diffuse away
+
+        class Stub:
+            def __getitem__(self, item):
+                return getattr(self, item)
+
+        ibm = IBM(
+            dict(
+                dt=dt,
+                ibm=dict(
+                    land_collision='freeze',
+                    horzdiff_type='smagorinsky',
+                ),
+            )
+        )
+
+        state = Stub()
+        N = 100
+        state.X = np.ones(N)
+        state.Y = np.ones(N)
+        state.Z = np.ones(N)
+        state.alive = np.ones(N, dtype=bool)
+
+        ibm.update_ibm(chem_grid, state, chem_forcing)
+
+        assert np.all(chem_grid.ingrid(state.X, state.Y))
+        assert 0 < state.alive.sum() < N

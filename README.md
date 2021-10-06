@@ -75,14 +75,14 @@ only a few time steps and a few particles at selected positions. In some cases
 it may also be necessary to specify somewhat unrealistic particle parameters
 to demonstrate certain features.
 
-The test is ran using the command `pytest -Wignore --pyargs ladim_plugins`. The
+The test is run using the command `pytest -Wignore --pyargs ladim_plugins`. The
 test succeeds if ladim is able to run the examples, and the output matches the
 contents of `out.nc` / `out.rls`.
 
 
 ## History
 
-**Version 1.5.2** (August 2021): Added heterogeneous vertical diffusion to `chemicals` module.
+**Version 1.5.8** (September 2021): Added heterogeneous diffusion to `chemicals` module.
 
 **Version 1.4.0** (May 2021): Added `salmon_lice` and `utils` modules. 
 Improvements made to `sedimentation` and `release` modules.
