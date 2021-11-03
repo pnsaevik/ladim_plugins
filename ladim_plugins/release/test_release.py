@@ -112,7 +112,7 @@ class Test_make_release:
         assert r['third'] == [10, 11]
         assert r['fourth'] == [0, 1]
 
-    def test_can_change_sortorder(self, conf0):
+    def test_can_change_column_sortorder(self, conf0):
         conf0['attrs'] = dict(first=0, second=1, third=2)
         conf0['columns'] = ['longitude', 'latitude', 'first', 'third', 'depth']
 
@@ -308,6 +308,29 @@ class Test_make_release:
     def test_accepts_list_of_configs(self, conf0):
         r = make_release([conf0, conf0])
         assert len(r['date']) == 4
+
+    def test_sorts_output_by_release_date_when_multiple_groups(self):
+        conf = dict(
+            seed=0,
+            groups=[
+                dict(
+                    date=['2000-01-01', '2000-01-31'],
+                    num=10,
+                    location=[5, 60],
+                    attrs=dict(group_id=1),
+                ),
+                dict(
+                    date=['2000-01-01', '2000-01-31'],
+                    num=10,
+                    location=[5, 60],
+                    attrs=dict(group_id=2),
+                ),
+            ],
+        )
+        r = make_release(conf)
+        dates = np.array(r['date']).astype('datetime64')
+        seconds = (dates - dates[0]) / np.timedelta64(1, 's')
+        assert all(np.diff(seconds) >= 0)
 
 
 class Test_triangulate:

@@ -36,6 +36,10 @@ the same order as the dict returned by the function.
 
 ## History
 
-Allow attributes generated from statistical distributions (Pål Næverlid Sævik, 2021)
+Let output be sorted by release date, as ladim requires date sorting to work
+properly (Pål Næverlid Sævik, Nov 2021)
+
+Allow attributes generated from statistical distributions (Pål Næverlid Sævik,
+Apr 2021)
  
 Created by Pål Næverlid Sævik (2020).
