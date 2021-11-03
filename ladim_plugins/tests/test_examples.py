@@ -40,7 +40,7 @@ def test_makrel_matches_snapshot(module_name):
     with open(ref_fname, encoding='utf-8') as f:
         ref = f.read()
 
-    assert ref.splitlines() == out.splitlines()
+    assert out.splitlines() == ref.splitlines()
 
 
 def check_equal(new, ref):
