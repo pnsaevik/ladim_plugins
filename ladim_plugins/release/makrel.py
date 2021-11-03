@@ -14,6 +14,9 @@ def make_release(config, fname=None):
     frames = [pd.DataFrame(make_single_release(c)) for c in config['groups']]
     frame = pd.concat(frames).fillna(0)
 
+    # Sort data frame by release time
+    frame = frame.sort_values('date')
+
     # Make column selection if specified
     if 'columns' in config:
         frame = frame[config['columns']]
