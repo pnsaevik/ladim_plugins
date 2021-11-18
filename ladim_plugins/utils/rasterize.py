@@ -350,9 +350,32 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
 
 
 def ladim_iterator(ladim_dsets):
-    for ladim_dset in ladim_dsets:
-        for tidx in range(ladim_dset.dims['time']):
-            yield ladim_dset.isel(time=tidx)
+    for dset in ladim_dsets:
+        pcount_cum = np.concatenate([[0], np.cumsum(dset.particle_count.values)])
+
+        for tidx in range(dset.dims['time']):
+            iidx = slice(pcount_cum[tidx], pcount_cum[tidx + 1])
+            pidx = xr.Variable('particle_instance', dset.pid[iidx].values)
+            ddset = dset.isel(
+                time=tidx,
+                particle_instance=iidx,
+                particle=pidx,
+            )
+            ddset = ddset.assign(instance_offset=dset.instance_offset + iidx.start)
+            yield ddset
+
+
+def _ladim_iterator_read_variable(dset, varname, tidx, iidx, pidx):
+    v = dset.variables[varname]
+    first_dim = v.dims[0]
+    if first_dim == 'particle_instance':
+        return v[iidx].values
+    elif first_dim == 'particle':
+        return v[pidx].values
+    elif first_dim == 'time':
+        return v[tidx].values
+    else:
+        raise ValueError(f'Unknown dimension type: {first_dim}')
 
 
 def main():
