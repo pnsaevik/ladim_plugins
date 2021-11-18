@@ -349,6 +349,12 @@ def _from_particle(slicefn, tvals, bin_keys, bin_edges, vdims):
     return dset
 
 
+def ladim_iterator(ladim_dsets):
+    for ladim_dset in ladim_dsets:
+        for tidx in range(ladim_dset.dims['time']):
+            yield ladim_dset.isel(time=tidx)
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(
