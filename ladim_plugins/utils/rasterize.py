@@ -389,6 +389,15 @@ class LadimInputStream:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    def find_limits(self, varnames):
+        lims = {k: [None, None] for k in varnames}
+        dset = self.datasets
+        for k in varnames:
+            lims[k][0] = dset.variables[k].min().values.item()
+            lims[k][1] = dset.variables[k].max().values.item()
+
+        return lims
+
     def read(self):
         try:
             return next(self.ladim_iter)
@@ -452,21 +461,24 @@ class Histogrammer:
             yield dict(varname=varname, indices=indices, values=values)
 
 
-def ladim_conc(resolution, limits, input_file, output_file):
+def ladim_conc(resolution, input_file, output_file, limits=None):
     # 1. Opprette output-fil
     # 2. Åpne input-fil(er) som en chunk-strøm
     # 3. Pipeline: Input chunk-strøm til funksjon, som gir output chunk-strøm
     # 4. Lagre chunk-strøm til output-fil
 
-    hist = Histogrammer(
-        resolution=resolution,
-        limits=limits,
-    )
+    with LadimInputStream(input_file) as dset_in:
+        if limits is None:
+            limits = dset_in.find_limits(list(resolution.keys()))
 
-    with RasterOutputStream(output_file) as dset_out:
-        dset_out.write_coords(hist)
-        dset_out.write_vars(hist)
-        with LadimInputStream(input_file) as dset_in:
+        hist = Histogrammer(
+            resolution=resolution,
+            limits=limits,
+        )
+
+        with RasterOutputStream(output_file) as dset_out:
+            dset_out.write_coords(hist)
+            dset_out.write_vars(hist)
             chunk_in = dset_in.read()
             while chunk_in is not None:
                 for chunk_out in hist.make(chunk_in):

@@ -129,3 +129,13 @@ class Test_get_conc:
             assert out_dset.variables['bincount'][:].tolist() == [
                 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0,
             ]
+
+    def test_finds_limits_if_not_given(self, ladim_dset):
+        with nc.Dataset('test_limits.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(
+                resolution=dict(X=1),
+                input_file=ladim_dset,
+                output_file=out_dset,
+            )
+
+            assert out_dset.variables['X'][:].tolist() == [5, 6]
