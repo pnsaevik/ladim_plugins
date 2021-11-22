@@ -378,6 +378,103 @@ def _ladim_iterator_read_variable(dset, varname, tidx, iidx, pidx):
         raise ValueError(f'Unknown dimension type: {first_dim}')
 
 
+class LadimInputStream:
+    def __init__(self, spec):
+        self.datasets = spec
+        self.ladim_iter = ladim_iterator([self.datasets])
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def read(self):
+        try:
+            return next(self.ladim_iter)
+        except StopIteration:
+            return None
+
+
+class RasterOutputStream:
+    def __init__(self, spec):
+        self.dataset = spec
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def add_histogram(self, varname, indices, values):
+        dtype = self.dataset.variables[varname].dtype
+        self.dataset.variables[varname][indices] += values.astype(dtype)
+
+    def write_coords(self, hist):
+        for name, coord_data in hist.coords.items():
+            centers = coord_data['centers']
+            self.dataset.createDimension(name, len(centers))
+            self.dataset.createVariable(name, centers.dtype, name)[:] = centers
+            self.dataset.variables[name].set_auto_maskandscale(False)
+
+    def write_vars(self, hist):
+        dims = tuple(hist.coords.keys())
+        self.dataset.createVariable('bincount', 'i4', dims)[:] = 0
+        self.dataset.variables['bincount'].set_auto_maskandscale(False)
+
+
+class Histogrammer:
+    def __init__(self, resolution, limits):
+        self.resolution = resolution
+        self.limits = limits
+        self.weights = dict(bincount=None)
+
+    @property
+    def coords(self):
+        crd = dict()
+        for k, v in self.resolution.items():
+            start, stop = self.limits[k]
+            centers = np.arange(start, stop + v, v)
+            if centers[-1] > stop:
+                centers = centers[:-1]
+            edges = _edges(centers)
+            crd[k] = dict(centers=centers, edges=edges)
+        return crd
+
+    def make(self, chunk):
+        coord_names = list(self.coords.keys())
+        bins = [self.coords[k]['edges'] for k in coord_names]
+        indices = tuple(slice(None) for _ in range(len(coord_names)))
+        coords = [chunk[k].values for k in coord_names]
+
+        for varname in self.weights.keys():
+            values, _ = np.histogramdd(coords, bins, weights=self.weights[varname])
+            yield dict(varname=varname, indices=indices, values=values)
+
+
+def ladim_conc(resolution, limits, input_file, output_file):
+    # 1. Opprette output-fil
+    # 2. Åpne input-fil(er) som en chunk-strøm
+    # 3. Pipeline: Input chunk-strøm til funksjon, som gir output chunk-strøm
+    # 4. Lagre chunk-strøm til output-fil
+
+    hist = Histogrammer(
+        resolution=resolution,
+        limits=limits,
+    )
+
+    with RasterOutputStream(output_file) as dset_out:
+        dset_out.write_coords(hist)
+        dset_out.write_vars(hist)
+        with LadimInputStream(input_file) as dset_in:
+            chunk_in = dset_in.read()
+            while chunk_in is not None:
+                for chunk_out in hist.make(chunk_in):
+                    dset_out.add_histogram(**chunk_out)
+                chunk_in = dset_in.read()
+    pass
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(

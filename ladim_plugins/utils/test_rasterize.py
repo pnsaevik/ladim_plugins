@@ -2,6 +2,7 @@ from ladim_plugins.utils import rasterize
 import pytest
 import xarray as xr
 import numpy as np
+import netCDF4 as nc
 
 
 @pytest.fixture(scope='module')
@@ -65,3 +66,66 @@ class Test_ladim_iterator:
         iterator = rasterize.ladim_iterator([ladim_dset])
         offset = [d.instance_offset.values.tolist() for d in iterator]
         assert offset == [0, 4]
+
+
+class Test_get_conc:
+    """Opprinnelig epost:
+
+    Hei,
+
+    Jeg tenker på sikt å lage et noenlunde brukervennlig skript for å lage konsentrasjonsfiler av ladim-filer.
+
+    Men jeg innser at det er skrekkelig mange måter å gjøre dette på, og ulike behov. For eksempel:
+
+    -	Aggregering av partikler på samme grid som input-griddet
+    -	Aggregering på finere skala (f.eks. en halv eller tredjedels gridcelle)
+    -	Aggregering på grovere skala (f.eks. 10 gridceller). Dette krever at vi tar hensyn til om cellene er på land.
+    -	Aggregering på ulike dybdenivåer
+    -	Aggregering på ulike tidsperioder
+    -	Vekting på f.eks. infektivitet
+    -	Filtrering på f.eks. anleggsnummer eller dybde
+    -	Valg av aggregeringsmetode (sum, gjennomsnitt per tid, sum per areal)
+    -	Inkludering av projeksjonsinformasjon til bruk i kartprogrammer
+
+    Jeg trenger litt innspill på hvordan et slikt skript skal utformes. Jeg ser for meg å lage et skript som kan kjøres fra kommandolinjen, med en config-fil som input. For eksempel:
+
+    ladim_conc config.yaml
+
+    der config.yaml ser omtrent slik ut:
+
+    ladim_file: out.nc
+    grid_file: norkyst_800m_blabla.nc  # Optional, is required only for the smoother and for map projection information
+    output_file: conc.nc  # Or possibly a set of files?
+    weights: time * infectivity / volume
+    filter: (40 <= age) & (age <= 170)
+    resolution:
+                    X: 1
+                    Y: 1
+                    Z: 5
+                    farm_id: discrete
+                    time: 1 hour
+    limits:  # If absent, compute from ladim particle file
+                    X: [0, 1000]
+                    Y: [0, 1000]
+                    Z: [0, 40]
+                    farm_id: [12345, 12346, 12347, 12348]
+                    time: [2000-01-01, 2000-01-31]
+    smoother: square9  # The value of one grid cell is smeared across a square area of 9x9 grid cells (Default: none)
+
+    Vil et slikt skript dekke behovene dere har? Er det unødvendig komplisert? Config-filen kan sikkert gjøres kortere med et fornuftig sett av default-verdier.
+
+    Pål
+    """
+
+    def test_counts_particles_if_standard_input(self, ladim_dset):
+        with nc.Dataset('test_smoke.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(
+                resolution=dict(X=1),
+                limits=dict(X=[0, 10]),
+                input_file=ladim_dset,
+                output_file=out_dset,
+            )
+
+            assert out_dset.variables['bincount'][:].tolist() == [
+                0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0,
+            ]
