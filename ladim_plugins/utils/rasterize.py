@@ -475,6 +475,40 @@ def ladim_conc(resolution, limits, input_file, output_file):
     pass
 
 
+def main2():
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='Convert LADiM output data to netCDF raster format.',
+    )
+    parser.add_argument("config_file", help="configuration file")
+
+    args = parser.parse_args()
+
+    # Initialize logger
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s: %(message)s',
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+    # Load config file
+    logger.info(f'Load config file {args.config_file}')
+    import yaml
+    with open(args.config_file, encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+
+    for line in yaml.safe_dump(config).split('\n'):
+        logger.info(line)
+
+    # Invoke main function
+    ladim_conc(
+        resolution=config['resolution'],
+        limits=config['limits'],
+        input_file=config['input_file'],
+        output_file=config['output_file'],
+    )
+
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(
