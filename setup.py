@@ -11,6 +11,7 @@ setup(
         'console_scripts': [
             'makrel=ladim_plugins.release.makrel:main',
             'ladim_raster=ladim_plugins.utils.rasterize:main',
+            'ladim_conc=ladim_plugins.utils.rasterize:main2',
         ],
     },
     url='https://github.com/pnsaevik/ladim_plugins',
