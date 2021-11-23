@@ -227,7 +227,7 @@ def add_edge_info(dset):
 
     for var_name in coords_without_bounds:
         bounds_name = var_name + '_bounds'
-        edges_values = _edges(dset[var_name].values)
+        edges_values = get_edges(dset[var_name].values)
         bounds_var = xr.Variable(
             dims=dset[var_name].dims + ('bounds_dim', ),
             data=np.stack([edges_values[:-1], edges_values[1:]], axis=-1),
@@ -239,9 +239,12 @@ def add_edge_info(dset):
     return dset_new
 
 
-def _edges(a):
-    mid = 0.5 * (a[:-1] + a[1:])
-    return np.concatenate([mid[:1] - (a[1] - a[0]), mid, mid[-1:] + a[-1] - a[-2]])
+def get_edges(a):
+    half_offset = 0.5 * (a[1:] - a[:-1])
+    first_edge = a[0] - half_offset[0]
+    last_edge = a[-1] + half_offset[-1]
+    mid_edges = a[:-1] + half_offset
+    return np.concatenate([[first_edge], mid_edges, [last_edge]])
 
 
 def _assign_georeference_to_data_vars(dset):
@@ -357,8 +360,9 @@ def ladim_iterator(ladim_dsets):
         for tidx in range(dset.dims['time']):
             iidx = slice(pcount_cum[tidx], pcount_cum[tidx + 1])
             pidx = xr.Variable('particle_instance', dset.pid[iidx].values)
+            ttidx = xr.Variable('particle_instance', np.broadcast_to(tidx, (len(pidx), )))
             ddset = dset.isel(
-                time=tidx,
+                time=ttidx,
                 particle_instance=iidx,
                 particle=pidx,
             )
@@ -467,7 +471,17 @@ class RasterOutputStream:
         for name, coord_data in hist.coords.items():
             centers = coord_data['centers']
             self.dataset.createDimension(name, len(centers))
-            self.dataset.createVariable(name, centers.dtype, name)[:] = centers
+
+            if np.issubdtype(centers.dtype, np.datetime64):
+                offset = (centers - np.datetime64('1970-01-01', 'us')).astype('i8')
+                v = self.dataset.createVariable(name, 'i8', name)
+                v[:] = offset
+                v.setncatts(dict(
+                    units="microseconds since 1970-01-01",
+                    calendar="proleptic_gregorian",
+                ))
+            else:
+                self.dataset.createVariable(name, centers.dtype, name)[:] = centers
             self.dataset.variables[name].set_auto_maskandscale(False)
 
     def write_vars(self, hist):
@@ -491,7 +505,7 @@ class Histogrammer:
             centers = np.arange(start, stop + v, v)
             if centers[-1] > stop:
                 centers = centers[:-1]
-            edges = _edges(centers)
+            edges = get_edges(centers)
             crd[k] = dict(centers=centers, edges=edges)
         return crd
 

@@ -33,6 +33,30 @@ def ladim_dset2(ladim_dset):
     return d
 
 
+class Test_get_edges:
+    def test_returns_midpoint_edges_when_asymmetric_int_array(self):
+        centers = np.array([2, 4, 8, 10, 20])
+        edges = rasterize.get_edges(centers)
+        assert edges.tolist() == [1, 3, 6, 9, 15, 25]
+
+    def test_returns_float_array_when_int_input(self):
+        centers = np.array([2, 4, 8, 10, 20]).astype(np.int32)
+        edges = rasterize.get_edges(centers)
+        assert edges.dtype == float
+
+    def test_returns_midpoint_edges_when_asymmetric_datetime64_array(self):
+        centers = np.datetime64('2000-01-01') + np.array([2, 4, 8, 10, 20]) * np.timedelta64(1, 'h')
+        edges = rasterize.get_edges(centers)
+        assert edges.astype(str).tolist() == [
+            '2000-01-01T01',
+            '2000-01-01T03',
+            '2000-01-01T06',
+            '2000-01-01T09',
+            '2000-01-01T15',
+            '2000-01-02T01',
+        ]
+
+
 class Test_ladim_iterator:
     def test_returns_one_dataset_per_timestep_when_multiple_datasets(self, ladim_dset, ladim_dset2):
         it = rasterize.ladim_iterator([ladim_dset, ladim_dset2])
@@ -41,12 +65,14 @@ class Test_ladim_iterator:
 
     def test_returns_correct_time_selection(self, ladim_dset):
         iterator = rasterize.ladim_iterator([ladim_dset])
-        particle_count = [d.particle_count.values.item() for d in iterator]
-        assert particle_count == ladim_dset.particle_count.values.tolist()
+        particle_count = [d.particle_count.values.tolist() for d in iterator]
+        assert particle_count == [[4, 4, 4, 4], [2, 2]]
 
         iterator = rasterize.ladim_iterator([ladim_dset])
-        time = [d.time.values.item() for d in iterator]
-        assert time == ladim_dset.time.values.tolist()
+        time = [d.time.values for d in iterator]
+        assert len(time) == 2
+        assert time[0].astype(str).tolist() == ['2000-01-02T00:00:00.000000000'] * 4
+        assert time[1].astype(str).tolist() == ['2000-01-03T00:00:00.000000000'] * 2
 
     def test_returns_correct_instance_selection(self, ladim_dset):
         iterator = rasterize.ladim_iterator([ladim_dset])
@@ -129,6 +155,26 @@ class Test_get_conc:
             assert out_dset.variables['histogram'][:].tolist() == [
                 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0,
             ]
+
+    def test_can_use_time_bins(self, ladim_dset):
+        with nc.Dataset('test_smoke.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(
+                resolution=dict(time=np.timedelta64(12, 'h')),
+                limits=dict(time=np.array(['2000-01-02', '2000-01-04'])
+                            .astype('datetime64[h]')),
+                input_file=ladim_dset,
+                output_file=out_dset,
+            )
+
+            assert out_dset.variables['histogram'][:].tolist() == [
+                4, 0, 2, 0, 0,
+            ]
+            assert out_dset.variables['time'].units == "microseconds since 1970-01-01"
+            assert out_dset.variables['time'].calendar == "proleptic_gregorian"
+            dates = ['2000-01-02T00', '2000-01-02T12', '2000-01-03T00', '2000-01-03T12', '2000-01-04T00']
+            assert out_dset.variables['time'][:].tolist() == (
+                np.array(dates).astype('datetime64[h]') - np.datetime64('1970-01-01')
+            ).astype('timedelta64[us]').astype('i8').tolist()
 
     def test_finds_limits_if_not_given(self, ladim_dset):
         with nc.Dataset('test_limits.nc', 'w', diskless=True) as out_dset:
