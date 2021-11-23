@@ -139,3 +139,22 @@ class Test_get_conc:
             )
 
             assert out_dset.variables['X'][:].tolist() == [5, 6]
+
+    def test_can_apply_filter_function(self, ladim_dset):
+        def preprocess(chunk):
+            idx = (chunk.farm_id.values > 12345) & (chunk.farm_id.values < 12348)
+            return chunk.isel({chunk.farm_id.dims[0]: idx})
+
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+        )
+
+        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=None)
+            assert out_dset.variables['bincount'][:].sum() == 6
+
+        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=preprocess)
+            assert out_dset.variables['bincount'][:].sum() == 4

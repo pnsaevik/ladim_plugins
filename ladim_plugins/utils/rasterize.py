@@ -389,6 +389,7 @@ class LadimInputStream:
             self._must_close = False
 
         self.ladim_iter = ladim_iterator([self.datasets])
+        self.filter = lambda chunk: chunk
 
     def __enter__(self):
         return self
@@ -400,9 +401,18 @@ class LadimInputStream:
     def close(self):
         self.datasets.close()
 
+    def add_filter(self, spec):
+        if spec is None:
+            return
+        elif callable(spec):
+            self.filter = spec
+        else:
+            raise TypeError(f'Unknown type: {type(spec)}')
+
     def find_limits(self, varnames):
         lims = {k: [None, None] for k in varnames}
         dset = self.datasets
+        dset = self.filter(dset)
         for k in varnames:
             lims[k][0] = dset.variables[k].min().values.item()
             lims[k][1] = dset.variables[k].max().values.item()
@@ -411,7 +421,9 @@ class LadimInputStream:
 
     def read(self):
         try:
-            return next(self.ladim_iter)
+            chunk = next(self.ladim_iter)
+            chunk = self.filter(chunk)
+            return chunk
         except StopIteration:
             return None
 
@@ -481,13 +493,15 @@ class Histogrammer:
             yield dict(varname=varname, indices=indices, values=values)
 
 
-def ladim_conc(resolution, input_file, output_file, limits=None):
+def ladim_conc(resolution, input_file, output_file, limits=None, afilter=None):
     # 1. Opprette output-fil
     # 2. Åpne input-fil(er) som en chunk-strøm
     # 3. Pipeline: Input chunk-strøm til funksjon, som gir output chunk-strøm
     # 4. Lagre chunk-strøm til output-fil
 
     with LadimInputStream(input_file) as dset_in:
+        dset_in.add_filter(afilter)
+
         if limits is None:
             limits = dset_in.find_limits(list(resolution.keys()))
 
@@ -538,6 +552,7 @@ def main2():
         limits=config['limits'],
         input_file=config['input_file'],
         output_file=config['output_file'],
+        afilter=config['filter'],
     )
 
 
