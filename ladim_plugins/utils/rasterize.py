@@ -1,4 +1,5 @@
 import xarray as xr
+import netCDF4 as nc
 import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 import logging
@@ -380,14 +381,24 @@ def _ladim_iterator_read_variable(dset, varname, tidx, iidx, pidx):
 
 class LadimInputStream:
     def __init__(self, spec):
-        self.datasets = spec
+        if isinstance(spec, str):
+            self._must_close = True
+            self.datasets = xr.open_dataset(spec)
+        else:
+            self.datasets = spec
+            self._must_close = False
+
         self.ladim_iter = ladim_iterator([self.datasets])
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        if self._must_close:
+            self.close()
+
+    def close(self):
+        self.datasets.close()
 
     def find_limits(self, varnames):
         lims = {k: [None, None] for k in varnames}
@@ -407,13 +418,22 @@ class LadimInputStream:
 
 class RasterOutputStream:
     def __init__(self, spec):
-        self.dataset = spec
+        if isinstance(spec, str):
+            self.dataset = nc.Dataset(spec, 'w')
+            self._must_close = True
+        else:
+            self.dataset = spec
+            self._must_close = False
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        if self._must_close:
+            self.close()
+
+    def close(self):
+        self.dataset.close()
 
     def add_histogram(self, varname, indices, values):
         dtype = self.dataset.variables[varname].dtype
