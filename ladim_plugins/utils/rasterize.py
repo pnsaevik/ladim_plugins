@@ -523,9 +523,9 @@ class Histogrammer:
         self.resolution = resolution
         self.limits = limits
         self.weights = dict(bincount=None)
+        self.coords = self._get_coords()
 
-    @property
-    def coords(self):
+    def _get_coords(self):
         crd = dict()
         for k, v in self.resolution.items():
             start, stop = self.limits[k]
