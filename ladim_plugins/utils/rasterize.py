@@ -419,6 +419,8 @@ class LadimInputStream:
     def set_weights(self, spec):
         if spec is None:
             return
+        elif isinstance(spec, str):
+            self.weights = get_weight_func(spec)
         elif callable(spec):
             self.weights = spec
         else:
@@ -455,6 +457,17 @@ def get_filter_func(spec):
         idx = ex.run(*args)
         return chunk.isel(particle_instance=idx)
     return filter_fn
+
+
+def get_weight_func(spec):
+    import numexpr
+    ex = numexpr.NumExpr(spec)
+
+    def weight_fn(chunk):
+        args = [chunk[n].values for n in ex.input_names]
+        return xr.Variable('particle_instance', ex.run(*args))
+
+    return weight_fn
 
 
 class RasterOutputStream:

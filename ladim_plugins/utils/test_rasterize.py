@@ -237,3 +237,16 @@ class Test_get_conc:
             assert out_dset.variables['histogram'][:].tolist() == [
                 0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
             ]
+
+    def test_can_apply_weight_string(self, ladim_dset):
+        with nc.Dataset('test_weight.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(
+                resolution=dict(X=1),
+                limits=dict(X=[0, 10]),
+                input_file=ladim_dset,
+                output_file=out_dset,
+                weights="X + Y",
+            )
+            assert out_dset.variables['histogram'][:].tolist() == [
+                0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
+            ]
