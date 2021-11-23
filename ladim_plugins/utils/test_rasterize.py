@@ -205,6 +205,23 @@ class Test_get_conc:
             rasterize.ladim_conc(**conf, output_file=out_dset, afilter=preprocess)
             assert out_dset.variables['histogram'][:].sum() == 4
 
+    def test_can_apply_filter_string(self, ladim_dset):
+        filter_str = '(farm_id > 12345) & (farm_id < 12348)'
+
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+        )
+
+        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=None)
+            assert out_dset.variables['histogram'][:].sum() == 6
+
+        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=filter_str)
+            assert out_dset.variables['histogram'][:].sum() == 4
+
     def test_can_apply_weight_function(self, ladim_dset):
         def preprocess(chunk):
             return chunk.X + chunk.Y

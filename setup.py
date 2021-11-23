@@ -44,7 +44,8 @@ setup(
     description='Plugins for LADiM',
     install_requires=[
         'numpy!=1.21.0', 'pytest', 'xarray', 'PyYAML', 'netCDF4', 'pyproj',
-        'triangle', 'scipy', 'cftime', 'ladim', 'skyfield', 'pandas', 'requests'
+        'triangle', 'scipy', 'cftime', 'ladim', 'skyfield', 'pandas', 'requests',
+        'numexpr',
     ],
     python_requires='>=3.6',
 )

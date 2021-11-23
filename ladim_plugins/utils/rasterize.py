@@ -409,6 +409,8 @@ class LadimInputStream:
     def set_filter(self, spec):
         if spec is None:
             return
+        elif isinstance(spec, str):
+            self.filter = get_filter_func(spec)
         elif callable(spec):
             self.filter = spec
         else:
@@ -425,7 +427,6 @@ class LadimInputStream:
     def find_limits(self, varnames):
         lims = {}
         dset = self.datasets
-        dset = self.filter(dset)
         for k in varnames:
             lims[k] = [
                 dset.variables[k].min().values.item(),
@@ -443,6 +444,17 @@ class LadimInputStream:
             return chunk
         except StopIteration:
             return None
+
+
+def get_filter_func(spec):
+    import numexpr
+    ex = numexpr.NumExpr(spec)
+
+    def filter_fn(chunk):
+        args = [chunk[n].values for n in ex.input_names]
+        idx = ex.run(*args)
+        return chunk.isel(particle_instance=idx)
+    return filter_fn
 
 
 class RasterOutputStream:
