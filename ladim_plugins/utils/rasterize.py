@@ -529,6 +529,11 @@ class Histogrammer:
         crd = dict()
         for k, v in self.resolution.items():
             start, stop = self.limits[k]
+            if isinstance(start, str) and isinstance(stop, str):
+                try:
+                    start, stop = np.array([start, stop]).astype('datetime64')
+                except ValueError:
+                    pass
             centers = np.arange(start, stop + v, v)
             if centers[-1] > stop:
                 centers = centers[:-1]

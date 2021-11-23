@@ -160,8 +160,7 @@ class Test_get_conc:
         with nc.Dataset('test_smoke.nc', 'w', diskless=True) as out_dset:
             rasterize.ladim_conc(
                 resolution=dict(time=np.timedelta64(12, 'h')),
-                limits=dict(time=np.array(['2000-01-02', '2000-01-04'])
-                            .astype('datetime64[h]')),
+                limits=dict(time=['2000-01-02', '2000-01-04']),
                 input_file=ladim_dset,
                 output_file=out_dset,
             )
