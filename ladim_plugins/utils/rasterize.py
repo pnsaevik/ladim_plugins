@@ -423,12 +423,14 @@ class LadimInputStream:
             raise TypeError(f'Unknown type: {type(spec)}')
 
     def find_limits(self, varnames):
-        lims = {k: [None, None] for k in varnames}
+        lims = {}
         dset = self.datasets
         dset = self.filter(dset)
         for k in varnames:
-            lims[k][0] = dset.variables[k].min().values.item()
-            lims[k][1] = dset.variables[k].max().values.item()
+            lims[k] = [
+                dset.variables[k].min().values.item(),
+                dset.variables[k].max().values.item(),
+            ]
 
         return lims
 
