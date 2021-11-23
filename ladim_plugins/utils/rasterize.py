@@ -529,11 +529,22 @@ class Histogrammer:
         crd = dict()
         for k, v in self.resolution.items():
             start, stop = self.limits[k]
+
+            # Check if limits is a datestring
             if isinstance(start, str) and isinstance(stop, str):
                 try:
                     start, stop = np.array([start, stop]).astype('datetime64')
                 except ValueError:
                     pass
+
+            # Check if resolution is a timedelta specified as [value, unit]
+            if np.issubdtype(np.array(start).dtype, np.datetime64):
+                try:
+                    t64val, t64unit = v
+                    v = np.timedelta64(t64val, t64unit)
+                except TypeError:
+                    pass
+
             centers = np.arange(start, stop + v, v)
             if centers[-1] > stop:
                 centers = centers[:-1]
