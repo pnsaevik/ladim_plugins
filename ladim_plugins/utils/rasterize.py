@@ -390,6 +390,7 @@ class LadimInputStream:
 
         self.ladim_iter = ladim_iterator([self.datasets])
         self.filter = lambda chunk: chunk
+        self.weights = None
 
     def __enter__(self):
         return self
@@ -401,11 +402,19 @@ class LadimInputStream:
     def close(self):
         self.datasets.close()
 
-    def add_filter(self, spec):
+    def set_filter(self, spec):
         if spec is None:
             return
         elif callable(spec):
             self.filter = spec
+        else:
+            raise TypeError(f'Unknown type: {type(spec)}')
+
+    def set_weights(self, spec):
+        if spec is None:
+            return
+        elif callable(spec):
+            self.weights = spec
         else:
             raise TypeError(f'Unknown type: {type(spec)}')
 
@@ -423,6 +432,8 @@ class LadimInputStream:
         try:
             chunk = next(self.ladim_iter)
             chunk = self.filter(chunk)
+            if self.weights:
+                chunk = chunk.assign(weights=self.weights(chunk))
             return chunk
         except StopIteration:
             return None
@@ -436,6 +447,7 @@ class RasterOutputStream:
         else:
             self.dataset = spec
             self._must_close = False
+        self.histogram_varname = 'histogram'
 
     def __enter__(self):
         return self
@@ -447,9 +459,9 @@ class RasterOutputStream:
     def close(self):
         self.dataset.close()
 
-    def add_histogram(self, varname, indices, values):
-        dtype = self.dataset.variables[varname].dtype
-        self.dataset.variables[varname][indices] += values.astype(dtype)
+    def add_histogram(self, indices, values):
+        v = self.dataset.variables[self.histogram_varname]
+        v[indices] += values.astype(v.dtype)
 
     def write_coords(self, hist):
         for name, coord_data in hist.coords.items():
@@ -460,8 +472,9 @@ class RasterOutputStream:
 
     def write_vars(self, hist):
         dims = tuple(hist.coords.keys())
-        self.dataset.createVariable('bincount', 'i4', dims)[:] = 0
-        self.dataset.variables['bincount'].set_auto_maskandscale(False)
+        v = self.dataset.createVariable(self.histogram_varname, 'f4', dims)
+        v.set_auto_maskandscale(False)
+        v[:] = 0
 
 
 class Histogrammer:
@@ -488,19 +501,26 @@ class Histogrammer:
         indices = tuple(slice(None) for _ in range(len(coord_names)))
         coords = [chunk[k].values for k in coord_names]
 
-        for varname in self.weights.keys():
-            values, _ = np.histogramdd(coords, bins, weights=self.weights[varname])
-            yield dict(varname=varname, indices=indices, values=values)
+        if 'weights' in chunk.variables:
+            weights = chunk.weights.values
+        else:
+            weights = None
+
+        values, _ = np.histogramdd(coords, bins, weights=weights)
+        yield dict(indices=indices, values=values)
 
 
-def ladim_conc(resolution, input_file, output_file, limits=None, afilter=None):
+def ladim_conc(
+        resolution, input_file, output_file, limits=None, afilter=None,
+        weights=None):
     # 1. Opprette output-fil
     # 2. Åpne input-fil(er) som en chunk-strøm
     # 3. Pipeline: Input chunk-strøm til funksjon, som gir output chunk-strøm
     # 4. Lagre chunk-strøm til output-fil
 
     with LadimInputStream(input_file) as dset_in:
-        dset_in.add_filter(afilter)
+        dset_in.set_filter(afilter)
+        dset_in.set_weights(weights)
 
         if limits is None:
             limits = dset_in.find_limits(list(resolution.keys()))
@@ -553,6 +573,7 @@ def main2():
         input_file=config['input_file'],
         output_file=config['output_file'],
         afilter=config['filter'],
+        weights=config['weights'],
     )
 
 

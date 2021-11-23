@@ -126,7 +126,7 @@ class Test_get_conc:
                 output_file=out_dset,
             )
 
-            assert out_dset.variables['bincount'][:].tolist() == [
+            assert out_dset.variables['histogram'][:].tolist() == [
                 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0,
             ]
 
@@ -153,8 +153,24 @@ class Test_get_conc:
 
         with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
             rasterize.ladim_conc(**conf, output_file=out_dset, afilter=None)
-            assert out_dset.variables['bincount'][:].sum() == 6
+            assert out_dset.variables['histogram'][:].sum() == 6
 
         with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
             rasterize.ladim_conc(**conf, output_file=out_dset, afilter=preprocess)
-            assert out_dset.variables['bincount'][:].sum() == 4
+            assert out_dset.variables['histogram'][:].sum() == 4
+
+    def test_can_apply_weight_function(self, ladim_dset):
+        def preprocess(chunk):
+            return chunk.X + chunk.Y
+
+        with nc.Dataset('test_weight.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(
+                resolution=dict(X=1),
+                limits=dict(X=[0, 10]),
+                input_file=ladim_dset,
+                output_file=out_dset,
+                weights=preprocess,
+            )
+            assert out_dset.variables['histogram'][:].tolist() == [
+                0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
+            ]
