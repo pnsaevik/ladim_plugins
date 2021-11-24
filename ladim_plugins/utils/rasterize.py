@@ -591,23 +591,29 @@ class RasterOutputStream:
         v = self.dataset.variables[self.histogram_varname]
         v[indices] += values.astype(v.dtype)
 
+    def write_coord(self, name, data, attrs=None):
+        data = np.array(data)
+        logger.info(f'Write coordinate {name}({len(data)}) to output file')
+
+        self.dataset.createDimension(name, len(data))
+
+        if np.issubdtype(data.dtype, np.datetime64):
+            offset = (data - np.datetime64('1970-01-01', 'us')).astype('i8')
+            v = self.dataset.createVariable(name, 'i8', name)
+            v[:] = offset
+            v.setncatts(dict(
+                units="microseconds since 1970-01-01",
+                calendar="proleptic_gregorian",
+            ))
+        else:
+            self.dataset.createVariable(name, data.dtype, name)[:] = data
+        self.dataset.variables[name].set_auto_maskandscale(False)
+        if attrs:
+            self.dataset.variables[name].setncatts(attrs)
+
     def write_coords(self, hist):
         for name, coord_data in hist.coords.items():
-            logger.info(f'Write coordinate "{name}" to output file')
-            centers = coord_data['centers']
-            self.dataset.createDimension(name, len(centers))
-
-            if np.issubdtype(centers.dtype, np.datetime64):
-                offset = (centers - np.datetime64('1970-01-01', 'us')).astype('i8')
-                v = self.dataset.createVariable(name, 'i8', name)
-                v[:] = offset
-                v.setncatts(dict(
-                    units="microseconds since 1970-01-01",
-                    calendar="proleptic_gregorian",
-                ))
-            else:
-                self.dataset.createVariable(name, centers.dtype, name)[:] = centers
-            self.dataset.variables[name].set_auto_maskandscale(False)
+            self.write_coord(name, coord_data['centers'])
 
     def write_vars(self, hist):
         logger.info(f'Initialize output variable "{self.histogram_varname}"')

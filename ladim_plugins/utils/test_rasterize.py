@@ -341,3 +341,10 @@ class Test_LadimInputStream:
             assert list(limits.keys()) == ['time']
             timestr = np.array(limits['time']).astype('datetime64[h]').astype(str)
             assert timestr.tolist() == ['2000-01-02T00', '2000-01-05T06']
+
+
+class Test_RasterOutputStream:
+    def test_can_initialize_from_nc_dataset(self):
+        with nc.Dataset('test_raster.nc', 'w') as dset:
+            r = rasterize.RasterOutputStream(dset)
+            r.write_coord('myvar', [1, 2, 3])
