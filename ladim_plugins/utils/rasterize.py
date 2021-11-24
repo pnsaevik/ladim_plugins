@@ -679,7 +679,10 @@ def ladim_conc(
         dset_in.weights = weights
 
         if limits is None:
-            limits = dset_in.find_limits(resolution)
+            limits = dict()
+        resolution_remaining = {k: v for k, v in resolution.items() if k not in limits}
+        if resolution_remaining:
+            limits = {**limits, **dset_in.find_limits(resolution_remaining)}
 
         hist = Histogrammer(
             resolution=resolution,

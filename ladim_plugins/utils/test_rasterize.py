@@ -185,6 +185,18 @@ class Test_get_conc:
 
             assert out_dset.variables['X'][:].tolist() == [5, 6, 7]
 
+    def test_finds_limits_if_some_are_missing(self, ladim_dset):
+        with nc.Dataset('test_limits.nc', 'w', diskless=True) as out_dset:
+            rasterize.ladim_conc(
+                resolution=dict(X=1, Y=1),
+                limits=dict(X=[4, 7]),
+                input_file=ladim_dset,
+                output_file=out_dset,
+            )
+
+            assert out_dset.variables['X'][:].tolist() == [4, 5, 6, 7]
+            assert out_dset.variables['Y'][:].tolist() == [60, 61, 62, 63]
+
     def test_can_apply_filter_function(self, ladim_dset):
         def preprocess(chunk):
             idx = (chunk.farm_id.values > 12345) & (chunk.farm_id.values < 12348)
