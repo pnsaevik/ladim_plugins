@@ -492,14 +492,32 @@ class LadimInputStream:
                     logger.info(f'Enter new dataset')
                     yield spec
 
+        def t64conv(timedelta_or_other):
+            try:
+                t64val, t64unit = timedelta_or_other
+                return np.timedelta64(t64val, t64unit)
+            except TypeError:
+                return timedelta_or_other
+
+        # Align to wholenumber resolution
+        def align(val_raw, res_raw):
+            if np.issubdtype(np.array(res).dtype, np.timedelta64):
+                val_posix = (val_raw - np.datetime64('1970-01-01')).astype('timedelta64[us]')
+                res_posix = res.astype('timedelta64[us]')
+                ret_posix = (val_posix.astype('i8') // res_posix.astype('i8')) * res_posix
+                return np.datetime64('1970-01-01') + ret_posix
+            else:
+                return np.array((val_raw // res_raw) * res_raw).item()
+
         varnames = resolution.keys()
         logger.info("Limits are not given, compute automatically from input file")
         minvals = {k: [] for k in varnames}
         maxvals = {k: [] for k in varnames}
         for dset in iterate_datasets():
             for k in varnames:
-                minval = (dset.variables[k].min().values.item() // resolution[k]) * resolution[k]
-                maxval = (dset.variables[k].max().values.item() // resolution[k] + 1) * resolution[k]
+                res = t64conv(resolution[k])
+                minval = align(dset.variables[k].min().values, res)
+                maxval = align(dset.variables[k].max().values + res, res)
                 logger.info(f'Limits for {k} in current dataset: [{minval}, {maxval}]')
                 minvals[k].append(minval)
                 maxvals[k].append(maxval)
