@@ -249,3 +249,34 @@ class Test_get_conc:
             assert out_dset.variables['histogram'][:].tolist() == [
                 0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
             ]
+
+
+@pytest.fixture(scope='module')
+def fnames():
+    import pkg_resources
+    try:
+        yield dict(
+            outdata=pkg_resources.resource_filename('ladim_plugins.chemicals', 'out.nc'),
+        )
+    finally:
+        pkg_resources.cleanup_resources()
+
+
+class Test_LadimInputStream:
+    def test_can_initialise_from_xr_dataset(self, ladim_dset):
+        with rasterize.LadimInputStream(ladim_dset) as dset:
+            dset.read()
+
+    def test_can_initialise_from_multiple_xr_datasets(self, ladim_dset, ladim_dset2):
+        with rasterize.LadimInputStream([ladim_dset, ladim_dset2]) as dset:
+            dset.read()
+
+    def test_can_initialise_from_filename(self, fnames):
+        ladim_fname = fnames['outdata']
+        with rasterize.LadimInputStream(ladim_fname) as dset:
+            dset.read()
+
+    def test_can_initialise_from_multiple_filenames(self, fnames):
+        ladim_fname = fnames['outdata']
+        with rasterize.LadimInputStream([ladim_fname, ladim_fname]) as dset:
+            dset.read()

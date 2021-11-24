@@ -3,6 +3,7 @@ import netCDF4 as nc
 import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 import logging
+import glob
 
 
 logger = logging.getLogger(__name__)
@@ -385,14 +386,22 @@ def _ladim_iterator_read_variable(dset, varname, tidx, iidx, pidx):
 
 class LadimInputStream:
     def __init__(self, spec):
-        if isinstance(spec, str):
-            self._must_close = True
-            self.datasets = xr.open_dataset(spec)
+        # Convert input spec to a sequence
+        if isinstance(spec, tuple) or isinstance(spec, list):
+            specs = spec
         else:
-            self.datasets = spec
-            self._must_close = False
+            specs = [spec]
 
-        self.ladim_iter = ladim_iterator([self.datasets])
+        # Convert specs to open datasets
+        self.datasets = []
+        for s in specs:
+            if isinstance(s, str):
+                for fname in sorted(glob.glob(s)):
+                    self.datasets.append((True, xr.open_dataset(fname)))
+            else:
+                self.datasets.append((False, s))
+
+        self.ladim_iter = ladim_iterator([d[1] for d in self.datasets])
         self.filter = lambda chunk: chunk
         self.weights = None
 
@@ -400,11 +409,13 @@ class LadimInputStream:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._must_close:
-            self.close()
+        for must_close, dset in self.datasets:
+            if must_close:
+                dset.close()
 
     def close(self):
-        self.datasets.close()
+        for _, dset in self.datasets:
+            dset.close()
 
     def set_filter(self, spec):
         if spec is None:
@@ -427,15 +438,14 @@ class LadimInputStream:
             raise TypeError(f'Unknown type: {type(spec)}')
 
     def find_limits(self, varnames):
-        lims = {}
-        dset = self.datasets
-        for k in varnames:
-            lims[k] = [
-                dset.variables[k].min().values.item(),
-                dset.variables[k].max().values.item(),
-            ]
+        minvals = {k: [] for k in varnames}
+        maxvals = {k: [] for k in varnames}
+        for _, dset in self.datasets:
+            for k in varnames:
+                minvals[k].append(dset.variables[k].min().values.item())
+                maxvals[k].append(dset.variables[k].max().values.item())
 
-        return lims
+        return {k: [np.min(minvals[k]), np.max(maxvals[k])] for k in varnames}
 
     def read(self):
         try:
