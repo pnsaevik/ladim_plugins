@@ -401,8 +401,8 @@ class LadimInputStream:
             else:
                 self.datasets.append(s)
 
-        self.filter = lambda chunk: chunk
-        self.weights = None
+        self._filter = lambda chunk: chunk
+        self._weights = None
 
         self._dataset_iterator = None
         self._dataset_current = xr.Dataset()
@@ -444,23 +444,33 @@ class LadimInputStream:
         self._dataset_iterator = dataset_iterator()
         self.ladim_iter = ladim_iterator(self._dataset_iterator)
 
-    def set_filter(self, spec):
+    @property
+    def filter(self):
+        return self._filter
+
+    @property
+    def weights(self):
+        return self._weights
+
+    @filter.setter
+    def filter(self, spec):
         if spec is None:
             return
         elif isinstance(spec, str):
-            self.filter = get_filter_func(spec)
+            self._filter = get_filter_func(spec)
         elif callable(spec):
-            self.filter = spec
+            self._filter = spec
         else:
             raise TypeError(f'Unknown type: {type(spec)}')
 
-    def set_weights(self, spec):
+    @weights.setter
+    def weights(self, spec):
         if spec is None:
             return
         elif isinstance(spec, str):
-            self.weights = get_weight_func(spec)
+            self._weights = get_weight_func(spec)
         elif callable(spec):
-            self.weights = spec
+            self._weights = spec
         else:
             raise TypeError(f'Unknown type: {type(spec)}')
 
@@ -621,8 +631,8 @@ def ladim_conc(
     # 4. Lagre chunk-strøm til output-fil
 
     with LadimInputStream(input_file) as dset_in:
-        dset_in.set_filter(afilter)
-        dset_in.set_weights(weights)
+        dset_in.filter = afilter
+        dset_in.weights = weights
 
         if limits is None:
             limits = dset_in.find_limits(list(resolution.keys()))
