@@ -280,3 +280,13 @@ class Test_LadimInputStream:
         ladim_fname = fnames['outdata']
         with rasterize.LadimInputStream([ladim_fname, ladim_fname]) as dset:
             dset.read()
+
+    def test_can_seek_to_dataset_beginning(self, ladim_dset):
+        with rasterize.LadimInputStream(ladim_dset) as dset:
+            first_chunk = dset.read()
+            second_chunk = dset.read()
+            dset.seek(0)
+            third_chunk = dset.read()
+
+        assert first_chunk.pid.values.tolist() != second_chunk.pid.values.tolist()
+        assert first_chunk.pid.values.tolist() == third_chunk.pid.values.tolist()

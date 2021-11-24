@@ -417,6 +417,11 @@ class LadimInputStream:
         for _, dset in self.datasets:
             dset.close()
 
+    def seek(self, pos):
+        if pos != 0:
+            raise NotImplementedError
+        self.ladim_iter = ladim_iterator([dset for _, dset in self.datasets])
+
     def set_filter(self, spec):
         if spec is None:
             return
