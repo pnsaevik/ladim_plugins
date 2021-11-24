@@ -4,6 +4,7 @@ import numpy as np
 from ladim_plugins.release.makrel import degree_diff_to_metric
 import logging
 import glob
+import typing
 
 
 logger = logging.getLogger(__name__)
@@ -392,35 +393,56 @@ class LadimInputStream:
         else:
             specs = [spec]
 
-        # Convert specs to open datasets
+        # Expand glob patterns in spec
         self.datasets = []
         for s in specs:
             if isinstance(s, str):
-                for fname in sorted(glob.glob(s)):
-                    self.datasets.append((True, xr.open_dataset(fname)))
+                self.datasets += sorted(glob.glob(s))
             else:
-                self.datasets.append((False, s))
+                self.datasets.append(s)
 
-        self.ladim_iter = ladim_iterator([d[1] for d in self.datasets])
         self.filter = lambda chunk: chunk
         self.weights = None
+
+        self._dataset_iterator = None
+        self._dataset_current = xr.Dataset()
+        self._dataset_mustclose = False
+        self.ladim_iter = None
+        self._reset_ladim_iterator()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        for must_close, dset in self.datasets:
-            if must_close:
-                dset.close()
+        if self._dataset_mustclose:
+            self._dataset_current.close()
 
     def close(self):
-        for _, dset in self.datasets:
-            dset.close()
+        self._dataset_current.close()
 
     def seek(self, pos):
         if pos != 0:
             raise NotImplementedError
-        self.ladim_iter = ladim_iterator([dset for _, dset in self.datasets])
+        self._reset_ladim_iterator()
+
+    def _reset_ladim_iterator(self):
+        if self._dataset_mustclose:
+            self._dataset_current.close()
+
+        def dataset_iterator():
+            for spec in self.datasets:
+                if isinstance(spec, str):
+                    with xr.open_dataset(spec) as dset:
+                        self._dataset_current = dset
+                        self._dataset_mustclose = True
+                        yield dset
+                else:
+                    self._dataset_current = spec
+                    self._dataset_mustclose = False
+                    yield spec
+
+        self._dataset_iterator = dataset_iterator()
+        self.ladim_iter = ladim_iterator(self._dataset_iterator)
 
     def set_filter(self, spec):
         if spec is None:
@@ -443,9 +465,17 @@ class LadimInputStream:
             raise TypeError(f'Unknown type: {type(spec)}')
 
     def find_limits(self, varnames):
+        def iterate_datasets() -> typing.Iterable:
+            for spec in self.datasets:
+                if isinstance(spec, str):
+                    with xr.open_dataset(spec) as ddset:
+                        yield ddset
+                else:
+                    yield spec
+
         minvals = {k: [] for k in varnames}
         maxvals = {k: [] for k in varnames}
-        for _, dset in self.datasets:
+        for dset in iterate_datasets():
             for k in varnames:
                 minvals[k].append(dset.variables[k].min().values.item())
                 maxvals[k].append(dset.variables[k].max().values.item())
