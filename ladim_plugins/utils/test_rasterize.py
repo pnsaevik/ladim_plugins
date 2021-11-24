@@ -183,7 +183,7 @@ class Test_get_conc:
                 output_file=out_dset,
             )
 
-            assert out_dset.variables['X'][:].tolist() == [5, 6]
+            assert out_dset.variables['X'][:].tolist() == [5, 6, 7]
 
     def test_can_apply_filter_function(self, ladim_dset):
         def preprocess(chunk):
@@ -311,3 +311,9 @@ class Test_LadimInputStream:
                 [12345, 12346, 12347, 12348],
                 [12346, 12347],
             ]
+
+    def test_autolimit_aligns_to_wholenumber_resolution_points(self, ladim_dset, ladim_dset2):
+        with rasterize.LadimInputStream([ladim_dset, ladim_dset2]) as dset:
+            assert dset.find_limits(dict(X=1)) == dict(X=[5, 7])
+            assert dset.find_limits(dict(X=2)) == dict(X=[4, 8])
+            assert dset.find_limits(dict(X=10)) == dict(X=[0, 10])

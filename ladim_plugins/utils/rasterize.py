@@ -481,7 +481,7 @@ class LadimInputStream:
         else:
             raise TypeError(f'Unknown type: {type(spec)}')
 
-    def find_limits(self, varnames):
+    def find_limits(self, resolution):
         def iterate_datasets() -> typing.Iterable:
             for spec in self.datasets:
                 if isinstance(spec, str):
@@ -492,13 +492,14 @@ class LadimInputStream:
                     logger.info(f'Enter new dataset')
                     yield spec
 
+        varnames = resolution.keys()
         logger.info("Limits are not given, compute automatically from input file")
         minvals = {k: [] for k in varnames}
         maxvals = {k: [] for k in varnames}
         for dset in iterate_datasets():
             for k in varnames:
-                minval = dset.variables[k].min().values.item()
-                maxval = dset.variables[k].max().values.item()
+                minval = (dset.variables[k].min().values.item() // resolution[k]) * resolution[k]
+                maxval = (dset.variables[k].max().values.item() // resolution[k] + 1) * resolution[k]
                 logger.info(f'Limits for {k} in current dataset: [{minval}, {maxval}]')
                 minvals[k].append(minval)
                 maxvals[k].append(maxval)
@@ -660,7 +661,7 @@ def ladim_conc(
         dset_in.weights = weights
 
         if limits is None:
-            limits = dset_in.find_limits(list(resolution.keys()))
+            limits = dset_in.find_limits(resolution)
 
         hist = Histogrammer(
             resolution=resolution,
