@@ -290,3 +290,24 @@ class Test_LadimInputStream:
 
         assert first_chunk.pid.values.tolist() != second_chunk.pid.values.tolist()
         assert first_chunk.pid.values.tolist() == third_chunk.pid.values.tolist()
+
+    def test_reads_one_timestep_at_the_time(self, ladim_dset, ladim_dset2):
+        with rasterize.LadimInputStream([ladim_dset, ladim_dset2]) as dset:
+            pids = list(c.pid.values.tolist() for c in dset.chunks())
+            assert len(pids) == ladim_dset.dims['time'] + ladim_dset2.dims['time']
+            assert pids == [[0, 1, 2, 3], [1, 2], [0, 1, 2, 3], [1, 2]]
+
+    def test_broadcasts_time_vars_when_reading(self, ladim_dset, ladim_dset2):
+        with rasterize.LadimInputStream([ladim_dset, ladim_dset2]) as dset:
+            counts = list(c.particle_count.values.tolist() for c in dset.chunks())
+            assert counts == [[4, 4, 4, 4], [2, 2], [4, 4, 4, 4], [2, 2]]
+
+    def test_broadcasts_particle_vars_when_reading(self, ladim_dset, ladim_dset2):
+        with rasterize.LadimInputStream([ladim_dset, ladim_dset2]) as dset:
+            farmid = list(c.farm_id.values.tolist() for c in dset.chunks())
+            assert farmid == [
+                [12345, 12346, 12347, 12348],
+                [12346, 12347],
+                [12345, 12346, 12347, 12348],
+                [12346, 12347],
+            ]

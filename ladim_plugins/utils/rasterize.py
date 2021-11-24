@@ -502,6 +502,12 @@ class LadimInputStream:
         except StopIteration:
             return None
 
+    def chunks(self) -> typing.Iterable:
+        chunk = self.read()
+        while chunk is not None:
+            yield chunk
+            chunk = self.read()
+
 
 def get_filter_func(spec):
     import numexpr
@@ -645,12 +651,9 @@ def ladim_conc(
         with RasterOutputStream(output_file) as dset_out:
             dset_out.write_coords(hist)
             dset_out.write_vars(hist)
-            chunk_in = dset_in.read()
-            while chunk_in is not None:
+            for chunk_in in dset_in.chunks():
                 for chunk_out in hist.make(chunk_in):
                     dset_out.add_histogram(**chunk_out)
-                chunk_in = dset_in.read()
-    pass
 
 
 def main2():
