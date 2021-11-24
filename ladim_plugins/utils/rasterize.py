@@ -360,7 +360,9 @@ def ladim_iterator(ladim_dsets):
         pcount_cum = np.concatenate([[0], np.cumsum(dset.particle_count.values)])
 
         for tidx in range(dset.dims['time']):
+            logger.info(f'Read time step {dset.time[tidx].values}')
             iidx = slice(pcount_cum[tidx], pcount_cum[tidx + 1])
+            logger.info(f'Number of particles: {iidx.stop - iidx.start}')
             pidx = xr.Variable('particle_instance', dset.pid[iidx].values)
             ttidx = xr.Variable('particle_instance', np.broadcast_to(tidx, (len(pidx), )))
             ddset = dset.isel(
@@ -400,6 +402,7 @@ class LadimInputStream:
                 self.datasets += sorted(glob.glob(s))
             else:
                 self.datasets.append(s)
+        logger.info(f'Number of input datasets: {len(self.datasets)}')
 
         self._filter = lambda chunk: chunk
         self._weights = None
@@ -432,13 +435,17 @@ class LadimInputStream:
         def dataset_iterator():
             for spec in self.datasets:
                 if isinstance(spec, str):
+                    logger.info(f'Open input dataset {spec}')
                     with xr.open_dataset(spec) as dset:
+                        logger.info(f'Number of particle instances: {dset.dims["particle_instance"]}')
                         self._dataset_current = dset
                         self._dataset_mustclose = True
                         yield dset
                 else:
+                    logger.info(f'Enter new dataset')
                     self._dataset_current = spec
                     self._dataset_mustclose = False
+                    logger.info(f'Number of particle instances: {spec.dims["particle_instance"]}')
                     yield spec
 
         self._dataset_iterator = dataset_iterator()
@@ -478,19 +485,28 @@ class LadimInputStream:
         def iterate_datasets() -> typing.Iterable:
             for spec in self.datasets:
                 if isinstance(spec, str):
+                    logger.info(f'Open input dataset {spec}')
                     with xr.open_dataset(spec) as ddset:
                         yield ddset
                 else:
+                    logger.info(f'Enter new dataset')
                     yield spec
 
+        logger.info("Limits are not given, compute automatically from input file")
         minvals = {k: [] for k in varnames}
         maxvals = {k: [] for k in varnames}
         for dset in iterate_datasets():
             for k in varnames:
-                minvals[k].append(dset.variables[k].min().values.item())
-                maxvals[k].append(dset.variables[k].max().values.item())
+                minval = dset.variables[k].min().values.item()
+                maxval = dset.variables[k].max().values.item()
+                logger.info(f'Limits for {k} in current dataset: [{minval}, {maxval}]')
+                minvals[k].append(minval)
+                maxvals[k].append(maxval)
 
-        return {k: [np.min(minvals[k]), np.max(maxvals[k])] for k in varnames}
+        lims = {k: [np.min(minvals[k]), np.max(maxvals[k])] for k in varnames}
+        for k in varnames:
+            logger.info(f'Final limits for {k}: [{lims[k][0]}, {lims[k][1]}]')
+        return lims
 
     def read(self):
         try:
@@ -534,6 +550,7 @@ def get_weight_func(spec):
 class RasterOutputStream:
     def __init__(self, spec):
         if isinstance(spec, str):
+            logger.info(f'Open output dataset {spec}')
             self.dataset = nc.Dataset(spec, 'w')
             self._must_close = True
         else:
@@ -557,6 +574,7 @@ class RasterOutputStream:
 
     def write_coords(self, hist):
         for name, coord_data in hist.coords.items():
+            logger.info(f'Write coordinate "{name}" to output file')
             centers = coord_data['centers']
             self.dataset.createDimension(name, len(centers))
 
@@ -573,6 +591,7 @@ class RasterOutputStream:
             self.dataset.variables[name].set_auto_maskandscale(False)
 
     def write_vars(self, hist):
+        logger.info(f'Initialize output variable "{self.histogram_varname}"')
         dims = tuple(hist.coords.keys())
         v = self.dataset.createVariable(self.histogram_varname, 'f4', dims)
         v.set_auto_maskandscale(False)
