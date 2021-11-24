@@ -568,48 +568,63 @@ def get_weight_func(spec):
 
 class RasterOutputStream:
     def __init__(self, spec):
-        if isinstance(spec, str):
-            logger.info(f'Open output dataset {spec}')
-            self.dataset = nc.Dataset(spec, 'w')
-            self._must_close = True
-        else:
-            self.dataset = spec
-            self._must_close = False
+        self.datasets = dict()
+
+        if isinstance(spec, nc.Dataset):
+            dset = spec
+            spec = "!" + spec.filepath()
+            self.datasets[spec] = dset
+
+        if not isinstance(spec, str):
+            raise TypeError(f'Wrong type: {type(spec)}')
+
+        self._spec = spec
         self.histogram_varname = 'histogram'
+
+    def dataset(self, selector):
+        fname = self._spec.format(selector)
+        if fname not in self.datasets:
+            logger.info(f'Create output dataset {fname}')
+            ffname = fname.replace('+', '')
+            diskless = fname.startswith('+')
+            self.datasets[fname] = nc.Dataset(ffname, 'w', diskless=diskless)
+        return self.datasets[fname]
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._must_close:
-            self.close()
+        self.close()
 
     def close(self):
-        self.dataset.close()
+        for fname, dset in self.datasets.items():
+            if not fname.startswith('!'):
+                dset.close()
 
     def add_histogram(self, indices, values):
-        v = self.dataset.variables[self.histogram_varname]
+        v = self.dataset(None).variables[self.histogram_varname]
         v[indices] += values.astype(v.dtype)
 
     def write_coord(self, name, data, attrs=None):
         data = np.array(data)
         logger.info(f'Write coordinate {name}({len(data)}) to output file')
 
-        self.dataset.createDimension(name, len(data))
+        dset = self.dataset(None)
+        dset.createDimension(name, len(data))
 
         if np.issubdtype(data.dtype, np.datetime64):
             offset = (data - np.datetime64('1970-01-01', 'us')).astype('i8')
-            v = self.dataset.createVariable(name, 'i8', name)
+            v = dset.createVariable(name, 'i8', name)
             v[:] = offset
             v.setncatts(dict(
                 units="microseconds since 1970-01-01",
                 calendar="proleptic_gregorian",
             ))
         else:
-            self.dataset.createVariable(name, data.dtype, name)[:] = data
-        self.dataset.variables[name].set_auto_maskandscale(False)
+            dset.createVariable(name, data.dtype, name)[:] = data
+        dset.variables[name].set_auto_maskandscale(False)
         if attrs:
-            self.dataset.variables[name].setncatts(attrs)
+            dset.variables[name].setncatts(attrs)
 
     def write_coords(self, hist):
         for name, coord_data in hist.coords.items():
@@ -618,7 +633,7 @@ class RasterOutputStream:
     def write_vars(self, hist):
         logger.info(f'Initialize output variable "{self.histogram_varname}"')
         dims = tuple(hist.coords.keys())
-        v = self.dataset.createVariable(self.histogram_varname, 'f4', dims)
+        v = self.dataset(None).createVariable(self.histogram_varname, 'f4', dims)
         v.set_auto_maskandscale(False)
         v[:] = 0
 
@@ -701,6 +716,8 @@ def ladim_conc(
             for chunk_in in dset_in.chunks():
                 for chunk_out in hist.make(chunk_in):
                     dset_out.add_histogram(**chunk_out)
+
+            return dset_out.datasets
 
 
 def main2():

@@ -348,3 +348,9 @@ class Test_RasterOutputStream:
         with nc.Dataset('test_raster.nc', 'w') as dset:
             r = rasterize.RasterOutputStream(dset)
             r.write_coord('myvar', [1, 2, 3])
+            assert '!test_raster.nc' in r.datasets
+
+    def test_can_initialize_from_virtual_filename(self):
+        with rasterize.RasterOutputStream('+virtual.nc') as r:
+            r.write_coord('myvar', [1, 2, 3])
+            assert '+virtual.nc' in r.datasets
