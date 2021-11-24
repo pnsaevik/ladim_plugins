@@ -683,12 +683,12 @@ def main2():
 
     # Invoke main function
     ladim_conc(
-        resolution=config['resolution'],
-        limits=config['limits'],
         input_file=config['input_file'],
         output_file=config['output_file'],
-        afilter=config['filter'],
-        weights=config['weights'],
+        resolution=config['resolution'],
+        limits=config.get('limits', None),
+        afilter=config.get('filter', None),
+        weights=config.get('weights', None),
     )
 
 
