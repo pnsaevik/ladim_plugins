@@ -354,3 +354,9 @@ class Test_RasterOutputStream:
         with rasterize.RasterOutputStream('+virtual.nc') as r:
             r.write_coord('myvar', [1, 2, 3])
             assert '+virtual.nc' in r.datasets
+
+    def test_can_create_coordinate_variables(self):
+        with rasterize.RasterOutputStream('+virtual.nc') as r:
+            r.write_coord('myvar', [1, 2, 3])
+            assert r.dataset().variables['myvar'].dimensions == ('myvar', )
+            assert r.dataset().variables['myvar'][:].tolist() == [1, 2, 3]

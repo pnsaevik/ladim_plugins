@@ -572,7 +572,7 @@ class RasterOutputStream:
 
         if isinstance(spec, nc.Dataset):
             dset = spec
-            spec = "!" + spec.filepath()
+            spec = "!" + spec.filepath()  # Leading ! means: "Don't close"
             self.datasets[spec] = dset
 
         if not isinstance(spec, str):
@@ -581,7 +581,7 @@ class RasterOutputStream:
         self._spec = spec
         self.histogram_varname = 'histogram'
 
-    def dataset(self, selector):
+    def dataset(self, selector=None):
         fname = self._spec.format(selector)
         if fname not in self.datasets:
             logger.info(f'Create output dataset {fname}')
