@@ -383,3 +383,25 @@ class Test_RasterOutputStream:
             dset5 = r.dataset(i=5)  # Trigger dataset creation
             assert dset0 is r.datasets['+virtual_0000.nc']
             assert dset5 is r.datasets['+virtual_0005.nc']
+
+    def test_can_split_histogram_across_files(self):
+        coords = dict(
+            X=dict(centers=[1, 3, 5]),
+            Y=dict(centers=[10, 30, 50, 70]),
+            Z=dict(centers=[9]),
+        )
+        with rasterize.RasterOutputStream('+v{X}{Z}.nc', coords, ('X', 'Z')) as r:
+            r.increment_histogram(
+                indices=(slice(None), slice(None), slice(None)),
+                values=np.arange(12).reshape((3, 4, 1)),
+            )
+            assert set(r.datasets.keys()) == {'+v19.nc', '+v39.nc', '+v59.nc'}
+            assert r.dataset(X=1, Z=9).dimensions['X'].size == 1
+            assert r.dataset(X=1, Z=9).dimensions['Y'].size == 4
+            assert r.dataset(X=1, Z=9).variables['histogram'].dimensions == ('X', 'Y', 'Z')
+            assert r.dataset(X=1, Z=9).variables['histogram'][:].tolist() == [[[0], [1], [2], [3]]]
+            assert r.dataset(X=3, Z=9).variables['histogram'][:].tolist() == [[[4], [5], [6], [7]]]
+            assert r.dataset(X=5, Z=9).variables['histogram'][:].tolist() == [[[8], [9], [10], [11]]]
+            assert r.dataset(X=3, Z=9).variables['X'][:].tolist() == [3]
+            assert r.dataset(X=5, Z=9).variables['X'][:].tolist() == [5]
+            assert r.dataset(X=5, Z=9).variables['Z'][:].tolist() == [9]

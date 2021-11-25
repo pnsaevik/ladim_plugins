@@ -567,15 +567,16 @@ def get_weight_func(spec):
 
 
 class RasterOutputStream:
-    def __init__(self, spec, coords):
+    def __init__(self, spec, coords, filesplit_dims=()):
         self.datasets = dict()
         self._coords = coords
         self.histogram_varname = 'histogram'
         self._fname_pattern = None
+        self._filesplit_dims = filesplit_dims
 
         if isinstance(spec, nc.Dataset):
             dset = spec
-            self._write_vars(dset)
+            self._write_vars(dset, dict())
             self._fname_pattern = "!" + spec.filepath()  # Leading ! means: "Don't close"
             self.datasets[self._fname_pattern] = dset
         elif isinstance(spec, str):
@@ -586,21 +587,21 @@ class RasterOutputStream:
     def dataset(self, **selector):
         fname = self._fname_pattern.format(**selector)
         if fname not in self.datasets:
-            self._create_dataset(fname)
+            self._create_dataset(fname, selector)
         return self.datasets[fname]
 
-    def _create_dataset(self, fname):
+    def _create_dataset(self, fname, selector):
         logger.info(f'Create output dataset {fname}')
         ffname = fname.replace('+', '')
         diskless = fname.startswith('+')
         dset = nc.Dataset(ffname, 'w', diskless=diskless)
         self.datasets[fname] = dset
-        self._write_vars(dset)
+        self._write_vars(dset, selector)
         return dset
 
-    def _write_vars(self, dset):
+    def _write_vars(self, dset, selector):
         for name in self._coords:
-            self._write_coord(dset, name)
+            self._write_coord(dset, name, selector)
         self._write_histvar(dset)
 
     def __enter__(self):
@@ -615,11 +616,44 @@ class RasterOutputStream:
                 dset.close()
 
     def increment_histogram(self, indices, values):
-        v = self.dataset().variables[self.histogram_varname]
-        v[indices] += values.astype(v.dtype)
+        for value_idx, array_idx, file_idx in self._split_indices(indices):
+            dset = self.dataset(**file_idx)
+            v = dset.variables[self.histogram_varname]
+            v[array_idx] += values[value_idx].astype(v.dtype)
 
-    def _write_coord(self, dset, name):
-        data = np.array(self._coords[name]['centers'])
+    def _split_indices(self, indices):
+        # Convert an index expression of the type (slice, slice, ..., slice)
+        # to an "array index" of the same type (with filesplit dimensions removed)
+        # and a "value index" (with filesplit dimensions set to specific value)
+        # and a "file index" of the type dict(X='a', Y='b')
+        # where X and Y are filesplit dimensions and 'a', 'b', 'c' are coordinate values.
+        # The function returns one set of indices per file
+
+        from itertools import product
+        dims = np.array(list(self._coords.keys()))
+        is_fdim = np.array([dim in self._filesplit_dims for dim in dims])
+        fdims = dims[is_fdim]
+        fdims_idx = dict()
+        for dim, idx in zip(fdims, np.array(indices)[is_fdim]):
+            fdims_idx[dim] = self._coords[dim]['centers'][idx]
+
+        for current_fdim_idx in product(*[range(len(v)) for v in fdims_idx.values()]):
+            value_idx = np.copy(indices)
+            value_idx[is_fdim] = current_fdim_idx
+            array_idx = np.copy(indices)
+            array_idx[is_fdim] = 0
+            file_idx = {
+                dim: fdims_idx[dim][i]
+                for dim, i in zip(fdims_idx.keys(), current_fdim_idx)
+            }
+            yield tuple(value_idx), tuple(array_idx), file_idx
+
+    def _write_coord(self, dset, name, selector):
+        if name in self._filesplit_dims:
+            data = np.array([selector[name]])
+        else:
+            data = np.array(self._coords[name]['centers'])
+
         logger.info(f'Write coordinate {name}({len(data)}) to output file')
 
         dset.createDimension(name, len(data))
