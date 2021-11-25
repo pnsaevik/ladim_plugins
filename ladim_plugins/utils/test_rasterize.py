@@ -345,7 +345,7 @@ class Test_LadimInputStream:
 
 class Test_RasterOutputStream:
     def test_can_initialize_from_nc_dataset(self):
-        with nc.Dataset('test_raster.nc', 'w') as dset:
+        with nc.Dataset('test_raster.nc', 'w', diskless=True) as dset:
             r = rasterize.RasterOutputStream(dset)
             r.write_coord('myvar', [1, 2, 3])
             assert '!test_raster.nc' in r.datasets
