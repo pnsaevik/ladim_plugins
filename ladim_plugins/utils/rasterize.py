@@ -601,7 +601,7 @@ class RasterOutputStream:
             if not fname.startswith('!'):
                 dset.close()
 
-    def add_histogram(self, indices, values):
+    def increment_histogram(self, indices, values):
         v = self.dataset(None).variables[self.histogram_varname]
         v[indices] += values.astype(v.dtype)
 
@@ -715,7 +715,7 @@ def ladim_conc(
             dset_out.write_vars(hist)
             for chunk_in in dset_in.chunks():
                 for chunk_out in hist.make(chunk_in):
-                    dset_out.add_histogram(**chunk_out)
+                    dset_out.increment_histogram(**chunk_out)
 
             return dset_out.datasets
 
