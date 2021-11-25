@@ -567,28 +567,41 @@ def get_weight_func(spec):
 
 
 class RasterOutputStream:
-    def __init__(self, spec):
+    def __init__(self, spec, coords):
         self.datasets = dict()
+        self._coords = coords
+        self.histogram_varname = 'histogram'
+        self._fname_pattern = None
 
         if isinstance(spec, nc.Dataset):
             dset = spec
-            spec = "!" + spec.filepath()  # Leading ! means: "Don't close"
-            self.datasets[spec] = dset
-
-        if not isinstance(spec, str):
+            self._write_vars(dset)
+            self._fname_pattern = "!" + spec.filepath()  # Leading ! means: "Don't close"
+            self.datasets[self._fname_pattern] = dset
+        elif isinstance(spec, str):
+            self._fname_pattern = spec
+        else:
             raise TypeError(f'Wrong type: {type(spec)}')
 
-        self._spec = spec
-        self.histogram_varname = 'histogram'
-
-    def dataset(self, selector=None):
-        fname = self._spec.format(selector)
+    def dataset(self, **selector):
+        fname = self._fname_pattern.format(**selector)
         if fname not in self.datasets:
-            logger.info(f'Create output dataset {fname}')
-            ffname = fname.replace('+', '')
-            diskless = fname.startswith('+')
-            self.datasets[fname] = nc.Dataset(ffname, 'w', diskless=diskless)
+            self._create_dataset(fname)
         return self.datasets[fname]
+
+    def _create_dataset(self, fname):
+        logger.info(f'Create output dataset {fname}')
+        ffname = fname.replace('+', '')
+        diskless = fname.startswith('+')
+        dset = nc.Dataset(ffname, 'w', diskless=diskless)
+        self.datasets[fname] = dset
+        self._write_vars(dset)
+        return dset
+
+    def _write_vars(self, dset):
+        for name in self._coords:
+            self._write_coord(dset, name)
+        self._write_histvar(dset)
 
     def __enter__(self):
         return self
@@ -602,14 +615,13 @@ class RasterOutputStream:
                 dset.close()
 
     def increment_histogram(self, indices, values):
-        v = self.dataset(None).variables[self.histogram_varname]
+        v = self.dataset().variables[self.histogram_varname]
         v[indices] += values.astype(v.dtype)
 
-    def write_coord(self, name, data, attrs=None):
-        data = np.array(data)
+    def _write_coord(self, dset, name):
+        data = np.array(self._coords[name]['centers'])
         logger.info(f'Write coordinate {name}({len(data)}) to output file')
 
-        dset = self.dataset(None)
         dset.createDimension(name, len(data))
 
         if np.issubdtype(data.dtype, np.datetime64):
@@ -623,17 +635,13 @@ class RasterOutputStream:
         else:
             dset.createVariable(name, data.dtype, name)[:] = data
         dset.variables[name].set_auto_maskandscale(False)
-        if attrs:
-            dset.variables[name].setncatts(attrs)
+        if 'attrs' in self._coords[name]:
+            dset.variables[name].setncatts(self._coords[name]['attrs'])
 
-    def write_coords(self, hist):
-        for name, coord_data in hist.coords.items():
-            self.write_coord(name, coord_data['centers'])
-
-    def write_vars(self, hist):
+    def _write_histvar(self, dset):
         logger.info(f'Initialize output variable "{self.histogram_varname}"')
-        dims = tuple(hist.coords.keys())
-        v = self.dataset(None).createVariable(self.histogram_varname, 'f4', dims)
+        dims = tuple(self._coords.keys())
+        v = dset.createVariable(self.histogram_varname, 'f4', dims)
         v.set_auto_maskandscale(False)
         v[:] = 0
 
@@ -710,9 +718,7 @@ def ladim_conc(
             limits=limits,
         )
 
-        with RasterOutputStream(output_file) as dset_out:
-            dset_out.write_coords(hist)
-            dset_out.write_vars(hist)
+        with RasterOutputStream(output_file, hist.coords) as dset_out:
             for chunk_in in dset_in.chunks():
                 for chunk_out in hist.make(chunk_in):
                     dset_out.increment_histogram(**chunk_out)

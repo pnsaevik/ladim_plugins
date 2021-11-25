@@ -346,17 +346,40 @@ class Test_LadimInputStream:
 class Test_RasterOutputStream:
     def test_can_initialize_from_nc_dataset(self):
         with nc.Dataset('test_raster.nc', 'w', diskless=True) as dset:
-            r = rasterize.RasterOutputStream(dset)
-            r.write_coord('myvar', [1, 2, 3])
+            r = rasterize.RasterOutputStream(dset, dict())
             assert '!test_raster.nc' in r.datasets
 
     def test_can_initialize_from_virtual_filename(self):
-        with rasterize.RasterOutputStream('+virtual.nc') as r:
-            r.write_coord('myvar', [1, 2, 3])
-            assert '+virtual.nc' in r.datasets
+        with rasterize.RasterOutputStream('+virtual.nc', dict()) as r:
+            dset = r.dataset()  # Trigger dataset creation
+            assert "+virtual.nc" in r.datasets
+            assert r.datasets["+virtual.nc"] is dset
 
-    def test_can_create_coordinate_variables(self):
-        with rasterize.RasterOutputStream('+virtual.nc') as r:
-            r.write_coord('myvar', [1, 2, 3])
-            assert r.dataset().variables['myvar'].dimensions == ('myvar', )
-            assert r.dataset().variables['myvar'][:].tolist() == [1, 2, 3]
+    def test_adds_coordinate_variables_at_creation(self):
+        coords = dict(
+            X=dict(centers=[1, 3, 5, 7, 9]),
+            Y=dict(centers=[10, 30, 50, 70]),
+        )
+        with rasterize.RasterOutputStream('+virtual.nc', coords) as r:
+            dset = r.dataset()  # Trigger dataset creation
+            assert dset.variables['X'].dimensions == ('X', )
+            assert dset.variables['X'][:].tolist() == coords['X']['centers']
+            assert dset.variables['Y'].dimensions == ('Y', )
+            assert dset.variables['Y'][:].tolist() == coords['Y']['centers']
+
+    def test_adds_zero_filled_histogram_variable_at_creation(self):
+        coords = dict(
+            X=dict(centers=[1, 3, 5, 7, 9]),
+            Y=dict(centers=[10, 30, 50, 70]),
+        )
+        with rasterize.RasterOutputStream('+virtual.nc', coords) as r:
+            dset = r.dataset()  # Trigger dataset creation
+            assert dset.variables['histogram'].dimensions == ('X', 'Y')
+            assert dset.variables['histogram'][:].tolist() == [[0] * 4] * 5
+
+    def test_creates_multiple_datasets_if_pattern_is_given(self):
+        with rasterize.RasterOutputStream('+virtual_{i:04}.nc', dict()) as r:
+            dset0 = r.dataset(i=0)  # Trigger dataset creation
+            dset5 = r.dataset(i=5)  # Trigger dataset creation
+            assert dset0 is r.datasets['+virtual_0000.nc']
+            assert dset5 is r.datasets['+virtual_0005.nc']
