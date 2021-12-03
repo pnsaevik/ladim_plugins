@@ -233,6 +233,23 @@ class Test_get_conc:
         with rasterize.ladim_conc(**conf, afilter=filter_str) as out:
             assert out.getData('histogram').sum() == 4
 
+    def test_can_apply_filter_funcname(self, ladim_dset):
+        filter_str = 'ladim_plugins.utils.test_rasterize.func_farmid_filter'
+
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+            output_file='test_filter.nc',
+            diskless=True,
+        )
+
+        with rasterize.ladim_conc(**conf, afilter=None) as out:
+            assert out.getData('histogram').sum() == 6
+
+        with rasterize.ladim_conc(**conf, afilter=filter_str) as out:
+            assert out.getData('histogram').sum() == 4
+
     def test_can_apply_weight_function(self, ladim_dset):
         def weight_fn(X, Y):
             return X + Y
@@ -260,6 +277,21 @@ class Test_get_conc:
             weights="X + Y",
             diskless=True,
         )
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('histogram').tolist() == [
+                0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
+            ]
+
+    def test_can_apply_weight_funcname(self, ladim_dset):
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+            output_file='test_weight.nc',
+            weights='ladim_plugins.utils.test_rasterize.func_x_plus_y',
+            diskless=True,
+        )
+
         with rasterize.ladim_conc(**conf) as out:
             assert out.getData('histogram').tolist() == [
                 0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
@@ -496,3 +528,11 @@ class Test_MultiDataset:
         assert mdset.getData('x').tolist() == [7, 7]
         mdset.setData('y', 8)
         assert mdset.getData('y').tolist() == [8, 8, 8]
+
+
+def func_farmid_filter(farm_id):
+    return (farm_id > 12345) & (farm_id < 12348)
+
+
+def func_x_plus_y(X, Y):
+    return X + Y

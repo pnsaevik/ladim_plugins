@@ -466,7 +466,10 @@ class LadimInputStream:
         if spec is None:
             return
         elif isinstance(spec, str):
-            self._filter = get_filter_func_from_numexpr(spec)
+            if '.' in spec:
+                self._filter = get_filter_func_from_funcstring(spec)
+            else:
+                self._filter = get_filter_func_from_numexpr(spec)
         elif callable(spec):
             self._filter = get_filter_func_from_callable(spec)
         else:
@@ -477,7 +480,10 @@ class LadimInputStream:
         if spec is None:
             return
         elif isinstance(spec, str):
-            self._weights = get_weight_func_from_numexpr(spec)
+            if '.' in spec:
+                self._weights = get_weight_func_from_funcstring(spec)
+            else:
+                self._weights = get_weight_func_from_numexpr(spec)
         elif callable(spec):
             self._weights = get_weight_func_from_callable(spec)
         else:
@@ -589,6 +595,22 @@ def get_weight_func_from_callable(fn):
         return xr.Variable('particle_instance', fn(*args))
 
     return weight_fn
+
+
+def get_filter_func_from_funcstring(s: str):
+    import importlib
+    module_name, func_name = s.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    func = getattr(module, func_name)
+    return get_filter_func_from_callable(func)
+
+
+def get_weight_func_from_funcstring(s: str):
+    import importlib
+    module_name, func_name = s.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    func = getattr(module, func_name)
+    return get_weight_func_from_callable(func)
 
 
 class MultiDataset:
