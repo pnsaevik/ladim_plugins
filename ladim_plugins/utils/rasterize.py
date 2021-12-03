@@ -991,6 +991,39 @@ class Histogrammer:
             crd[crd_name] = dict(centers=centers, edges=edges)
         return crd
 
+    @staticmethod
+    def adaptive_histogram(sample, bins, **kwargs):
+        """
+        Return an adaptive histogram
+
+        For input values `sample` and `bins`, the code snippet
+
+        hist = np.zeros([len(b) for b in bins])
+        hist_chunk, idx = adaptive_histogram(sample, bins, **kwargs)
+        hist[idx] = hist_chunk
+
+        gives the same output as
+
+        hist, _ = np.histogramdd(sample, bins, **kwargs)
+
+        :param sample:
+        :param bins:
+        :param kwargs:
+        :return:
+        """
+        idx = []
+        bins_subset = []
+        for coord, bin_edges in zip(sample, bins):
+            digitized_min = np.digitize(np.min(coord), bin_edges)
+            digitized_max = np.digitize(np.max(coord), bin_edges)
+            idx_start = max(0, digitized_min - 1)
+            idx_stop = min(len(bin_edges), digitized_max + 1)
+            idx.append(slice(idx_start, idx_stop - 1))
+            bins_subset.append(bin_edges[idx_start:idx_stop])
+
+        rasterized_data = np.histogramdd(sample, bins_subset, **kwargs)[0]
+        return rasterized_data, tuple(idx)
+
     def make(self, chunk):
         coord_names = list(self.coords.keys())
         shape = [len(v['centers']) for v in self.coords.values()]

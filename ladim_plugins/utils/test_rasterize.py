@@ -566,6 +566,27 @@ class Test_Histogrammer:
         assert stop == [2, 3, 4]
 
 
+class Test_adaptive_histogram:
+    def test_(self):
+        x = [1, 2, 3, 4]
+        y = [10, 20, 30, 40]
+        z = [100, 200, 300, 400]
+
+        xbins = [0, .5, 1.5, 3, 4]
+        ybins = [15, 25, 35, 45, 50]
+        zbins = [0, 1000]
+
+        sample = [z, y, x]
+        bins = [zbins, ybins, xbins]
+
+        hist2 = np.zeros([len(zbins)-1, len(ybins)-1, len(xbins)-1], dtype=int)
+        hist, idx = rasterize.Histogrammer.adaptive_histogram(sample, bins)
+        hist2[idx] = hist
+
+        hist3, _ = np.histogramdd(sample, bins)
+        assert hist3.tolist() == hist2.tolist()
+
+
 def func_farmid_filter(farm_id):
     return (farm_id > 12345) & (farm_id < 12348)
 
