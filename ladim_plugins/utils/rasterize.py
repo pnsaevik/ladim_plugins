@@ -716,17 +716,17 @@ class MultiDataset:
         base, ext = os.path.splitext(self.main_dataset.filepath())
         return base + '_' + '_'.join(stubs) + ext
 
-    def _create_dset(self, file_idx):
+    def getDataset(self, **file_idx):
         """Return sub-dataset, or create it if necessary"""
-        file_idx_hash = tuple(file_idx.items())
-        if file_idx_hash not in self.datasets:
+        file_idx_key = tuple((k, file_idx[k]) for k in self._cross_coords.keys())
+        if file_idx_key not in self.datasets:
             fname = self._get_filename(file_idx)
             dset = nc.Dataset(fname, mode='w', **self._dataset_kwargs)
             self._copy_from_main(dset, file_idx)
-            self.datasets[file_idx_hash] = dset
+            self.datasets[file_idx_key] = dset
             self._editable = False
 
-        return self.datasets[file_idx_hash]
+        return self.datasets[file_idx_key]
 
     def _copy_from_main(self, dest, crossdim_idx):
         cross_dims = list(self._cross_coords.keys())
@@ -791,7 +791,7 @@ class MultiDataset:
             data = np.empty(shape, variable_info['data'].dtype)
 
             for i_file, i_var, i_data in self._split_indices(varname, idx):
-                dset = self._create_dset(i_file)
+                dset = self.getDataset(**i_file)
                 data[i_data] = dset.variables[varname][i_var]
 
             return data
@@ -819,7 +819,7 @@ class MultiDataset:
             bdata = np.broadcast_to(data, shape)
 
             for i_file, i_var, i_data in self._split_indices(varname, idx):
-                dset = self._create_dset(i_file)
+                dset = self.getDataset(**i_file)
 
                 dset.variables[varname][i_var] = bdata[i_data]
 
@@ -953,7 +953,7 @@ class Histogrammer:
 @contextlib.contextmanager
 def ladim_conc(
         resolution, input_file, output_file, limits=None, afilter=None,
-        weights=None, diskless=False):
+        weights=None, diskless=False, filesplit_dims=()):
     # 1. Opprette output-fil
     # 2. Åpne input-fil(er) som en chunk-strøm
     # 3. Pipeline: Input chunk-strøm til funksjon, som gir output chunk-strøm
@@ -981,7 +981,7 @@ def ladim_conc(
                     varname=coord_name,
                     data=coord_info['centers'],
                     attrs=coord_info.get('attrs', dict()),
-                    cross_dataset=False,
+                    cross_dataset=coord_name in filesplit_dims,
                 )
 
             dset_out.createVariable(

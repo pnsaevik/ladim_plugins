@@ -266,6 +266,28 @@ class Test_get_conc:
                 0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
             ]
 
+    def test_can_split_across_multiple_datasets(self, ladim_dset):
+        conf = dict(
+            resolution=dict(Y=1, X=1),
+            limits=dict(X=[0, 10], Y=[60, 63]),
+            input_file=ladim_dset,
+            output_file='test_smoke.nc',
+            filesplit_dims=['Y'],
+            diskless=True,
+        )
+        with rasterize.ladim_conc(**conf) as out:
+            data = np.array([
+                [0, 0, 0, 0, 0, 3, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ])
+            assert out.getData('histogram').tolist() == data.tolist()
+            assert out.getDataset(Y=0)['histogram'][:].tolist() == data[0:1, :].tolist()
+            assert out.getDataset(Y=1)['histogram'][:].tolist() == data[1:2, :].tolist()
+            assert out.getDataset(Y=2)['histogram'][:].tolist() == data[2:3, :].tolist()
+            assert out.getDataset(Y=3)['histogram'][:].tolist() == data[3:4, :].tolist()
+
 
 @pytest.fixture(scope='module')
 def fnames():
