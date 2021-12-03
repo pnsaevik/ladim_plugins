@@ -466,9 +466,9 @@ class LadimInputStream:
         if spec is None:
             return
         elif isinstance(spec, str):
-            self._filter = get_filter_func(spec)
+            self._filter = get_filter_func_from_numexpr(spec)
         elif callable(spec):
-            self._filter = spec
+            self._filter = get_filter_func_from_callable(spec)
         else:
             raise TypeError(f'Unknown type: {type(spec)}')
 
@@ -477,9 +477,9 @@ class LadimInputStream:
         if spec is None:
             return
         elif isinstance(spec, str):
-            self._weights = get_weight_func(spec)
+            self._weights = get_weight_func_from_numexpr(spec)
         elif callable(spec):
-            self._weights = spec
+            self._weights = get_weight_func_from_callable(spec)
         else:
             raise TypeError(f'Unknown type: {type(spec)}')
 
@@ -546,7 +546,7 @@ class LadimInputStream:
             chunk = self.read()
 
 
-def get_filter_func(spec):
+def get_filter_func_from_numexpr(spec):
     import numexpr
     ex = numexpr.NumExpr(spec)
 
@@ -557,13 +557,36 @@ def get_filter_func(spec):
     return filter_fn
 
 
-def get_weight_func(spec):
+def get_weight_func_from_numexpr(spec):
     import numexpr
     ex = numexpr.NumExpr(spec)
 
     def weight_fn(chunk):
         args = [chunk[n].values for n in ex.input_names]
         return xr.Variable('particle_instance', ex.run(*args))
+
+    return weight_fn
+
+
+def get_filter_func_from_callable(fn):
+    import inspect
+    signature = inspect.signature(fn)
+
+    def filter_fn(chunk):
+        args = [chunk[n].values for n in signature.parameters.keys()]
+        idx = fn(*args)
+        return chunk.isel(particle_instance=idx)
+
+    return filter_fn
+
+
+def get_weight_func_from_callable(fn):
+    import inspect
+    signature = inspect.signature(fn)
+
+    def weight_fn(chunk):
+        args = [chunk[n].values for n in signature.parameters.keys()]
+        return xr.Variable('particle_instance', fn(*args))
 
     return weight_fn
 

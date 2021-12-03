@@ -199,9 +199,8 @@ class Test_get_conc:
             assert out.getData('Y').tolist() == [60, 61, 62, 63]
 
     def test_can_apply_filter_function(self, ladim_dset):
-        def preprocess(chunk):
-            idx = (chunk.farm_id.values > 12345) & (chunk.farm_id.values < 12348)
-            return chunk.isel({chunk.farm_id.dims[0]: idx})
+        def preprocess(farm_id):
+            return (farm_id > 12345) & (farm_id < 12348)
 
         conf = dict(
             resolution=dict(X=1),
@@ -235,15 +234,15 @@ class Test_get_conc:
             assert out.getData('histogram').sum() == 4
 
     def test_can_apply_weight_function(self, ladim_dset):
-        def preprocess(chunk):
-            return chunk.X + chunk.Y
+        def weight_fn(X, Y):
+            return X + Y
 
         conf = dict(
             resolution=dict(X=1),
             limits=dict(X=[0, 10]),
             input_file=ladim_dset,
             output_file='test_weight.nc',
-            weights=preprocess,
+            weights=weight_fn,
             diskless=True,
         )
 
