@@ -2,7 +2,6 @@ from ladim_plugins.utils import rasterize
 import pytest
 import xarray as xr
 import numpy as np
-import netCDF4 as nc
 from uuid import uuid4
 
 
@@ -348,74 +347,10 @@ class Test_LadimInputStream:
             assert timestr.tolist() == ['2000-01-02T00', '2000-01-05T06']
 
 
-class Test_RasterOutputStream:
-    def test_can_initialize_from_nc_dataset(self):
-        with nc.Dataset('test_raster.nc', 'w', diskless=True) as dset:
-            r = rasterize.RasterOutputStream(dset, dict())
-            assert '!test_raster.nc' in r.datasets
-
-    def test_can_initialize_from_virtual_filename(self):
-        with rasterize.RasterOutputStream('+virtual.nc', dict()) as r:
-            dset = r.dataset()  # Trigger dataset creation
-            assert "+virtual.nc" in r.datasets
-            assert r.datasets["+virtual.nc"] is dset
-
-    def test_adds_coordinate_variables_at_creation(self):
-        coords = dict(
-            X=dict(centers=[1, 3, 5, 7, 9]),
-            Y=dict(centers=[10, 30, 50, 70]),
-        )
-        with rasterize.RasterOutputStream('+virtual.nc', coords) as r:
-            dset = r.dataset()  # Trigger dataset creation
-            assert dset.variables['X'].dimensions == ('X', )
-            assert dset.variables['X'][:].tolist() == coords['X']['centers']
-            assert dset.variables['Y'].dimensions == ('Y', )
-            assert dset.variables['Y'][:].tolist() == coords['Y']['centers']
-
-    def test_adds_zero_filled_histogram_variable_at_creation(self):
-        coords = dict(
-            X=dict(centers=[1, 3, 5, 7, 9]),
-            Y=dict(centers=[10, 30, 50, 70]),
-        )
-        with rasterize.RasterOutputStream('+virtual.nc', coords) as r:
-            dset = r.dataset()  # Trigger dataset creation
-            assert dset.variables['histogram'].dimensions == ('X', 'Y')
-            assert dset.variables['histogram'][:].tolist() == [[0] * 4] * 5
-
-    def test_creates_multiple_datasets_if_pattern_is_given(self):
-        with rasterize.RasterOutputStream('+virtual_{i:04}.nc', dict()) as r:
-            dset0 = r.dataset(i=0)  # Trigger dataset creation
-            dset5 = r.dataset(i=5)  # Trigger dataset creation
-            assert dset0 is r.datasets['+virtual_0000.nc']
-            assert dset5 is r.datasets['+virtual_0005.nc']
-
-    def test_can_split_histogram_across_files(self):
-        coords = dict(
-            X=dict(centers=[1, 3, 5]),
-            Y=dict(centers=[10, 30, 50, 70]),
-            Z=dict(centers=[9]),
-        )
-        with rasterize.RasterOutputStream('+v{X}{Z}.nc', coords, ('X', 'Z')) as r:
-            r.increment_histogram(
-                indices=(slice(None), slice(None), slice(None)),
-                values=np.arange(12).reshape((3, 4, 1)),
-            )
-            assert set(r.datasets.keys()) == {'+v19.nc', '+v39.nc', '+v59.nc'}
-            assert r.dataset(X=1, Z=9).dimensions['X'].size == 1
-            assert r.dataset(X=1, Z=9).dimensions['Y'].size == 4
-            assert r.dataset(X=1, Z=9).variables['histogram'].dimensions == ('X', 'Y', 'Z')
-            assert r.dataset(X=1, Z=9).variables['histogram'][:].tolist() == [[[0], [1], [2], [3]]]
-            assert r.dataset(X=3, Z=9).variables['histogram'][:].tolist() == [[[4], [5], [6], [7]]]
-            assert r.dataset(X=5, Z=9).variables['histogram'][:].tolist() == [[[8], [9], [10], [11]]]
-            assert r.dataset(X=3, Z=9).variables['X'][:].tolist() == [3]
-            assert r.dataset(X=5, Z=9).variables['X'][:].tolist() == [5]
-            assert r.dataset(X=5, Z=9).variables['Z'][:].tolist() == [9]
-
-
 class Test_MultiDataset:
     @pytest.fixture(scope="function")
     def mdset(self):
-        with rasterize.MultiDataset(uuid4()) as d:
+        with rasterize.MultiDataset(uuid4(), diskless=True) as d:
             yield d
 
     def test_can_set_main_coordinate(self, mdset):
@@ -444,14 +379,12 @@ class Test_MultiDataset:
         assert mdset.getAttrs('myvar') == dict(myatt=9)
 
     def test_can_set_data_of_main_variable_after_creation(self, mdset):
-        mdset = rasterize.MultiDataset(uuid4())
         mdset.createCoord('mycoord', [1, 2, 3])
         mdset.createVariable('myvar', [4, 5, 6], 'mycoord')
         mdset.setData('myvar', [7, 8, 9])
         assert mdset.getData('myvar').tolist() == [7, 8, 9]
 
     def test_can_set_partial_data_of_main_variable_after_creation(self, mdset):
-        mdset = rasterize.MultiDataset(uuid4())
         mdset.createCoord('mycoord', [1, 2, 3])
         mdset.createVariable('myvar', [4, 5, 6], 'mycoord')
         mdset.setData('myvar', 7, idx=0)

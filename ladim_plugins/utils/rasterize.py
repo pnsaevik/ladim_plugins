@@ -901,30 +901,6 @@ class MultiDataset:
             yield file_idx, var_idx, data_idx
 
 
-class RasterOutputStream:
-    def __init__(self, spec, coords, filesplit_dims=(), **kwargs):
-        mdset = MultiDataset(spec, **kwargs)
-        for c in coords:
-            mdset.createCoord(c['name'], c['centers'], c['attrs'],
-                              cross_dataset=c in filesplit_dims)
-        self.histogram_varname = 'histogram'
-        mdset.createVariable(self.histogram_varname, 0, tuple(coords.keys()))
-        self.multidataset = mdset
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    def close(self):
-        self.multidataset.close()
-
-    def increment_histogram(self, indices, values):
-        mdset = self.multidataset
-        mdset.incrementData(self.histogram_varname, values, indices)
-
-
 class Histogrammer:
     def __init__(self, resolution, limits):
         self.resolution = resolution
