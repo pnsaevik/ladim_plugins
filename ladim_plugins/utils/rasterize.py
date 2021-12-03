@@ -951,39 +951,51 @@ class Histogrammer:
         self.resolution = resolution
         self.limits = limits
         self.weights = dict(bincount=None)
-        self.coords = self._get_coords()
+        self.coords = Histogrammer._get_coords(resolution, limits)
 
-    def _get_coords(self):
+    @staticmethod
+    def get_edges(centers):
+        return get_edges(centers)
+
+    @staticmethod
+    def get_centers(resolution, limits):
+        start, stop = limits
+
+        # Check if limits is a datestring
+        if isinstance(start, str) and isinstance(stop, str):
+            try:
+                start, stop = np.array([start, stop]).astype('datetime64')
+            except ValueError:
+                pass
+
+        # Check if resolution is a timedelta specified as [value, unit]
+        if np.issubdtype(np.array(start).dtype, np.datetime64):
+            try:
+                t64val, t64unit = resolution
+                resolution = np.timedelta64(t64val, t64unit)
+            except TypeError:
+                pass
+
+        centers = np.arange(start, stop + resolution, resolution)
+        if centers[-1] > stop:
+            centers = centers[:-1]
+        return centers
+
+    @staticmethod
+    def _get_coords(resolution_dict, limits_dict):
         crd = dict()
-        for k, v in self.resolution.items():
-            start, stop = self.limits[k]
-
-            # Check if limits is a datestring
-            if isinstance(start, str) and isinstance(stop, str):
-                try:
-                    start, stop = np.array([start, stop]).astype('datetime64')
-                except ValueError:
-                    pass
-
-            # Check if resolution is a timedelta specified as [value, unit]
-            if np.issubdtype(np.array(start).dtype, np.datetime64):
-                try:
-                    t64val, t64unit = v
-                    v = np.timedelta64(t64val, t64unit)
-                except TypeError:
-                    pass
-
-            centers = np.arange(start, stop + v, v)
-            if centers[-1] > stop:
-                centers = centers[:-1]
-            edges = get_edges(centers)
-            crd[k] = dict(centers=centers, edges=edges)
+        for crd_name, resolution in resolution_dict.items():
+            limits = limits_dict[crd_name]
+            centers = Histogrammer.get_centers(resolution, limits)
+            edges = Histogrammer.get_edges(centers)
+            crd[crd_name] = dict(centers=centers, edges=edges)
         return crd
 
     def make(self, chunk):
         coord_names = list(self.coords.keys())
+        shape = [len(v['centers']) for v in self.coords.values()]
         bins = [self.coords[k]['edges'] for k in coord_names]
-        indices = tuple(slice(None) for _ in range(len(coord_names)))
+        indices = tuple(slice(0, sz) for sz in shape)
         coords = [chunk[k].values for k in coord_names]
 
         if 'weights' in chunk.variables:
