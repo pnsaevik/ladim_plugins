@@ -145,58 +145,59 @@ class Test_get_conc:
     """
 
     def test_counts_particles_if_standard_input(self, ladim_dset):
-        with nc.Dataset('test_smoke.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(
-                resolution=dict(X=1),
-                limits=dict(X=[0, 10]),
-                input_file=ladim_dset,
-                output_file=out_dset,
-            )
-
-            assert out_dset.variables['histogram'][:].tolist() == [
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+            output_file='test_smoke.nc',
+            diskless=True,
+        )
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('histogram').tolist() == [
                 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0,
             ]
 
     def test_can_use_time_bins(self, ladim_dset):
-        with nc.Dataset('test_smoke.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(
-                resolution=dict(time=[12, 'h']),
-                limits=dict(time=['2000-01-02', '2000-01-04']),
-                input_file=ladim_dset,
-                output_file=out_dset,
-            )
-
-            assert out_dset.variables['histogram'][:].tolist() == [
+        conf = dict(
+            resolution=dict(time=[12, 'h']),
+            limits=dict(time=['2000-01-02', '2000-01-04']),
+            input_file=ladim_dset,
+            output_file='test_smoke.nc',
+            diskless=True,
+        )
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('histogram').tolist() == [
                 4, 0, 2, 0, 0,
             ]
-            assert out_dset.variables['time'].units == "microseconds since 1970-01-01"
-            assert out_dset.variables['time'].calendar == "proleptic_gregorian"
+            attrs = out.getAttrs('time')
+            assert attrs['units'] == "microseconds since 1970-01-01"
+            assert attrs['calendar'] == "proleptic_gregorian"
             dates = ['2000-01-02T00', '2000-01-02T12', '2000-01-03T00', '2000-01-03T12', '2000-01-04T00']
-            assert out_dset.variables['time'][:].tolist() == (
+            assert out.getData('time').tolist() == (
                 np.array(dates).astype('datetime64[h]') - np.datetime64('1970-01-01')
             ).astype('timedelta64[us]').astype('i8').tolist()
 
     def test_finds_limits_if_not_given(self, ladim_dset):
-        with nc.Dataset('test_limits.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(
-                resolution=dict(X=1),
-                input_file=ladim_dset,
-                output_file=out_dset,
-            )
-
-            assert out_dset.variables['X'][:].tolist() == [5, 6, 7]
+        conf = dict(
+            resolution=dict(X=1),
+            input_file=ladim_dset,
+            output_file='test_limits.nc',
+            diskless=True,
+        )
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('X').tolist() == [5, 6, 7]
 
     def test_finds_limits_if_some_are_missing(self, ladim_dset):
-        with nc.Dataset('test_limits.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(
-                resolution=dict(X=1, Y=1),
-                limits=dict(X=[4, 7]),
-                input_file=ladim_dset,
-                output_file=out_dset,
-            )
-
-            assert out_dset.variables['X'][:].tolist() == [4, 5, 6, 7]
-            assert out_dset.variables['Y'][:].tolist() == [60, 61, 62, 63]
+        conf = dict(
+            resolution=dict(X=1, Y=1),
+            limits=dict(X=[4, 7]),
+            input_file=ladim_dset,
+            output_file='test_limits.nc',
+            diskless=True,
+        )
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('X').tolist() == [4, 5, 6, 7]
+            assert out.getData('Y').tolist() == [60, 61, 62, 63]
 
     def test_can_apply_filter_function(self, ladim_dset):
         def preprocess(chunk):
@@ -207,15 +208,15 @@ class Test_get_conc:
             resolution=dict(X=1),
             limits=dict(X=[0, 10]),
             input_file=ladim_dset,
+            output_file='test_filter.nc',
+            diskless=True,
         )
 
-        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=None)
-            assert out_dset.variables['histogram'][:].sum() == 6
+        with rasterize.ladim_conc(**conf, afilter=None) as out:
+            assert out.getData('histogram').sum() == 6
 
-        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=preprocess)
-            assert out_dset.variables['histogram'][:].sum() == 4
+        with rasterize.ladim_conc(**conf, afilter=preprocess) as out:
+            assert out.getData('histogram').sum() == 4
 
     def test_can_apply_filter_string(self, ladim_dset):
         filter_str = '(farm_id > 12345) & (farm_id < 12348)'
@@ -224,42 +225,45 @@ class Test_get_conc:
             resolution=dict(X=1),
             limits=dict(X=[0, 10]),
             input_file=ladim_dset,
+            output_file='test_filter.nc',
+            diskless=True,
         )
 
-        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=None)
-            assert out_dset.variables['histogram'][:].sum() == 6
+        with rasterize.ladim_conc(**conf, afilter=None) as out:
+            assert out.getData('histogram').sum() == 6
 
-        with nc.Dataset('test_filter.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(**conf, output_file=out_dset, afilter=filter_str)
-            assert out_dset.variables['histogram'][:].sum() == 4
+        with rasterize.ladim_conc(**conf, afilter=filter_str) as out:
+            assert out.getData('histogram').sum() == 4
 
     def test_can_apply_weight_function(self, ladim_dset):
         def preprocess(chunk):
             return chunk.X + chunk.Y
 
-        with nc.Dataset('test_weight.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(
-                resolution=dict(X=1),
-                limits=dict(X=[0, 10]),
-                input_file=ladim_dset,
-                output_file=out_dset,
-                weights=preprocess,
-            )
-            assert out_dset.variables['histogram'][:].tolist() == [
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+            output_file='test_weight.nc',
+            weights=preprocess,
+            diskless=True,
+        )
+
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('histogram').tolist() == [
                 0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
             ]
 
     def test_can_apply_weight_string(self, ladim_dset):
-        with nc.Dataset('test_weight.nc', 'w', diskless=True) as out_dset:
-            rasterize.ladim_conc(
-                resolution=dict(X=1),
-                limits=dict(X=[0, 10]),
-                input_file=ladim_dset,
-                output_file=out_dset,
-                weights="X + Y",
-            )
-            assert out_dset.variables['histogram'][:].tolist() == [
+        conf = dict(
+            resolution=dict(X=1),
+            limits=dict(X=[0, 10]),
+            input_file=ladim_dset,
+            output_file='test_weight.nc',
+            weights="X + Y",
+            diskless=True,
+        )
+        with rasterize.ladim_conc(**conf) as out:
+            assert out.getData('histogram').tolist() == [
                 0, 0, 0, 0, 0, 195, 201, 0, 0, 0, 0,
             ]
 

@@ -1,3 +1,5 @@
+import contextlib
+
 import xarray as xr
 import netCDF4 as nc
 import numpy as np
@@ -620,6 +622,18 @@ class MultiDataset:
             raise TypeError("Adding new variables must be done before accessing cross-dataset data")
 
         data = np.array(data)
+
+        if np.issubdtype(data.dtype, np.datetime64):
+            attrs = {
+                **(attrs or dict()),
+                **dict(
+                    units="microseconds since 1970-01-01",
+                    calendar="proleptic_gregorian",
+                ),
+            }
+            datediff = data - np.datetime64('1970-01-01')
+            data = datediff.astype('timedelta64[us]').astype('i8')
+
         dset = self.main_dataset
         dset.createDimension(varname, len(data))
         variable = dset.createVariable(varname, data.dtype, varname)
@@ -827,7 +841,7 @@ class MultiDataset:
         :return: The input data
         """
         previous = self.getData(varname, idx)
-        newdata = previous + np.broadcast_to(previous.shape, data)
+        newdata = previous + np.broadcast_to(data, previous.shape)
         self.setData(varname, newdata, idx)
 
     def _split_indices(self, varname, index):
@@ -888,42 +902,14 @@ class MultiDataset:
 
 
 class RasterOutputStream:
-    def __init__(self, spec, coords, filesplit_dims=()):
-        self.datasets = dict()
-        self._coords = coords
+    def __init__(self, spec, coords, filesplit_dims=(), **kwargs):
+        mdset = MultiDataset(spec, **kwargs)
+        for c in coords:
+            mdset.createCoord(c['name'], c['centers'], c['attrs'],
+                              cross_dataset=c in filesplit_dims)
         self.histogram_varname = 'histogram'
-        self._fname_pattern = None
-        self._filesplit_dims = filesplit_dims
-
-        if isinstance(spec, nc.Dataset):
-            dset = spec
-            self._write_vars(dset, dict())
-            self._fname_pattern = "!" + spec.filepath()  # Leading ! means: "Don't close"
-            self.datasets[self._fname_pattern] = dset
-        elif isinstance(spec, str):
-            self._fname_pattern = spec
-        else:
-            raise TypeError(f'Wrong type: {type(spec)}')
-
-    def dataset(self, **selector):
-        fname = self._fname_pattern.format(**selector)
-        if fname not in self.datasets:
-            self._create_dataset(fname, selector)
-        return self.datasets[fname]
-
-    def _create_dataset(self, fname, selector):
-        logger.info(f'Create output dataset {fname}')
-        ffname = fname.replace('+', '')
-        diskless = fname.startswith('+')
-        dset = nc.Dataset(ffname, 'w', diskless=diskless)
-        self.datasets[fname] = dset
-        self._write_vars(dset, selector)
-        return dset
-
-    def _write_vars(self, dset, selector):
-        for name in self._coords:
-            self._write_coord(dset, name, selector)
-        self._write_histvar(dset)
+        mdset.createVariable(self.histogram_varname, 0, tuple(coords.keys()))
+        self.multidataset = mdset
 
     def __enter__(self):
         return self
@@ -932,73 +918,11 @@ class RasterOutputStream:
         self.close()
 
     def close(self):
-        for fname, dset in self.datasets.items():
-            if not fname.startswith('!'):
-                dset.close()
+        self.multidataset.close()
 
     def increment_histogram(self, indices, values):
-        for value_idx, array_idx, file_idx in self._split_indices(indices):
-            dset = self.dataset(**file_idx)
-            v = dset.variables[self.histogram_varname]
-            v[array_idx] += values[value_idx].astype(v.dtype)
-
-    def _split_indices(self, indices):
-        # Convert an index expression of the type (slice, slice, ..., slice)
-        # to an "array index" of the same type (with filesplit dimensions removed)
-        # and a "value index" (with filesplit dimensions set to specific value)
-        # and a "file index" of the type dict(X='a', Y='b')
-        # where X and Y are filesplit dimensions and 'a', 'b', 'c' are coordinate values.
-        # The function returns one set of indices per file
-
-        from itertools import product
-        dims = np.array(list(self._coords.keys()))
-        is_fdim = np.array([dim in self._filesplit_dims for dim in dims])
-        fdims = dims[is_fdim]
-        fdims_idx = dict()
-        for dim, idx in zip(fdims, np.array(indices)[is_fdim]):
-            fdims_idx[dim] = self._coords[dim]['centers'][idx]
-
-        for current_fdim_idx in product(*[range(len(v)) for v in fdims_idx.values()]):
-            value_idx = np.copy(indices)
-            value_idx[is_fdim] = current_fdim_idx
-            array_idx = np.copy(indices)
-            array_idx[is_fdim] = 0
-            file_idx = {
-                dim: fdims_idx[dim][i]
-                for dim, i in zip(fdims_idx.keys(), current_fdim_idx)
-            }
-            yield tuple(value_idx), tuple(array_idx), file_idx
-
-    def _write_coord(self, dset, name, selector):
-        if name in self._filesplit_dims:
-            data = np.array([selector[name]])
-        else:
-            data = np.array(self._coords[name]['centers'])
-
-        logger.info(f'Write coordinate {name}({len(data)}) to output file')
-
-        dset.createDimension(name, len(data))
-
-        if np.issubdtype(data.dtype, np.datetime64):
-            offset = (data - np.datetime64('1970-01-01', 'us')).astype('i8')
-            v = dset.createVariable(name, 'i8', name)
-            v[:] = offset
-            v.setncatts(dict(
-                units="microseconds since 1970-01-01",
-                calendar="proleptic_gregorian",
-            ))
-        else:
-            dset.createVariable(name, data.dtype, name)[:] = data
-        dset.variables[name].set_auto_maskandscale(False)
-        if 'attrs' in self._coords[name]:
-            dset.variables[name].setncatts(self._coords[name]['attrs'])
-
-    def _write_histvar(self, dset):
-        logger.info(f'Initialize output variable "{self.histogram_varname}"')
-        dims = tuple(self._coords.keys())
-        v = dset.createVariable(self.histogram_varname, 'f4', dims)
-        v.set_auto_maskandscale(False)
-        v[:] = 0
+        mdset = self.multidataset
+        mdset.incrementData(self.histogram_varname, values, indices)
 
 
 class Histogrammer:
@@ -1050,9 +974,10 @@ class Histogrammer:
         yield dict(indices=indices, values=values)
 
 
+@contextlib.contextmanager
 def ladim_conc(
         resolution, input_file, output_file, limits=None, afilter=None,
-        weights=None):
+        weights=None, diskless=False):
     # 1. Opprette output-fil
     # 2. Åpne input-fil(er) som en chunk-strøm
     # 3. Pipeline: Input chunk-strøm til funksjon, som gir output chunk-strøm
@@ -1072,13 +997,32 @@ def ladim_conc(
             resolution=resolution,
             limits=limits,
         )
+        coords = hist.coords
 
-        with RasterOutputStream(output_file, hist.coords) as dset_out:
+        with MultiDataset(output_file, diskless=diskless) as dset_out:
+            for coord_name, coord_info in coords.items():
+                dset_out.createCoord(
+                    varname=coord_name,
+                    data=coord_info['centers'],
+                    attrs=coord_info.get('attrs', dict()),
+                    cross_dataset=False,
+                )
+
+            dset_out.createVariable(
+                varname='histogram',
+                data=np.array(0, dtype=np.float32),
+                dims=tuple(coords.keys()),
+            )
+
             for chunk_in in dset_in.chunks():
                 for chunk_out in hist.make(chunk_in):
-                    dset_out.increment_histogram(**chunk_out)
+                    dset_out.incrementData(
+                        varname='histogram',
+                        data=chunk_out['values'],
+                        idx=chunk_out['indices'],
+                    )
 
-            return dset_out.datasets
+            yield dset_out
 
 
 def main2():
