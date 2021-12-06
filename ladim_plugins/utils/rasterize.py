@@ -1011,6 +1011,13 @@ class Histogrammer:
         :param kwargs:
         :return:
         """
+
+        # Cast datetime samples to be comparable with bins
+        for i, s in enumerate(sample):
+            if np.issubdtype(s.dtype, np.datetime64):
+                sample[i] = s.astype(bins[i].dtype)
+
+        # Find min and max bin edges to be used
         idx = []
         bins_subset = []
         for coord, bin_edges in zip(sample, bins):
