@@ -526,7 +526,7 @@ class LadimInputStream:
                 res = t64conv(resolution[k])
                 minval = align(dset.variables[k].min().values, res)
                 maxval = align(dset.variables[k].max().values + res, res)
-                logger.info(f'Limits for {k} in current dataset: [{minval}, {maxval}]')
+                logger.info(f'Limits for `{k}` in current dataset: [{minval}, {maxval}]')
                 minvals[k].append(minval)
                 maxvals[k].append(maxval)
 
@@ -1115,14 +1115,18 @@ def main2():
         logger.info(line)
 
     # Invoke main function
-    ladim_conc(
+    ladim_conc_setup = ladim_conc(
         input_file=config['input_file'],
         output_file=config['output_file'],
         resolution=config['resolution'],
         limits=config.get('limits', None),
         afilter=config.get('filter', None),
         weights=config.get('weights', None),
+        filesplit_dims=config.get('filesplit_dims', None),
     )
+
+    with ladim_conc_setup as outfile:
+        pass
 
 
 def main():
@@ -1191,4 +1195,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main2()
