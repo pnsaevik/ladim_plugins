@@ -757,7 +757,20 @@ class MultiDataset:
 
     def _get_filename(self, file_idx):
         import os
-        stubs = [str(v) for v in file_idx.values()]
+
+        # Get filename-friendly value of variable
+        def strval(varname, index):
+            variable = self.getCoord(varname)
+            attrs = self.getAttrs(varname)
+            value = variable[index]
+            if 'since' in attrs.get('units', ''):
+                import cftime
+                date = cftime.num2date(value, attrs['units'], attrs.get('calendar', 'standard'))
+                return f'{date:%Y%m%d%H%M%S}'
+            else:
+                return str(value)
+
+        stubs = [str(strval(k, v)) for k, v in file_idx.items()]
         base, ext = os.path.splitext(self.main_dataset.filepath())
         return base + '_' + '_'.join(stubs) + ext
 
