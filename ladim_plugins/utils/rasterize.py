@@ -1014,8 +1014,8 @@ class Histogrammer:
         idx = []
         bins_subset = []
         for coord, bin_edges in zip(sample, bins):
-            digitized_min = np.digitize(np.min(coord), bin_edges)
-            digitized_max = np.digitize(np.max(coord), bin_edges)
+            digitized_min = np.searchsorted(bin_edges, np.min(coord), side='right')
+            digitized_max = np.searchsorted(bin_edges, np.max(coord), side='right')
             idx_start = max(0, digitized_min - 1)
             idx_stop = min(len(bin_edges), digitized_max + 1)
             idx.append(slice(idx_start, idx_stop - 1))
@@ -1026,9 +1026,7 @@ class Histogrammer:
 
     def make(self, chunk):
         coord_names = list(self.coords.keys())
-        shape = [len(v['centers']) for v in self.coords.values()]
         bins = [self.coords[k]['edges'] for k in coord_names]
-        indices = tuple(slice(0, sz) for sz in shape)
         coords = [chunk[k].values for k in coord_names]
 
         if 'weights' in chunk.variables:
@@ -1036,8 +1034,8 @@ class Histogrammer:
         else:
             weights = None
 
-        values, _ = np.histogramdd(coords, bins, weights=weights)
-        yield dict(indices=indices, values=values)
+        values, idx = self.adaptive_histogram(coords, bins, weights=weights)
+        yield dict(indices=idx, values=values)
 
 
 @contextlib.contextmanager
