@@ -685,7 +685,7 @@ class MultiDataset:
 
         dset = self.main_dataset
         dset.createDimension(varname, len(data))
-        variable = dset.createVariable(varname, data.dtype, varname)
+        variable = dset.createVariable(varname, data.dtype, varname, fill_value=False)
         variable.set_auto_maskandscale(False)
         variable[:] = data
         if attrs:
@@ -751,7 +751,7 @@ class MultiDataset:
         # Create regular variable
         else:
             dset = self.main_dataset
-            variable = dset.createVariable(varname, data.dtype, dims)
+            variable = dset.createVariable(varname, data.dtype, dims, fill_value=False)
             variable.set_auto_maskandscale(False)
             variable[:] = data
             if attrs:
