@@ -538,8 +538,12 @@ class LadimInputStream:
     def read(self):
         try:
             chunk = next(self.ladim_iter)
+            logger.info("Apply filter")
             chunk = self.filter(chunk)
-            if self.weights:
+            num_unfiltered = chunk.dims['particle_instance']
+            logger.info(f'Number of unfiltered particles: {num_unfiltered}')
+            if self.weights and (num_unfiltered == 0):
+                logger.info("Apply weights")
                 chunk = chunk.assign(weights=self.weights(chunk))
             return chunk
         except StopIteration:
@@ -1024,6 +1028,10 @@ class Histogrammer:
         :param kwargs:
         :return:
         """
+
+        # Abort if there are no points in the sample
+        if len(sample[0]) == 0:
+            return np.zeros((0, ) * len(sample)), (slice(1, 0), ) * len(sample)
 
         # Cast datetime samples to be comparable with bins
         for i, s in enumerate(sample):
