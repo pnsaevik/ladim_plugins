@@ -365,6 +365,8 @@ def ladim_iterator(ladim_dsets):
             logger.info(f'Read time step {dset.time[tidx].values}')
             iidx = slice(pcount_cum[tidx], pcount_cum[tidx + 1])
             logger.info(f'Number of particles: {iidx.stop - iidx.start}')
+            if iidx.stop == iidx.start:
+                continue
             pidx = xr.Variable('particle_instance', dset.pid[iidx].values)
             ttidx = xr.Variable('particle_instance', np.broadcast_to(tidx, (len(pidx), )))
             ddset = dset.isel(
