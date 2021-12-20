@@ -29,7 +29,7 @@ ibm:
     horzdiff_type: smagorinsky
     horzdiff_max: 1
     horzdiff_min: 0
-    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze'
+    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze', 'costal_diffusion'
 
 particle_release:
     variables: [release_time, X, Y, Z, group_id]

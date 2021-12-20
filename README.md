@@ -82,6 +82,8 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
+**Version 1.5.10** (December 2021): Additions to the `chemicals` module
+
 **Version 1.5.9** (November 2021): Corrections to `release` module
 
 **Version 1.5.8** (September 2021): Added heterogeneous diffusion to `chemicals` module.

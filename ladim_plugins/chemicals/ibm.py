@@ -34,6 +34,8 @@ class IBM:
 
         if self.land_collision == "reposition":
             self.reposition()
+        elif self.land_collision == "coastal_diffusion":
+            self.coastal_diffusion()
 
         self.advect()
 
@@ -160,3 +162,13 @@ class IBM:
         self.x = self.state.X
         self.y = self.state.Y
         self.pid = self.state.pid
+
+    def coastal_diffusion(self):
+        # If particles are close to coast, reposition them within the cell
+        x, y, pid = self.state.X, self.state.Y, self.state.pid
+        is_coastal = self.grid.grid.is_close_to_land(x, y)
+        num_coastal = np.count_nonzero(is_coastal)
+        x_new = np.round(x[is_coastal]) - 0.5 + np.random.rand(num_coastal)
+        y_new = np.round(y[is_coastal]) - 0.5 + np.random.rand(num_coastal)
+        self.state['X'][is_coastal] = x_new
+        self.state['Y'][is_coastal] = y_new
