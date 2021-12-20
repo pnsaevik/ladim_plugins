@@ -232,6 +232,10 @@ class Grid:
         i_new, j_new = nearest_unmasked(np.logical_not(self.M), I, J)
         return i_new, j_new
 
+    def is_close_to_land(self, X, Y):
+        I = X - self.i0
+        J = Y - self.j0
+        return is_close_to_land(self.M, I, J)
 
 
 # -----------------------------------------------
@@ -974,3 +978,16 @@ def nearest_unmasked(mask, i, j):
     j_close = j_neigh[idx, np.arange(len(idx))]
     
     return i_close, j_close
+
+
+def is_close_to_land(mask, i, j):
+    i_center = np.int32(np.round(i))
+    j_center = np.int32(np.round(j))
+    is_land = ~np.array(mask, dtype=bool)
+
+    i_stencil = np.array([-1, 0, 1, 1, 1, 0, -1, -1])[:, np.newaxis]
+    j_stencil = np.array([-1, -1, -1, 0, 1, 1, 1, 0])[:, np.newaxis]
+    i_around = np.minimum(mask.shape[1] - 1, np.maximum(0, i_center + i_stencil))
+    j_around = np.minimum(mask.shape[0] - 1, np.maximum(0, j_center + j_stencil))
+    is_land_around = is_land[j_around, i_around]
+    return np.any(is_land_around, axis=0)
