@@ -52,6 +52,36 @@ class Test_nearest_unmasked:
         assert jj.tolist() == [1, 1, 0, 0, 0, 0, 2]
 
 
+class Test_is_close_to_land:
+    def test_correct_when_all_land(self):
+        mask = np.zeros((4, 3))
+        i = np.array([1, 1, 2])
+        j = np.array([2, 3, 3])
+        isclose = gridforce.is_close_to_land(mask, i, j)
+        assert isclose.tolist() == [True, True, True]
+
+    def test_correct_when_all_sea(self):
+        mask = np.ones((4, 3))
+        i = np.array([1, 1, 2])
+        j = np.array([2, 3, 3])
+        isclose = gridforce.is_close_to_land(mask, i, j)
+        assert isclose.tolist() == [False, False, False]
+
+    def test_correct_when_south_edge(self):
+        mask_south = np.array([[0, 0, 0, 0], [1, 1, 1, 1], [1, 1, 1, 1]])
+        i = np.array([0, 1, 2])
+        j = np.array([0, 1, 2])
+        isclose = gridforce.is_close_to_land(mask_south, i, j)
+        assert isclose.tolist() == [True, True, False]
+
+    def test_correct_when_west_edge(self):
+        mask_west = np.array([[0, 1, 1, 1], [0, 1, 1, 1], [0, 1, 1, 1]])
+        i = np.array([0, 1, 2, 3])
+        j = np.array([0, 1, 2, 2])
+        isclose = gridforce.is_close_to_land(mask_west, i, j)
+        assert isclose.tolist() == [True, True, False, False]
+
+
 class Test_ibm_land_collision:
     @pytest.fixture()
     def state(self, chem_config, chem_grid):
