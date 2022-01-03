@@ -7,21 +7,21 @@ import pytest
 class Test_light:
     def test_changes_with_latitude(self):
         Eb = utils.light(time='2000-01-01T12', lon=5, lat=[0, 60])
-        assert Eb.tolist() == [1500.0520471376183, 1484.063211499949]
+        assert Eb.round(1).tolist() == [1500.1, 1484.1]
 
     def test_changes_with_time(self):
-        Eb_1 = utils.light(time='2000-01-01T12', lon=5, lat=60)
+        Eb_1 = utils.light(time='2000-01-01T12', lon=5, lat=60).round(1)
         Eb_2 = utils.light(time='2000-01-01T00', lon=5, lat=60)
-        assert [Eb_1, Eb_2] == [1484.063211499949, 1.15e-05]
+        assert [Eb_1, Eb_2] == [1484.1, 1.15e-05]
 
     def test_changes_with_date(self):
-        Eb_1 = utils.light(time='2000-01-01T12', lon=5, lat=60)
-        Eb_2 = utils.light(time='2000-06-01T12', lon=5, lat=60)
-        assert [Eb_1, Eb_2] == [1484.063211499949, 1502.4089323926253]
+        Eb_1 = utils.light(time='2000-01-01T12', lon=5, lat=60).round(1)
+        Eb_2 = utils.light(time='2000-06-01T12', lon=5, lat=60).round(1)
+        assert [Eb_1, Eb_2] == [1484.1, 1502.4]
 
     def test_changes_with_depth(self):
         Eb = utils.light(time='2000-01-01T12', lon=5, lat=60, depth=np.array([0, 5, 10]))
-        assert Eb.tolist() == [1484.063211499949, 545.9563449096972, 200.84611506938265]
+        assert Eb.round(1).tolist() == [1484.1, 546.0, 200.8]
 
 
 class Test_density:
@@ -127,10 +127,10 @@ class Test_ladim_raster:
     def test_adds_area_info_if_not_present(self, ladim_dset, wgs84_dset):
         raster = utils.ladim_raster(ladim_dset, wgs84_dset)
 
-        assert raster.cell_area.values.tolist() == [
-            [6190827534.65317, 6190827534.65317],
-            [6003046562.36359, 6003046562.36359],
-            [5813411740.18686, 5813411740.18686],
+        assert raster.cell_area.values.round(1).tolist() == [
+            [6190827534.7, 6190827534.7],
+            [6003046562.4, 6003046562.4],
+            [5813411740.2, 5813411740.2],
         ]
 
     def test_can_use_weights(self, ladim_dset, wgs84_dset):
