@@ -27,10 +27,18 @@ class IBM:
                 logging.warning('Possible unstable vertical diffusion scheme')
                 logging.warning('Reduce time step, increase sampling distance or limit the diffusion coefficient')
 
+        # Animation
+        self.animation = dict()
+        if config['ibm'].get('animate', False):
+            self.animation_init()
+
     def update_ibm(self, grid, state, forcing):
         self.grid = grid
         self.state = state
         self.forcing = forcing
+
+        if self.animation:
+            self.animation_update()
 
         if self.land_collision == "reposition":
             self.reposition()
@@ -172,3 +180,35 @@ class IBM:
         y_new = np.round(y[is_coastal]) - 0.5 + np.random.rand(num_coastal)
         self.state['X'][is_coastal] = x_new
         self.state['Y'][is_coastal] = y_new
+
+    def animation_init(self):
+        from matplotlib import pyplot as plt
+        fig, ax = plt.subplots()
+        self.animation['fig'] = fig
+        self.animation['ax'] = ax
+        plt.ion()
+        fig.show()
+
+    def animation_init_land(self):
+        if 'land' in self.animation:
+            return
+
+        grid = self.grid
+        ax = self.animation['ax']
+        land_data = grid.grid.M
+        x = np.arange(land_data.shape[1] + 1) + .5
+        y = np.arange(land_data.shape[0] + 1) + .5
+        self.animation['land'] = ax.pcolormesh(x, y, land_data)
+        self.animation['dots'] = ax.plot([1], [1], 'r.')[0]
+
+    def animation_update(self):
+        self.animation_init_land()
+
+        dots = self.animation['dots']
+        dots.set_xdata(self.state.X)
+        dots.set_ydata(self.state.Y)
+
+        from matplotlib import pyplot as plt
+        plt.pause(0.01)
+
+        pass

@@ -677,3 +677,138 @@ class Test_horzdiff:
 
         assert np.all(chem_grid.ingrid(state.X, state.Y))
         assert 0 < state.alive.sum() < N
+
+
+class Test_accumulation:
+    @pytest.fixture()
+    def force_dset(self):
+        from pathlib import Path
+        import xarray as xr
+        fname = Path(__file__).parent / 'forcing.nc'
+        return xr.load_dataset(fname)
+
+    @pytest.fixture()
+    def release_file(self, force_dset):
+
+        # Create mesh of particles
+        xvec = np.arange(1, 13, .1)
+        yvec = np.arange(1, 8, .1)
+        zvec = np.arange(1, 2, 1)
+        z, y, x = np.meshgrid(zvec, yvec, xvec, indexing='ij')
+        z = z.ravel()
+        y = y.ravel()
+        x = x.ravel()
+
+        # Remove land particles
+        is_water = force_dset.mask_rho.values.astype(bool)
+        particle_is_water = is_water[np.int32(y.round()), np.int32(x.round())]
+        z = z[particle_is_water]
+        y = y[particle_is_water]
+        x = x[particle_is_water]
+
+        # Write particle file
+        import tempfile
+        import pandas as pd
+        from pathlib import Path
+        fname = Path(tempfile.tempdir) / "test_accumulation_release_file.rls"
+        df = pd.DataFrame(dict(time='2015-09-07T01:00:00', x=x, y=y, z=z))
+        df.to_csv(fname, sep='\t', index=False, header=False)
+        yield str(fname)
+        fname.unlink(missing_ok=True)
+
+    @pytest.fixture()
+    def out_file(self):
+        from pathlib import Path
+        return str(Path(__file__).parent / "test_chemicals_ladim_out_file.nc")
+
+    @pytest.fixture()
+    def ladimconf(self, release_file, out_file):
+        import io
+        return io.StringIO(f"""
+
+time_control:
+    # Start and stop of simulation
+    start_time     : 2015-09-07 01:00:00
+    stop_time      : 2015-09-07 03:00:00
+
+
+files:
+    particle_release_file : {release_file}
+    output_file           : {out_file}
+
+
+gridforce:
+    # Module name is mandatory.
+    # The other items are module dependent
+    module: ladim_plugins.chemicals
+    input_file: forcing.nc  # Use wildcards (*) to select a range of files
+    ibm_forcing:
+    - AKs
+
+
+ibm:
+    module: ladim_plugins.chemicals
+    vertical_mixing: 0.000010  # Scalar [m2/s] or variable name
+    land_collision: coastal_diffusion  # Alternatives: 'reposition' (default), 'freeze', 'costal_diffusion'
+    animate: true
+
+particle_release:
+    variables: [release_time, X, Y, Z]
+    release_time: time   # np.datetime64[s]
+
+    # Mark variables as time independent
+    particle_variables: [release_time]
+
+
+output_variables:
+    # Frequency of output
+    outper: [1, h]
+
+    # Variables included in output
+    particle: [release_time]
+    instance: [pid, X, Y, Z]
+
+
+    # --- Output format for standard variables ---
+
+    # Output format for the particle release time
+    release_time:
+        ncformat: f8
+        long_name: particle release time
+        units: seconds since reference_time
+
+    # Output format for the particle identifier
+    pid:
+        ncformat: i4
+        long_name: particle identifier
+
+    # Output format for the X coordinate
+    X:
+        ncformat: f4
+        long_name: particle X-coordinate
+
+    # Output format for the Y coordinate
+    Y:
+        ncformat: f4
+        long_name: particle Y-coordinate
+
+    # Output format for the particle depth
+    Z:
+        ncformat: f4
+        long_name: particle depth
+        standard_name: depth_below_surface
+        units: m
+        positive: down
+
+
+numerics:
+    # Model time step
+    dt: [120, s]     # Format = [value, unit]
+    # Advection method, EF, RK2, or RK4
+    advection: RK4
+    diffusion: 0    # [m/s**2]
+        """)
+
+    def test_run(self, ladimconf):
+        import ladim
+        ladim.main(ladimconf)
