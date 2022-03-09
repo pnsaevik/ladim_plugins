@@ -1,18 +1,19 @@
 language: python
+
 python:
-- "3.6"
-- "3.7"
 - "3.8"
 - "3.9"
 
-install:
+before_install:
   - python --version
   - pip --version
   - pip install --upgrade setuptools numpy
   - pip install typing-extensions
   - pip install git+https://github.com/bjornaa/ladim.git
+
+install:
   - pip install .
   - pip list
 
 script:
-  - pytest -Wignore --pyargs ladim_plugins
+  - pytest -Wignore
