@@ -14,11 +14,12 @@ Name                                                   | Description
 ------------------------------------------------------ | ------------------
 [chemicals](ladim_plugins/chemicals)         | Passive tracer    
 [egg](ladim_plugins/egg)                     | Buoyant fish eggs 
-[salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
-[sedimentation](ladim_plugins/sedimentation) | Sinking particles 
 [lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
-[release](ladim_plugins/release)             | General module for creating release files
 [nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
+[release](ladim_plugins/release)             | General module for creating release files
+[salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
+[sandeel](ladim_plugins/sandeel)             | Sand eel eggs and larvae
+[sedimentation](ladim_plugins/sedimentation) | Sinking particles 
 [utils](ladim_plugins/utils)                 | General utility functions for IBMs
 
 
