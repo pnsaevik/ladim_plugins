@@ -13,35 +13,32 @@ def is_legacy():
     return False
 
 
-@pytest.fixture(scope='module')
-def chem_config():
+@pytest.fixture
+def chem_modules():
     from ladim_plugins.tests.test_examples import get_config
     from ladim.configuration import configure
-    conf = configure(get_config('chemicals'))
-    del conf['ibm']['horzdiff_type']
-    return conf
-
-
-@pytest.fixture(scope='module')
-def chem_grid(chem_config):
     from ladim.gridforce import Grid
-    if is_legacy():
-        return Grid(chem_config)
-    else:
-        return Grid(dict(config=chem_config))
-
-
-@pytest.fixture(scope='module')
-def chem_forcing(chem_config, chem_grid):
     from ladim.gridforce import Forcing
+    from ladim.state import State
+
+    conf_str = get_config('chemicals')
+    conf = configure(conf_str)
+    del conf['ibm']['horzdiff_type']
+
+    modules = dict()
     if is_legacy():
-        return Forcing(chem_config, chem_grid)
+        modules['grid'] = Grid(conf)
+        modules['forcing'] = Forcing(conf, modules['grid'])
+        modules['state'] = State(conf, modules['grid'])
+        modules['ibm'] = IBM(conf)
     else:
-        modules = dict(
-            config=chem_config,
-            grid=chem_grid,
-        )
-        return Forcing(modules)
+        from ladim.ibms import legacy
+        modules['grid'] = Grid(modules, **conf['grid'])
+        modules['forcing'] = Forcing(modules, **conf['forcing'])
+        modules['state'] = State(modules, **conf['state'])
+        modules['ibm'] = legacy.Legacy_IBM(modules, **conf['ibm']).ibm
+
+    return modules
 
 
 class Test_nearest_unmasked:
@@ -101,21 +98,12 @@ class Test_is_close_to_land:
 
 
 class Test_ibm_land_collision:
-    @pytest.fixture()
-    def state(self, chem_config, chem_grid):
-        from ladim.state import State
-        if is_legacy():
-            return State(chem_config, chem_grid)
-        else:
-            modules = dict(grid=chem_grid, config=chem_config)
-            return State(modules)
-
-    @pytest.fixture()
-    def ibm_chemicals(self, chem_config):
-        return IBM(chem_config)
-
-    def test_land_collision(self, ibm_chemicals, chem_grid, state, chem_forcing):
+    def test_land_collision(self, chem_modules):
         np.random.seed(0)
+        state = chem_modules['state']
+        chem_grid = chem_modules['grid']
+        chem_forcing = chem_modules['forcing']
+        ibm_chemicals = chem_modules['ibm']
 
         state.X = np.float32([1, 1, 1])
         state.Y = np.float32([1, 1, 1])
@@ -395,7 +383,7 @@ class Test_divergence:
         if is_legacy():
             tracker = ladim.tracker.Tracker(config)
         else:
-            tracker = ladim.tracker.Tracker(dict(config=config))
+            tracker = ladim.tracker.Tracker(dict(), **config)
         newstate = state.copy()
         tracker.move_particles(forcing._grid, forcing, newstate)
         if ibm is not None:
@@ -656,23 +644,23 @@ class Test_vertdiff:
 
 
 class Test_horzdiff:
-    def test_returns_float_vector(self, chem_forcing):
+    def test_returns_float_vector(self, chem_modules):
         x = np.zeros(5)
         y = np.zeros(5)
         z = np.zeros(5)
 
-        a = chem_forcing.forcing.horzdiff(x, y, z)
+        a = chem_modules['forcing'].forcing.horzdiff(x, y, z)
         assert len(a) == len(x)
 
-    def test_no_error_when_outside_grid(self, chem_forcing):
+    def test_no_error_when_outside_grid(self, chem_modules):
         x = np.zeros(5) - 1
         y = np.zeros(5) + 100
         z = (np.arange(5) - 1) * 100
 
-        a = chem_forcing.forcing.horzdiff(x, y, z)
+        a = chem_modules['forcing'].forcing.horzdiff(x, y, z)
         assert len(a) == len(x)
 
-    def test_kill_particles_that_leaves_grid(self, chem_forcing, chem_grid):
+    def test_kill_particles_that_leaves_grid(self, chem_modules):
         np.random.seed(0)
 
         dt = 1e6  # Large timestep to ensure some particles diffuse away
@@ -698,7 +686,7 @@ class Test_horzdiff:
         state.Z = np.ones(N)
         state.alive = np.ones(N, dtype=bool)
 
-        ibm.update_ibm(chem_grid, state, chem_forcing)
+        ibm.update_ibm(chem_modules['grid'], state, chem_modules['forcing'])
 
-        assert np.all(chem_grid.ingrid(state.X, state.Y))
+        assert np.all(chem_modules['grid'].ingrid(state.X, state.Y))
         assert 0 < state.alive.sum() < N
