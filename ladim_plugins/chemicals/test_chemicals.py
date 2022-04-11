@@ -5,6 +5,14 @@ from contextlib import contextmanager
 from typing import Any
 
 
+def is_legacy():
+    try:
+        import ladim.timestepper
+    except ModuleNotFoundError:
+        return True
+    return False
+
+
 @pytest.fixture(scope='module')
 def chem_config():
     from ladim_plugins.tests.test_examples import get_config
@@ -17,13 +25,23 @@ def chem_config():
 @pytest.fixture(scope='module')
 def chem_grid(chem_config):
     from ladim.gridforce import Grid
-    return Grid(chem_config)
+    if is_legacy():
+        return Grid(chem_config)
+    else:
+        return Grid(dict(config=chem_config))
 
 
 @pytest.fixture(scope='module')
 def chem_forcing(chem_config, chem_grid):
     from ladim.gridforce import Forcing
-    return Forcing(chem_config, chem_grid)
+    if is_legacy():
+        return Forcing(chem_config, chem_grid)
+    else:
+        modules = dict(
+            config=chem_config,
+            grid=chem_grid,
+        )
+        return Forcing(modules)
 
 
 class Test_nearest_unmasked:
@@ -86,7 +104,11 @@ class Test_ibm_land_collision:
     @pytest.fixture()
     def state(self, chem_config, chem_grid):
         from ladim.state import State
-        return State(chem_config, chem_grid)
+        if is_legacy():
+            return State(chem_config, chem_grid)
+        else:
+            modules = dict(grid=chem_grid, config=chem_config)
+            return State(modules)
 
     @pytest.fixture()
     def ibm_chemicals(self, chem_config):
@@ -370,7 +392,10 @@ class Test_divergence:
             ibm_variables=[],
             dt=Test_divergence.CONST_DT,
         )
-        tracker = ladim.tracker.Tracker(config)
+        if is_legacy():
+            tracker = ladim.tracker.Tracker(config)
+        else:
+            tracker = ladim.tracker.Tracker(dict(config=config))
         newstate = state.copy()
         tracker.move_particles(forcing._grid, forcing, newstate)
         if ibm is not None:
