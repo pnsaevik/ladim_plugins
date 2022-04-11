@@ -1,6 +1,7 @@
-# Sand eel egg and larva module
+# Sand eel module
 
-The module represents eggs and larvae of sand eel.
+The module represents larvae of sand eel. This is a simple module, only random
+vertical movement is implemented.
 
 
 ## Usage

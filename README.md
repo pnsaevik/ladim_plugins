@@ -18,7 +18,7 @@ Name                                                   | Description
 [nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
 [release](ladim_plugins/release)             | General module for creating release files
 [salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
-[sandeel](ladim_plugins/sandeel)             | Sand eel eggs and larvae
+[sandeel](ladim_plugins/sandeel)             | Sand eel larvae
 [sedimentation](ladim_plugins/sedimentation) | Sinking particles 
 [utils](ladim_plugins/utils)                 | General utility functions for IBMs
 
@@ -82,6 +82,8 @@ contents of `out.nc` / `out.rls`.
 
 
 ## History
+
+**Version 1.6.0** (April 2022): Added `sandeel` module
 
 **Version 1.5.10** (December 2021): Additions to the `chemicals` module
 
