@@ -1,6 +1,8 @@
 import numpy as np
 import typing
 
+import pandas as pd
+
 
 def make_release(config, fname=None):
     config = load_config(config)
@@ -10,7 +12,6 @@ def make_release(config, fname=None):
         np.random.seed(config['seed'])
 
     # Create release params
-    import pandas as pd
     frames = [pd.DataFrame(make_single_release(c)) for c in config['groups']]
     frame = pd.concat(frames).fillna(0)
 
@@ -148,11 +149,18 @@ def get_location_offset(loc_conf, num):
 
 
 def get_polygons_from_feature_geometry(geom):
+    def remove_closing_coordinate(c):
+        return c[:-1, :]
+
     crd = geom['coordinates']
     if geom['type'].upper() == 'MULTIPOLYGON':
-        return [np.array(p[0]) for p in crd]
+        coords = [np.array(p[0]) for p in crd]
     elif geom['type'].upper() == 'POLYGON':
-        return [np.array(crd[0])]
+        coords = [np.array(crd[0])]
+    else:
+        raise ValueError(f'Unknown geom type: "{geom["type"]}"')
+
+    return [remove_closing_coordinate(c) for c in coords]
 
 
 def get_location_file(file, num):
@@ -162,19 +170,36 @@ def get_location_file(file, num):
     if isinstance(data, dict):
         data = [data]
 
-    def get_points_from_layer(layer):
-        feats = layer['features']
-        return [p for f in feats for p in get_points_from_feature(f)]
+    # Pick the first layer in the data
+    layer = data[0]
 
-    def get_points_from_feature(feature):
-        return get_polygons_from_feature_geometry(feature['geometry'])
+    # A list of all geojson features in the layer.
+    feats = layer['features']
 
-    points = get_points_from_layer(data[0])
-    plon = [p[:-1, 0] for p in points]
-    plat = [p[:-1, 1] for p in points]
+    # Create table of all feature properties. One row per feature.
+    att_by_feature = pd.DataFrame([pd.Series(f.get('properties', {})) for f in feats])
 
+    # Create flat list of all polygon coordinates, with corresponding feature id
+    # - Each polygon is a list of multiple coordinates
+    # - Each coordinate is two values (x, y)
+    polys_flat = [
+        (feature_id, poly)
+        for feature_id, f in enumerate(feats)
+        for poly in get_polygons_from_feature_geometry(f['geometry'])
+    ]
+
+    # Create new property table indexed by polygon number instead of feature number
+    att_by_poly = att_by_feature.loc[[i for i, _ in polys_flat]].reset_index(drop=True)
+
+    plon = [p[:, 0] for _, p in polys_flat]
+    plat = [p[:, 1] for _, p in polys_flat]
     slat, slon, polynum = latlon_from_poly(plat, plon, num)
-    return slon.tolist(), slat.tolist(), {}
+
+    # Create new property table indexed by particle instead of polygon number
+    att_by_particle = att_by_poly.loc[polynum].reset_index(drop=True)
+    attrs = att_by_particle.to_dict(orient='list')
+
+    return slon.tolist(), slat.tolist(), attrs
 
 
 def date_range(date_span, num):
@@ -459,7 +484,6 @@ def main():
     
     """)
     elif len(sys.argv) == 2:
-        import pandas as pd
         out = make_release(sys.argv[1])
         print(pd.DataFrame(out))
     else:
