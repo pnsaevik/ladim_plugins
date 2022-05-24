@@ -325,29 +325,11 @@ def point_inside_polygon(coords):
 
 
 def triangulate_nonconvex_multi(coords):
-    import triangle as tr
+    multi_tri = [(i, triangulate_nonconvex(c)) for i, c in enumerate(coords)]
+    tri_coords_flat = np.concatenate([c for _, c in multi_tri])
+    tri_idx_flat = np.concatenate([[i] * len(c) for i, c in multi_tri])
 
-    # Build flat list of coordinates
-    coords_flat = np.concatenate(coords)
-    inside_point = [point_inside_polygon(c) for c in coords]
-
-    # Build list of segments for multipolygons
-    # Multipolygon [[0, 1, 2, 3], [4, 5, 6]] is encoded as
-    # segments = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 4]]
-    start = np.arange(len(coords_flat))
-    stop = start + 1
-    coordpos = np.cumsum([0] + [len(c) for c in coords])
-    stop[coordpos[1:] - 1] = coordpos[:-1]
-    segments = np.stack((start, stop)).T
-    regions = [[x, y, i + 1, 0] for i, (x, y) in enumerate(inside_point)]
-
-    # Triangulate and parse output
-    trpoly = dict(vertices=coords_flat, segments=segments, regions=regions)
-    trdata = tr.triangulate(trpoly, 'pA')
-    coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
-    polynum = trdata['triangle_attributes'].ravel().astype('i4') - 1
-
-    return np.array(coords), polynum
+    return tri_coords_flat, tri_idx_flat
 
 
 def triangle_areas(triangles):
