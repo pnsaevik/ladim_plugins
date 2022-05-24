@@ -94,30 +94,45 @@ def make_single_release(conf):
     # Compute parameter values
     num = conf['num']
     release_time = date_range(conf['date'], num)
-    lon, lat = get_location(conf['location'], num)
+    loc_attrs = get_location(conf['location'], num)
     attrs = get_attrs(attrs_all, num)
 
     # Assemble return value
-    r = dict(date=release_time, longitude=lon, latitude=lat)
-    return {**r, **attrs}
+    r = dict(date=release_time)
+    return {**r, **loc_attrs, **attrs}
 
 
 def get_location(loc_conf, num):
+    # If file name: Assume geojson file
     if isinstance(loc_conf, str):
         with open(loc_conf, 'r', encoding='utf-8') as file:
-            return get_location_file(file, num)
+            lon, lat = get_location_file(file, num)
+
+    # If file object: Assume geojson file
     elif hasattr(loc_conf, 'read'):
-        return get_location_file(loc_conf, num)
+        lon, lat = get_location_file(loc_conf, num)
 
-    lon, lat = loc_conf
+    # If dict: Assume center/offset config
+    elif isinstance(loc_conf, dict) and 'offset' in loc_conf:
+        lon, lat = get_location_offset(loc_conf, num)
 
-    if isinstance(loc_conf, dict) and 'offset' in loc_conf:
-        return get_location_offset(loc_conf, num)
-    elif not hasattr(lon, '__len__'):
-        return [lon] * num, [lat] * num
+    # If list of two elements: Assume this is lon/lat
     else:
-        slat, slon = latlon_from_poly(lat, lon, num)
-        return slon.tolist(), slat.tolist()
+        lon_spec, lat_spec = loc_conf
+
+        # If single values, assume this is a point specification
+        if not hasattr(lon_spec, '__len__'):
+            lon = [lon_spec] * num
+            lat = [lat_spec] * num
+
+        # Otherwise, assume this is a polygon specification
+        else:
+            np_lat, np_lon = latlon_from_poly(lat_spec, lon_spec, num)
+            lon = np_lon.tolist()
+            lat = np_lat.tolist()
+
+    # Finally, assemble return value
+    return dict(longitude=lon, latitude=lat)
 
 
 def get_location_offset(loc_conf, num):
