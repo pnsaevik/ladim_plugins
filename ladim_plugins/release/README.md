@@ -41,5 +41,7 @@ properly (Pål Næverlid Sævik, Nov 2021)
 
 Allow attributes generated from statistical distributions (Pål Næverlid Sævik,
 Apr 2021)
+
+Add attributes from geojson files (Pål Næverlid Sævik, May 2022)
  
 Created by Pål Næverlid Sævik (2020).
