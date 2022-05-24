@@ -103,14 +103,16 @@ def make_single_release(conf):
 
 
 def get_location(loc_conf, num):
+    loc_attrs = {}
+
     # If file name: Assume geojson file
     if isinstance(loc_conf, str):
         with open(loc_conf, 'r', encoding='utf-8') as file:
-            lon, lat = get_location_file(file, num)
+            lon, lat, loc_attrs = get_location_file(file, num)
 
     # If file object: Assume geojson file
     elif hasattr(loc_conf, 'read'):
-        lon, lat = get_location_file(loc_conf, num)
+        lon, lat, loc_attrs = get_location_file(loc_conf, num)
 
     # If dict: Assume center/offset config
     elif isinstance(loc_conf, dict) and 'offset' in loc_conf:
@@ -132,7 +134,7 @@ def get_location(loc_conf, num):
             lat = np_lat.tolist()
 
     # Finally, assemble return value
-    return dict(longitude=lon, latitude=lat)
+    return {**dict(longitude=lon, latitude=lat), **loc_attrs}
 
 
 def get_location_offset(loc_conf, num):
@@ -166,7 +168,7 @@ def get_location_file(file, num):
     plat = [p[:-1, 1] for p in points]
 
     slat, slon = latlon_from_poly(plat, plon, num)
-    return slon.tolist(), slat.tolist()
+    return slon.tolist(), slat.tolist(), {}
 
 
 def date_range(date_span, num):
