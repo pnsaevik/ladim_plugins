@@ -327,12 +327,14 @@ def triangle_areas(triangles):
 
 def get_polygon_sample_convex(coords, num):
     triangles = triangulate(coords)
-    return get_polygon_sample_triangles(triangles, num)
+    x, y, _ = get_polygon_sample_triangles(triangles, num)
+    return x, y
 
 
 def get_polygon_sample_nonconvex(coords, num):
     triangles = triangulate_nonconvex(coords)
-    return get_polygon_sample_triangles(triangles, num)
+    x, y, _ = get_polygon_sample_triangles(triangles, num)
+    return x, y
 
 
 def get_polygon_sample_triangles(triangles, num):
@@ -348,7 +350,7 @@ def get_polygon_sample_triangles(triangles, num):
     (x1, x2, x3), (y1, y2, y3) = triangles[triangle_num].T
     x = (x2 - x1) * s + (x3 - x1) * t + x1
     y = (y2 - y1) * s + (y3 - y1) * t + y1
-    return x, y
+    return x, y, triangle_num
 
 
 def is_convex(coords):
@@ -404,7 +406,8 @@ def latlon_from_poly(lat, lon, n):
 
     coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
     triangles, polynum = triangulate_nonconvex_multi(coords)
-    return get_polygon_sample_triangles(np.array(triangles), n)
+    lat, lon, triangle_num = get_polygon_sample_triangles(np.array(triangles), n)
+    return lat, lon
 
 
 def main():
