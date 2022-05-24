@@ -1,6 +1,8 @@
 import numpy as np
 import typing
 
+import pandas as pd
+
 
 def make_release(config, fname=None):
     config = load_config(config)
@@ -10,7 +12,6 @@ def make_release(config, fname=None):
         np.random.seed(config['seed'])
 
     # Create release params
-    import pandas as pd
     frames = [pd.DataFrame(make_single_release(c)) for c in config['groups']]
     frame = pd.concat(frames).fillna(0)
 
@@ -94,30 +95,47 @@ def make_single_release(conf):
     # Compute parameter values
     num = conf['num']
     release_time = date_range(conf['date'], num)
-    lon, lat = get_location(conf['location'], num)
+    loc_attrs = get_location(conf['location'], num)
     attrs = get_attrs(attrs_all, num)
 
     # Assemble return value
-    r = dict(date=release_time, longitude=lon, latitude=lat)
-    return {**r, **attrs}
+    r = dict(date=release_time)
+    return {**r, **loc_attrs, **attrs}
 
 
 def get_location(loc_conf, num):
+    loc_attrs = {}
+
+    # If file name: Assume geojson file
     if isinstance(loc_conf, str):
         with open(loc_conf, 'r', encoding='utf-8') as file:
-            return get_location_file(file, num)
+            lon, lat, loc_attrs = get_location_file(file, num)
+
+    # If file object: Assume geojson file
     elif hasattr(loc_conf, 'read'):
-        return get_location_file(loc_conf, num)
+        lon, lat, loc_attrs = get_location_file(loc_conf, num)
 
-    lon, lat = loc_conf
+    # If dict: Assume center/offset config
+    elif isinstance(loc_conf, dict) and 'offset' in loc_conf:
+        lon, lat = get_location_offset(loc_conf, num)
 
-    if isinstance(loc_conf, dict) and 'offset' in loc_conf:
-        return get_location_offset(loc_conf, num)
-    elif not hasattr(lon, '__len__'):
-        return [lon] * num, [lat] * num
+    # If list of two elements: Assume this is lon/lat
     else:
-        slat, slon = latlon_from_poly(lat, lon, num)
-        return slon.tolist(), slat.tolist()
+        lon_spec, lat_spec = loc_conf
+
+        # If single values, assume this is a point specification
+        if not hasattr(lon_spec, '__len__'):
+            lon = [lon_spec] * num
+            lat = [lat_spec] * num
+
+        # Otherwise, assume this is a polygon specification
+        else:
+            np_lat, np_lon, _ = latlon_from_poly(lat_spec, lon_spec, num)
+            lon = np_lon.tolist()
+            lat = np_lat.tolist()
+
+    # Finally, assemble return value
+    return {**dict(longitude=lon, latitude=lat), **loc_attrs}
 
 
 def get_location_offset(loc_conf, num):
@@ -126,8 +144,23 @@ def get_location_offset(loc_conf, num):
     dlon, dlat = metric_diff_to_degrees(olon, olat, clat)
     plon = clon + np.array(dlon)
     plat = clat + np.array(dlat)
-    slat, slon = latlon_from_poly(plat, plon, num)
+    slat, slon, _ = latlon_from_poly(plat, plon, num)
     return slon.tolist(), slat.tolist()
+
+
+def get_polygons_from_feature_geometry(geom):
+    def remove_closing_coordinate(c):
+        return c[:-1, :]
+
+    crd = geom['coordinates']
+    if geom['type'].upper() == 'MULTIPOLYGON':
+        coords = [np.array(p[0]) for p in crd]
+    elif geom['type'].upper() == 'POLYGON':
+        coords = [np.array(crd[0])]
+    else:
+        raise ValueError(f'Unknown geom type: "{geom["type"]}"')
+
+    return [remove_closing_coordinate(c) for c in coords]
 
 
 def get_location_file(file, num):
@@ -137,21 +170,36 @@ def get_location_file(file, num):
     if isinstance(data, dict):
         data = [data]
 
-    def get_points_from_layer(layer):
-        feats = layer['features']
-        return [p for f in feats for p in get_points_from_feature(f)]
+    # Pick the first layer in the data
+    layer = data[0]
 
-    def get_points_from_feature(feature):
-        geom = feature['geometry']
-        assert geom['type'].upper() == 'MULTIPOLYGON'
-        return [np.array(p[0]) for p in geom['coordinates']]
+    # A list of all geojson features in the layer.
+    feats = layer['features']
 
-    points = get_points_from_layer(data[0])
-    plon = [p[:-1, 0] for p in points]
-    plat = [p[:-1, 1] for p in points]
+    # Create table of all feature properties. One row per feature.
+    att_by_feature = pd.DataFrame([pd.Series(f.get('properties', {})) for f in feats])
 
-    slat, slon = latlon_from_poly(plat, plon, num)
-    return slon.tolist(), slat.tolist()
+    # Create flat list of all polygon coordinates, with corresponding feature id
+    # - Each polygon is a list of multiple coordinates
+    # - Each coordinate is two values (x, y)
+    polys_flat = [
+        (feature_id, poly)
+        for feature_id, f in enumerate(feats)
+        for poly in get_polygons_from_feature_geometry(f['geometry'])
+    ]
+
+    # Create new property table indexed by polygon number instead of feature number
+    att_by_poly = att_by_feature.loc[[i for i, _ in polys_flat]].reset_index(drop=True)
+
+    plon = [p[:, 0] for _, p in polys_flat]
+    plat = [p[:, 1] for _, p in polys_flat]
+    slat, slon, polynum = latlon_from_poly(plat, plon, num)
+
+    # Create new property table indexed by particle instead of polygon number
+    att_by_particle = att_by_poly.loc[polynum].reset_index(drop=True)
+    attrs = att_by_particle.to_dict(orient='list')
+
+    return slon.tolist(), slat.tolist(), attrs
 
 
 def date_range(date_span, num):
@@ -256,11 +304,32 @@ def triangulate_nonconvex(coords):
     return np.array(coords)
 
 
+def point_inside_polygon(coords):
+    # Find a point with minimal xy coordinates. Then the point and its neighbours are
+    # in the convex hull.
+    i = np.lexsort(coords.T)[0]
+
+    # Find the coordinates of the points
+    c1 = coords[i - 1]
+    c2 = coords[i]
+    c3 = coords[i + 1]
+
+    # Find the difference vectors from the central point
+    d21 = c1 - c2
+    d23 = c3 - c2
+
+    # Walk a small fraction along each of the difference vectors to find a point close
+    # to c2 which is still inside the polygon. If the polygon is convex we can choose
+    # to walk any distance up to 0.5.
+    return c2 + 1e-7 * d21 + 1e-7 * d23
+
+
 def triangulate_nonconvex_multi(coords):
     import triangle as tr
 
     # Build flat list of coordinates
     coords_flat = np.concatenate(coords)
+    inside_point = [point_inside_polygon(c) for c in coords]
 
     # Build list of segments for multipolygons
     # Multipolygon [[0, 1, 2, 3], [4, 5, 6]] is encoded as
@@ -270,12 +339,15 @@ def triangulate_nonconvex_multi(coords):
     coordpos = np.cumsum([0] + [len(c) for c in coords])
     stop[coordpos[1:] - 1] = coordpos[:-1]
     segments = np.stack((start, stop)).T
+    regions = [[x, y, i + 1, 0] for i, (x, y) in enumerate(inside_point)]
 
     # Triangulate and parse output
-    trpoly = dict(vertices=coords_flat, segments=segments)
-    trdata = tr.triangulate(trpoly, 'p')
+    trpoly = dict(vertices=coords_flat, segments=segments, regions=regions)
+    trdata = tr.triangulate(trpoly, 'pA')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
-    return np.array(coords)
+    polynum = trdata['triangle_attributes'].ravel().astype('i4') - 1
+
+    return np.array(coords), polynum
 
 
 def triangle_areas(triangles):
@@ -286,12 +358,14 @@ def triangle_areas(triangles):
 
 def get_polygon_sample_convex(coords, num):
     triangles = triangulate(coords)
-    return get_polygon_sample_triangles(triangles, num)
+    x, y, _ = get_polygon_sample_triangles(triangles, num)
+    return x, y
 
 
 def get_polygon_sample_nonconvex(coords, num):
     triangles = triangulate_nonconvex(coords)
-    return get_polygon_sample_triangles(triangles, num)
+    x, y, _ = get_polygon_sample_triangles(triangles, num)
+    return x, y
 
 
 def get_polygon_sample_triangles(triangles, num):
@@ -307,7 +381,7 @@ def get_polygon_sample_triangles(triangles, num):
     (x1, x2, x3), (y1, y2, y3) = triangles[triangle_num].T
     x = (x2 - x1) * s + (x3 - x1) * t + x1
     y = (y2 - y1) * s + (y3 - y1) * t + y1
-    return x, y
+    return x, y, triangle_num
 
 
 def is_convex(coords):
@@ -362,8 +436,9 @@ def latlon_from_poly(lat, lon, n):
         lon = [lon]
 
     coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
-    triangles = triangulate_nonconvex_multi(coords)
-    return get_polygon_sample_triangles(np.array(triangles), n)
+    triangles, polynum = triangulate_nonconvex_multi(coords)
+    lat, lon, triangle_num = get_polygon_sample_triangles(np.array(triangles), n)
+    return lat, lon, polynum[triangle_num]
 
 
 def main():
@@ -409,7 +484,6 @@ def main():
     
     """)
     elif len(sys.argv) == 2:
-        import pandas as pd
         out = make_release(sys.argv[1])
         print(pd.DataFrame(out))
     else:

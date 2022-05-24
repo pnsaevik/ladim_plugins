@@ -332,6 +332,28 @@ class Test_make_release:
         seconds = (dates - dates[0]) / np.timedelta64(1, 's')
         assert all(np.diff(seconds) >= 0)
 
+    def test_adds_attributes_within_geojson_file(self, conf0):
+        geojson = """
+        {"type": "FeatureCollection", "name": "test",
+        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}},
+        "features": [
+        {"type": "Feature", "properties": { "cage_id": 1 }, "geometry": {"type": "MultiPolygon",
+        "coordinates": [[ [ [ 0, 0 ], [ 0, 1 ], [ 1, 1 ], [ 1, 0 ], [ 0, 0 ] ] ],
+                        [ [ [ 10, 10 ], [ 11, 10 ], [ 11, 11], [ 10, 10 ] ] ]] }},
+        {"type": "Feature", "properties": { "cage_id": 2}, "geometry": {"type": "MultiPolygon",
+        "coordinates": [[ [ [ 2, 4 ], [ 2, 5 ], [ 3, 5 ], [ 3, 4 ], [ 2, 4 ] ] ]] }} ]}
+        """
+
+        import io
+        geojson_file = io.StringIO(geojson)
+
+        conf0['location'] = geojson_file
+        conf0['num'] = 10
+        result = make_release(conf0)
+
+        assert 'cage_id' in result
+        assert np.all(np.isin(result['cage_id'], [1, 2]))
+
 
 class Test_triangulate:
     def test_if_triangle(self):
@@ -530,3 +552,47 @@ class Test_load_config:
             dict(num=1, date=['2000-01-01', '2000-01-02'], location=[5, 9])
         ]
         makrel.load_config(config)
+
+
+class Test_point_inside_polygon:
+    def test_inside_if_clockwise_square(self):
+        coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+        x, y = makrel.point_inside_polygon(coords)
+        assert 0 < x < 1
+        assert 0 < y < 1
+
+    def test_inside_if_counterclockwise_square(self):
+        coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
+        x, y = makrel.point_inside_polygon(coords)
+        assert 0 < x < 1
+        assert 0 < y < 1
+
+
+class Test_get_polygons_from_feature_geometry:
+    def test_correct_number_of_polygons_if_multipolygon(self):
+        feature_geom = {
+            "type": "MultiPolygon",
+            "coordinates": [
+                [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]],
+                [[[10, 10], [11, 10], [11, 11], [10, 10]]],
+                [[[20, 10], [21, 10], [21, 11], [20, 10]]],
+            ],
+        }
+        p = makrel.get_polygons_from_feature_geometry(feature_geom)
+        assert len(p) == 3
+
+    def test_cuts_last_coordinate_if_duplicated(self):
+        feature_geom = {
+            "type": "MultiPolygon",
+            "coordinates": [[[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]]],
+        }
+        p = makrel.get_polygons_from_feature_geometry(feature_geom)
+        assert len(p[0]) == 4
+
+    def test_polygons_and_multipolygons_give_same_output(self):
+        crd = [[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]
+        feature_geom_poly = {"type": "Polygon", "coordinates": [crd]}
+        feature_geom_multi = {"type": "MultiPolygon", "coordinates": [[crd]]}
+        poly = makrel.get_polygons_from_feature_geometry(feature_geom_poly)
+        multi = makrel.get_polygons_from_feature_geometry(feature_geom_multi)
+        assert np.shape(poly) == np.shape(multi)

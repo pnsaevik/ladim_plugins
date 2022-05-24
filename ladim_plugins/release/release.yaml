@@ -50,7 +50,7 @@ groups:
   #       - [-50, 50, 50, -50]  # Polygon X coordinates (metric offset in longitude direction)
   #       - [-50, -50, 50, 50]  # Polygon Y coordinates (metric offset in latitude direction)
 
-  # 5. GIS polygon, in the form of a GeoJSON file (WGS84 projection)
+  # 5. GIS polygon, in the form of a GeoJSON file (WGS84 projection). Properties in the GeoJSON file are included.
   # location: release_area.geojson
 
   # --- Release depth, in meters. Can be either of the following forms: ---
