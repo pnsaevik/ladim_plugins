@@ -129,7 +129,7 @@ def get_location(loc_conf, num):
 
         # Otherwise, assume this is a polygon specification
         else:
-            np_lat, np_lon = latlon_from_poly(lat_spec, lon_spec, num)
+            np_lat, np_lon, _ = latlon_from_poly(lat_spec, lon_spec, num)
             lon = np_lon.tolist()
             lat = np_lat.tolist()
 
@@ -143,7 +143,7 @@ def get_location_offset(loc_conf, num):
     dlon, dlat = metric_diff_to_degrees(olon, olat, clat)
     plon = clon + np.array(dlon)
     plat = clat + np.array(dlat)
-    slat, slon = latlon_from_poly(plat, plon, num)
+    slat, slon, _ = latlon_from_poly(plat, plon, num)
     return slon.tolist(), slat.tolist()
 
 
@@ -167,7 +167,7 @@ def get_location_file(file, num):
     plon = [p[:-1, 0] for p in points]
     plat = [p[:-1, 1] for p in points]
 
-    slat, slon = latlon_from_poly(plat, plon, num)
+    slat, slon, polynum = latlon_from_poly(plat, plon, num)
     return slon.tolist(), slat.tolist(), {}
 
 
@@ -314,7 +314,7 @@ def triangulate_nonconvex_multi(coords):
     trpoly = dict(vertices=coords_flat, segments=segments, regions=regions)
     trdata = tr.triangulate(trpoly, 'pA')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
-    polynum = trdata['triangle_attributes'].ravel().astype('i4')
+    polynum = trdata['triangle_attributes'].ravel().astype('i4') - 1
 
     return np.array(coords), polynum
 
@@ -407,7 +407,7 @@ def latlon_from_poly(lat, lon, n):
     coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
     triangles, polynum = triangulate_nonconvex_multi(coords)
     lat, lon, triangle_num = get_polygon_sample_triangles(np.array(triangles), n)
-    return lat, lon
+    return lat, lon, polynum[triangle_num]
 
 
 def main():
