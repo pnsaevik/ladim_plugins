@@ -308,13 +308,15 @@ def triangulate_nonconvex_multi(coords):
     coordpos = np.cumsum([0] + [len(c) for c in coords])
     stop[coordpos[1:] - 1] = coordpos[:-1]
     segments = np.stack((start, stop)).T
-    regions = [[x, y, i + 10, 0] for i, (x, y) in enumerate(inside_point)]
+    regions = [[x, y, i + 1, 0] for i, (x, y) in enumerate(inside_point)]
 
     # Triangulate and parse output
     trpoly = dict(vertices=coords_flat, segments=segments, regions=regions)
     trdata = tr.triangulate(trpoly, 'pA')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
-    return np.array(coords)
+    polynum = trdata['triangle_attributes'].ravel().astype('i4')
+
+    return np.array(coords), polynum
 
 
 def triangle_areas(triangles):
@@ -401,7 +403,7 @@ def latlon_from_poly(lat, lon, n):
         lon = [lon]
 
     coords = [np.stack((lat_e, lon_e)).T for lat_e, lon_e in zip(lat, lon)]
-    triangles = triangulate_nonconvex_multi(coords)
+    triangles, polynum = triangulate_nonconvex_multi(coords)
     return get_polygon_sample_triangles(np.array(triangles), n)
 
 
