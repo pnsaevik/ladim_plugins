@@ -273,11 +273,32 @@ def triangulate_nonconvex(coords):
     return np.array(coords)
 
 
+def point_inside_polygon(coords):
+    # Find a point with minimal xy coordinates. Then the point and its neighbours are
+    # in the convex hull.
+    i = np.lexsort(coords.T)[0]
+
+    # Find the coordinates of the points
+    c1 = coords[i - 1]
+    c2 = coords[i]
+    c3 = coords[i + 1]
+
+    # Find the difference vectors from the central point
+    d21 = c1 - c2
+    d23 = c3 - c2
+
+    # Walk a small fraction along each of the difference vectors to find a point close
+    # to c2 which is still inside the polygon. If the polygon is convex we can choose
+    # to walk any distance up to 0.5.
+    return c2 + 1e-7 * d21 + 1e-7 * d23
+
+
 def triangulate_nonconvex_multi(coords):
     import triangle as tr
 
     # Build flat list of coordinates
     coords_flat = np.concatenate(coords)
+    inside_point = [point_inside_polygon(c) for c in coords]
 
     # Build list of segments for multipolygons
     # Multipolygon [[0, 1, 2, 3], [4, 5, 6]] is encoded as
@@ -287,10 +308,11 @@ def triangulate_nonconvex_multi(coords):
     coordpos = np.cumsum([0] + [len(c) for c in coords])
     stop[coordpos[1:] - 1] = coordpos[:-1]
     segments = np.stack((start, stop)).T
+    regions = [[x, y, i + 10, 0] for i, (x, y) in enumerate(inside_point)]
 
     # Triangulate and parse output
-    trpoly = dict(vertices=coords_flat, segments=segments)
-    trdata = tr.triangulate(trpoly, 'p')
+    trpoly = dict(vertices=coords_flat, segments=segments, regions=regions)
+    trdata = tr.triangulate(trpoly, 'pA')
     coords = [trdata['vertices'][tidx] for tidx in trdata['triangles']]
     return np.array(coords)
 

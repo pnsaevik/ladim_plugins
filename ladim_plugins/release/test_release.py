@@ -530,3 +530,17 @@ class Test_load_config:
             dict(num=1, date=['2000-01-01', '2000-01-02'], location=[5, 9])
         ]
         makrel.load_config(config)
+
+
+class Test_point_inside_polygon:
+    def test_inside_if_clockwise_square(self):
+        coords = np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+        x, y = makrel.point_inside_polygon(coords)
+        assert 0 < x < 1
+        assert 0 < y < 1
+
+    def test_inside_if_counterclockwise_square(self):
+        coords = np.array([[0, 0], [0, 1], [1, 1], [1, 0]])
+        x, y = makrel.point_inside_polygon(coords)
+        assert 0 < x < 1
+        assert 0 < y < 1
