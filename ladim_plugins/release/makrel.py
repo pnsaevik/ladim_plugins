@@ -147,6 +147,14 @@ def get_location_offset(loc_conf, num):
     return slon.tolist(), slat.tolist()
 
 
+def get_polygons_from_feature_geometry(geom):
+    crd = geom['coordinates']
+    if geom['type'].upper() == 'MULTIPOLYGON':
+        return [np.array(p[0]) for p in crd]
+    elif geom['type'].upper() == 'POLYGON':
+        return [np.array(crd[0])]
+
+
 def get_location_file(file, num):
     import json
 
@@ -159,9 +167,7 @@ def get_location_file(file, num):
         return [p for f in feats for p in get_points_from_feature(f)]
 
     def get_points_from_feature(feature):
-        geom = feature['geometry']
-        assert geom['type'].upper() == 'MULTIPOLYGON'
-        return [np.array(p[0]) for p in geom['coordinates']]
+        return get_polygons_from_feature_geometry(feature['geometry'])
 
     points = get_points_from_layer(data[0])
     plon = [p[:-1, 0] for p in points]

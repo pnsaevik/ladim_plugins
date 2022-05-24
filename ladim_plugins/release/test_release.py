@@ -544,3 +544,27 @@ class Test_point_inside_polygon:
         x, y = makrel.point_inside_polygon(coords)
         assert 0 < x < 1
         assert 0 < y < 1
+
+
+class Test_get_polygons_from_feature_geometry:
+    def test_correct_shape_if_multipolygon(self):
+        feature_geom = {
+            "type": "MultiPolygon",
+            "coordinates": [
+                [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]],
+                [[[10, 10], [11, 10], [11, 11], [10, 10]]],
+                [[[20, 10], [21, 10], [21, 11], [20, 10]]],
+            ],
+        }
+        p = makrel.get_polygons_from_feature_geometry(feature_geom)
+        assert len(p) == 3
+        assert [len(pp) for pp in p] == [5, 4, 4]
+        assert all(len(c) == 2 for polygon in p for c in polygon)
+
+    def test_polygons_and_multipolygons_give_same_output(self):
+        crd = [[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]
+        feature_geom_poly = {"type": "Polygon", "coordinates": [crd]}
+        feature_geom_multi = {"type": "MultiPolygon", "coordinates": [[crd]]}
+        poly = makrel.get_polygons_from_feature_geometry(feature_geom_poly)
+        multi = makrel.get_polygons_from_feature_geometry(feature_geom_multi)
+        assert np.shape(poly) == np.shape(multi)
