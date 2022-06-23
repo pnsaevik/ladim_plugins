@@ -29,7 +29,7 @@ Install using the following commands (the first command can be skipped if
 LADiM is already present on your system):
 
 ```
-pip install git+https://github.com/bjornaa/ladim.git
+pip install git+https://github.com/pnsaevik/ladim.git
 pip install git+https://github.com/pnsaevik/ladim_plugins.git
 ```
 
@@ -82,6 +82,8 @@ contents of `out.nc` / `out.rls`.
 
 
 ## History
+
+**Version 1.6.3** (June 2022): Bugfix in `mine` module
 
 **Version 1.6.2** (May 2022): Additions to the `release` module
 

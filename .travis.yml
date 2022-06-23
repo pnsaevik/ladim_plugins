@@ -9,7 +9,7 @@ before_install:
   - pip --version
   - pip install --upgrade setuptools numpy
   - pip install typing-extensions
-  - pip install git+https://github.com/bjornaa/ladim.git
+  - pip install git+https://github.com/pnsaevik/ladim.git
 
 install:
   - pip install .

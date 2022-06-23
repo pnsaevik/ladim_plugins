@@ -31,17 +31,20 @@ class Test_sinkvel_egg:
 class Test_growth_cod_larvae:
     def test_changes_with_temp(self):
         g = ibm.growth_cod_larvae(temp=np.array([2, 4, 6]), weight=1, dt=86400)
-        assert g.tolist() == [0.046599999999999975, 0.08240000000000003, 0.11820000000000008]
+        g_rounded = np.round(g, 4)
+        assert g_rounded.tolist() == [0.0466, 0.0824, 0.1182]
 
     def test_changes_with_weight(self):
         g = ibm.growth_cod_larvae(temp=16, weight=[.1, 1, 10], dt=86400)
-        assert g.tolist() == [0.022072443645092355, 0.29720000000000013, 2.0995294989750346]
+        g_rounded = np.round(g, 3)
+        assert g_rounded.tolist() == [0.022, 0.297, 2.100]
 
 
 class Test_weight_to_length:
     def test_changes_with_weight(self):
         L = ibm.weight_to_length(weight=np.array([0.1, 1, 10]))
-        assert L.tolist() == [5.108959666553063, 9.934365412170125, 18.295002538937236]
+        L_rounded = np.round(L, 3)
+        assert L_rounded.tolist() == [5.109, 9.934, 18.295]
 
 
 # def test_snapshot():
