@@ -1,3 +1,3 @@
 from .ibm import IBM
-from ladim_plugins.chemicals import Forcing
-from .gridforce_horizontal import Grid
+from ..chemicals import Forcing
+from ..sedimentation import Grid

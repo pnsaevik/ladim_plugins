@@ -60,4 +60,7 @@ is stored in the file specified by `ibm.output_file`, if present.
 
 ## History
 
+**Version 1.6.3** (June 2022):
+Fixed bug which caused `ladim` to crash when particles were close to the edge.
+
 Created by Pål Næverlid Sævik (2021).
