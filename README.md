@@ -29,7 +29,7 @@ Install using the following commands (the first command can be skipped if
 LADiM is already present on your system):
 
 ```
-pip install git+https://github.com/bjornaa/ladim.git
+pip install git+https://github.com/pnsaevik/ladim.git
 pip install git+https://github.com/pnsaevik/ladim_plugins.git
 ```
 
