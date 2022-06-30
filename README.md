@@ -1,4 +1,4 @@
-![travis](https://travis-ci.com/pnsaevik/ladim_plugins.svg?branch=master)
+![CircleCI](https://circleci.com/gh/pnsaevik/ladim_plugins.svg?style=svg)
 
 # Plugins for LADiM
 This repository contains plugins for the _Lagrangian Advection and Diffusion
