@@ -12,6 +12,7 @@ orbs:
   python: circleci/python@1.5.0
 
 build-template: &tmpl
+  steps:
     - checkout
     - run:
         name: Install Ladim
