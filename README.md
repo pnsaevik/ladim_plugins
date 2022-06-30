@@ -1,4 +1,4 @@
-![travis](https://travis-ci.com/pnsaevik/ladim_plugins.svg?branch=master)
+![CircleCI](https://circleci.com/gh/pnsaevik/ladim_plugins.svg?style=svg)
 
 # Plugins for LADiM
 This repository contains plugins for the _Lagrangian Advection and Diffusion
@@ -82,6 +82,8 @@ contents of `out.nc` / `out.rls`.
 
 
 ## History
+
+**Version 1.6.4** (June 2022): Bugfix in `nk800met` module
 
 **Version 1.6.3** (June 2022): Bugfix in `mine` module
 

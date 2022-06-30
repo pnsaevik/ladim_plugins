@@ -44,6 +44,8 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+June 2022: Minor bugfix
+
 July 2020: First version
 
 Created by Pål Næverlid Sævik (2020).

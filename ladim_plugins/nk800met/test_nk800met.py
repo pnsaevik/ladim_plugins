@@ -1,7 +1,9 @@
 import numpy as np
 from ladim_plugins.nk800met import gridforce
+import pytest
 
 
+@pytest.mark.opendap
 class Test_OnlineDatabase_request_dset:
     def test_can_get_metadata(self):
         time = np.datetime64('2020-01-01T12:30')
