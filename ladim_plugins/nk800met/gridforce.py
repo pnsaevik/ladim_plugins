@@ -139,9 +139,9 @@ class OnlineDatabase:
         return th
 
     def close(self):
-        for dset in self._dset_buf.values():
+        for dset in self._dset_buf.buf.values():
             dset.close()
-        self._dset_buf = dict()
+        self._dset_buf = None
 
     def __del__(self):
         self.close()
