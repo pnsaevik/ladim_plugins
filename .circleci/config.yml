@@ -28,7 +28,10 @@ build-template: &tmpl
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  python_3_10_2: {<<: *tmpl, docker: [image: cimg/python:3.10.2]}
+  python_3_10: {<<: *tmpl, docker: [image: cimg/python:3.10.2]}
+  python_3_9: {<<: *tmpl, docker: [image: cimg/python:3.9.12]}
+  python_3_8: {<<: *tmpl, docker: [image: cimg/python:3.8.13]}
+  python_3_7: {<<: *tmpl, docker: [image: cimg/python:3.7.13]}
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -36,4 +39,7 @@ workflows:
   sample: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - python_3_10_2
+      - python_3_10
+      - python_3_9
+      - python_3_8
+      - python_3_7
