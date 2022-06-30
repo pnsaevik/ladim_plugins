@@ -30,6 +30,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install Ladim
+          command: pip install git+https://github.com/pnsaevik/ladim
+      - run:
           name: Install package
           command: pip install .
       - run:
