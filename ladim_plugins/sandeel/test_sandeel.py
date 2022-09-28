@@ -7,6 +7,37 @@ import numpy as np
 # def test_snapshot():
 #    test_examples.test_output_matches_snapshot('sandeel')
 
+class Test_egg_development:
+    def test_increases_only_egg_stages(self):
+        state = dict(
+            temp=np.zeros(4),
+            stage=np.array([0, .5, 1, 1.5]),
+            active=np.zeros(4),
+            hatch_rate=np.zeros(4),
+            dt=1,
+        )
+        ibm.egg_development(**state)
+        assert state['stage'][0] > 0
+        assert state['stage'][1] > .5
+        assert state['stage'][2] == 1
+        assert state['stage'][3] == 1.5
+
+    def test_activates_hatched_eggs(self):
+        state = dict(
+            temp=np.zeros(2),
+            stage=np.array([0, .99999999]),
+            active=np.zeros(2, dtype=bool),
+            hatch_rate=np.zeros(2),
+            dt=1,
+        )
+        ibm.egg_development(**state)
+
+        assert state['stage'][0] < 1
+        assert state['active'][0] == 0
+
+        assert state['stage'][1] >= 1
+        assert state['active'][1] != 0
+
 
 class Test_hatch_time:
     def test_can_reproduce_table_from_paper(self):

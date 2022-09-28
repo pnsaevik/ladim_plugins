@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator, RectBivariateSpline
+from scipy.interpolate import RectBivariateSpline
 
 
 class IBM:
@@ -44,6 +44,29 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
     idx = r > rmax
     r[idx] = 2*rmax[idx] - r[r > rmax]
     return np.clip(r, rmin, rmax)
+
+
+def egg_development(temp, stage, hatch_rate, active, dt):
+    """
+    Egg development according to Christensen et al. (2008), doi:10.1139/F08-073
+
+    Changes (in-place) the variables `stage` and `active`
+
+    :param temp: Ambient temperature
+    :param stage: Particle stage (0-1 = egg, 1-2 = larva, 2+ = metamorphosed)
+    :param hatch_rate: Number between 0 and 1 indicating hatch rate
+    :param active: 0 if stationary, 1 if the particle follows currents
+    :param dt: Time step size, in seconds
+    """
+
+    # Increase development level of eggs
+    idx = stage < 1
+    development_time = hatch_time(hatch_rate[idx], temp[idx])
+    stage_increase = dt / development_time
+    stage[idx] += stage_increase
+
+    # Activate hatched eggs
+    active[idx] = stage[idx] >= 1
 
 
 def get_hatch_time_func():
