@@ -18,6 +18,7 @@ gridforce:
 ibm:
     ibm_module: ladim_plugins.sandeel
     vertical_mixing: 0.00005  # [m*2/s]
+    max_depth: 50  # [m]
 
 
 particle_release:

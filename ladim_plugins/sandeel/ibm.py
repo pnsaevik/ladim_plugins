@@ -8,6 +8,7 @@ class IBM:
     def __init__(self, config):
         self.D = config['ibm']['vertical_mixing']
         self.dt = config['dt']
+        self.maxdepth = config['ibm']['max_depth']
 
         self.state = None
         self.grid = None
@@ -29,7 +30,7 @@ class IBM:
 
         # Keep within vertical limits, reflexive condition
         rmin = 0
-        rmax = np.array(self.grid.sample_depth(state.X, state.Y))
+        rmax = np.minimum(self.maxdepth, self.grid.sample_depth(state.X, state.Y))
         state.Z = reflexive(state.Z, rmin, rmax)
 
 
