@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator, RectBivariateSpline
 
 
 class IBM:
@@ -43,3 +44,48 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
     idx = r > rmax
     r[idx] = 2*rmax[idx] - r[r > rmax]
     return np.clip(r, rmin, rmax)
+
+
+def get_hatch_time_func():
+    """
+    Total hatch time based on Smigielski et al. (1984), doi: 10.3354/meps014287
+
+    The underlying data table is taken directly from the paper. Interpolation is
+    linear with date and second order in the rate direction.
+    """
+
+    days_tab = np.array([
+        [61, 51, 39, 25],
+        [82, 67, 48, 30],
+        [135, 116, 82, 55],
+    ])
+    temp_tab = np.array([2, 4, 7, 10])
+    rate_tab = np.array([0, 0.5, 1])
+
+    spline = RectBivariateSpline(
+        x=rate_tab,
+        y=temp_tab,
+        z=days_tab,
+        kx=2,
+        ky=1,
+    )
+
+    def hatch_time_fn(rate, temp):
+        """
+        Total hatch time based on Smigielski et al. (1984), doi: 10.3354/meps014287
+
+        The underlying data table is taken directly from the paper. Interpolation is
+        linear with date and second order in the rate direction.
+
+        :param rate: 0 = earliest spawners, 0.5 = median spawners, 1 = latest spawners
+        :param temp: Ambient temperature, in degrees Celcius
+        :return: Total hatch time, in days
+        """
+        temp = np.minimum(temp_tab[-1], np.maximum(temp_tab[0], temp))
+        out = spline(rate.ravel(), temp.ravel(), grid=False)
+        return out.reshape(rate.shape)
+
+    return hatch_time_fn
+
+
+hatch_time = get_hatch_time_func()
