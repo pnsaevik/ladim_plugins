@@ -7,6 +7,38 @@ import numpy as np
 # def test_snapshot():
 #    test_examples.test_output_matches_snapshot('sandeel')
 
+class Test_larval_development:
+    def test_increases_only_larval_stages(self):
+        state = dict(
+            temp=np.zeros(4),
+            stage=np.array([0, .5, 1, 1.5]),
+            dt=1,
+        )
+        ibm.larval_development(**state)
+        assert state['stage'][0] == 0
+        assert state['stage'][1] == .5
+        assert state['stage'][2] > 1
+        assert state['stage'][3] > 1.5
+
+    # def test_looks_nice(self):
+    #     L = []
+    #     state = dict(
+    #         temp=np.array([0, 5, 10]),
+    #         stage=np.array([1., 1., 1.]),
+    #         dt=60*60*24,
+    #     )
+    #     days = range(50)
+    #     for _ in days:
+    #         L.append(np.copy(state['stage']))
+    #         ibm.larval_development(**state)
+    #
+    #     import matplotlib.pyplot as plt
+    #     plt.plot(days, np.array(L))
+    #     plt.xlabel("days")
+    #     plt.ylabel("stage")
+    #     plt.show()
+
+
 class Test_egg_development:
     def test_increases_only_egg_stages(self):
         state = dict(

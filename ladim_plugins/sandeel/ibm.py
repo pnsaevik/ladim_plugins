@@ -46,11 +46,47 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
     return np.clip(r, rmin, rmax)
 
 
+def larval_development(temp, stage, dt):
+    """
+    Larval development according to Christensen et al. (2008), doi:10.1139/F08-073
+
+    The function modifies (in-place) the variable `stage`. The length of the larvae is
+    assumed to be related to the stage as
+
+       L = L0 * (1 - s) + Lm * s
+
+    where L0 = 7.73mm, Lm = 40mm and s = stage - 1
+
+    :param temp: Ambient temperature, in degrees Celcius
+    :param stage: Particle stage (0-1 = egg, 1-2 = larva, 2+ = metamorphosed)
+    :param dt: Time step size, in seconds
+    """
+
+    idx = stage >= 1
+    s = stage[idx] - 1
+
+    Lm = 40
+    L0 = 7.73
+    L_inf = 218
+
+    L = L0 + s * (Lm - L0)
+    gam = 0.316
+    lamb0 = -1.725
+    lamb1 = 0.136
+    lamb = np.exp(lamb0 + lamb1 * temp[idx])
+
+    dLdt = lamb * np.power(L / L0, gam) * (1 - L / L_inf)
+    L_new = L + dLdt * dt / (60 * 60 * 24)
+    stage[idx] = 1 + (L_new - L0) / (Lm - L0)
+
+
 def egg_development(temp, stage, hatch_rate, active, dt):
     """
     Egg development according to Christensen et al. (2008), doi:10.1139/F08-073
 
-    Changes (in-place) the variables `stage` and `active`
+    Using initialization model `e` (variable maturation)
+
+    The function modifies (in-place) the variables `stage` and `active`
 
     :param temp: Ambient temperature
     :param stage: Particle stage (0-1 = egg, 1-2 = larva, 2+ = metamorphosed)
