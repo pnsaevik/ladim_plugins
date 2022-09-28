@@ -46,7 +46,7 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
     return np.clip(r, rmin, rmax)
 
 
-def larval_development(temp, stage, dt):
+def larval_development(temp, stage, active, dt):
     """
     Larval development according to Christensen et al. (2008), doi:10.1139/F08-073
 
@@ -59,10 +59,14 @@ def larval_development(temp, stage, dt):
 
     :param temp: Ambient temperature, in degrees Celcius
     :param stage: Particle stage (0-1 = egg, 1-2 = larva, 2+ = metamorphosed)
+    :param active: 0 if stationary, 1 if the particle follows currents
     :param dt: Time step size, in seconds
     """
 
-    idx = stage >= 1
+    # Christensen's "flexible settlement" scenario is between lengths 37mm and 43mm,
+    # which corresponds to a larval stage between 1.907 and 2.093
+
+    idx = (1 <= stage) & (stage < 2)
     s = stage[idx] - 1
 
     Lm = 40
@@ -78,6 +82,10 @@ def larval_development(temp, stage, dt):
     dLdt = lamb * np.power(L / L0, gam) * (1 - L / L_inf)
     L_new = L + dLdt * dt / (60 * 60 * 24)
     stage[idx] = 1 + (L_new - L0) / (Lm - L0)
+
+    # Deactivate metamorphosed larvae
+    # assert np.all(stage[idx] >= 1)  # stage is only increasing
+    active[idx] = stage[idx] < 2
 
 
 def egg_development(temp, stage, hatch_rate, active, dt):

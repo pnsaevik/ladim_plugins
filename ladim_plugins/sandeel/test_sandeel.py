@@ -12,6 +12,7 @@ class Test_larval_development:
         state = dict(
             temp=np.zeros(4),
             stage=np.array([0, .5, 1, 1.5]),
+            active=np.zeros(4),
             dt=1,
         )
         ibm.larval_development(**state)
@@ -19,6 +20,21 @@ class Test_larval_development:
         assert state['stage'][1] == .5
         assert state['stage'][2] > 1
         assert state['stage'][3] > 1.5
+
+    def test_deactivates_metamorphosed_larvae(self):
+        state = dict(
+            temp=np.zeros(2),
+            stage=np.array([1, 1.99999999]),
+            active=np.ones(2, dtype=bool),
+            dt=1,
+        )
+        ibm.larval_development(**state)
+
+        assert 1 <= state['stage'][0] < 2
+        assert state['active'][0] == 1
+
+        assert state['stage'][1] >= 2
+        assert state['active'][1] == 0
 
     # def test_looks_nice(self):
     #     L = []
