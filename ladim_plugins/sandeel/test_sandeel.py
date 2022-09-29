@@ -1,11 +1,10 @@
 from ladim_plugins.sandeel import ibm
 import numpy as np
 
-from ..tests import test_examples
 
-
-def test_snapshot():
-    test_examples.test_output_matches_snapshot('sandeel')
+# def test_snapshot():
+#     from ..tests import test_examples
+#     test_examples.test_output_matches_snapshot('sandeel')
 
 
 class Test_larval_development:
