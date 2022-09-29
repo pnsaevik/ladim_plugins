@@ -83,6 +83,8 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
+**Version 1.6.5** (September 2022): Additions to the `sandeel` module
+
 **Version 1.6.4** (June 2022): Bugfix in `nk800met` module
 
 **Version 1.6.3** (June 2022): Bugfix in `mine` module
