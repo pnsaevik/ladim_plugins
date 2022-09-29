@@ -12,7 +12,7 @@ files:
 gridforce:
     module: ladim.gridforce.ROMS
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
-    ibm_forcing: [temp, salt]
+    ibm_forcing: [temp]
 
 
 ibm:
@@ -20,24 +20,30 @@ ibm:
     vertical_mixing: 0.00005  # [m*2/s]
     max_depth: 50  # [m]
     variables:
-        - region
-        - stage
-        - hatch_rate
-        - active
-        - temp
+    - hatch_rate     # Hatch rate (0 = early hatcher, 1 = late hatcher)
+    - stage          # Larvae stage (0 = egg, 1 = larva, 2 = metamorphosed)
+    - active         # 0 if standstill, 1 if moving
+    - temp           # Temperature sampled from the gridforce file
 
 
 particle_release:
     release_type: discrete
     variables: 
-    - active         # 0 if standstill, 1 if moving
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
     - X              # X coordinate of release location
     - Y              # Y coordinate of release location
     - Z              # Depth of release location (when hatched)
     - region         # Region of origin
+
+    # CAUTION: These last 3 columns should be removed from the release file in
+    # actual simulations. They are only present here to test that the code is
+    # working properly. Alternatively, they can be all set to zero. This is
+    # equivalent to removing them (a hatch_rate of exactly zero is
+    # automatically replaced with a random number).
+
     - stage          # Larvae stage (0 = egg, 1 = larva, 2 = metamorphosed)
     - hatch_rate     # Hatch rate (0 = early hatcher, 1 = late hatcher)
+    - active         # 0 if standstill, 1 if moving
 
     # Converters (if not float)
     release_time: time
@@ -96,4 +102,4 @@ numerics:
     # Model time step, [value, unit]
     dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
     advection: RK4  # either EF, RK2 or RK4 (recommended)
-    diffusion: 0    # [m*2/s]
+    diffusion: 0    # [m*2/s] Usually 0.1 on 160m NorFjords, 1 on NorKyst800, 10 on SVIM4km

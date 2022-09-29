@@ -7,7 +7,27 @@ during migration.
 
 ## Usage
 
-Modify `ladim.yaml` and `particles.rls` to suit your needs.
+The eggs should be released around 1st of January, since this is the time when
+sandeels are spawning. In the release file, eggs should be placed at the depth
+where they will start their migration after being hatched. The internal egg
+maturation routine will sample the bottom temperature regardless of the
+vertical particle position.
+
+The particle variable `hatch_rate` is uniformly random between 0 and 1, and
+represents the development rate at the egg stage. A value of 0.0 represents an
+early hatcher, and a value of 1.0 represents a late hatcher.
+
+The particle variable `stage` starts at zero and gradually increases towards 1
+when eggs are ready to hatch. After hatching, the larvae follow the currents
+passively with a constant vertical mixing (down to a specified depth).
+
+After hatching, the `stage` variable gradually increases towards 2 which marks
+the metamorphosis stage. After metamorphosis, the larvae becomes immobile. The
+variable `stage` is linearly related to the larval length, where 1.0 is the
+initial length (7.73 mm) and 2.0 is the final length (40 mm).  
+
+The sample files `ladim.yaml` and `particles.rls` are a starting point for
+making simulations.
 
 Common changes applied to `ladim.yaml`:
 - Start date of simulation (`time_control.start_time`)
