@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import RectBivariateSpline
 
 
 class IBM:
@@ -7,6 +8,7 @@ class IBM:
     def __init__(self, config):
         self.D = config['ibm']['vertical_mixing']
         self.dt = config['dt']
+        self.maxdepth = config['ibm']['max_depth']
 
         self.state = None
         self.grid = None
@@ -17,7 +19,25 @@ class IBM:
         self.grid = grid
         self.forcing = forcing
 
+        self.initialize_hatch_rate()
+
+        egg_development(self.bottom_temp(), state['stage'], state['hatch_rate'],
+                        state['active'], self.dt)
+
+        larval_development(state['temp'], state['stage'], state['active'], self.dt)
+
         self.vertical_diffuse()
+
+    def initialize_hatch_rate(self):
+        h = self.state['hatch_rate']
+        idx = (h == 0)
+        if np.any(idx):
+            h[idx] = np.random.rand(np.count_nonzero(idx))
+
+    def bottom_temp(self):
+        i = np.round(self.state['X'] - self.grid.grid.i0).astype('i4')
+        j = np.round(self.state['Y'] - self.grid.grid.j0).astype('i4')
+        return self.forcing.forcing.temp[0, j, i]
 
     def vertical_diffuse(self):
         state = self.state
@@ -28,7 +48,7 @@ class IBM:
 
         # Keep within vertical limits, reflexive condition
         rmin = 0
-        rmax = np.array(self.grid.sample_depth(state.X, state.Y))
+        rmax = np.minimum(self.maxdepth, self.grid.sample_depth(state.X, state.Y))
         state.Z = reflexive(state.Z, rmin, rmax)
 
 
@@ -43,3 +63,115 @@ def reflexive(r, rmin=-np.inf, rmax=np.inf):
     idx = r > rmax
     r[idx] = 2*rmax[idx] - r[r > rmax]
     return np.clip(r, rmin, rmax)
+
+
+def larval_development(temp, stage, active, dt):
+    """
+    Larval development according to Christensen et al. (2008), doi:10.1139/F08-073
+
+    The function modifies (in-place) the variable `stage`. The length of the larvae is
+    assumed to be related to the stage as
+
+       L = L0 * (1 - s) + Lm * s
+
+    where L0 = 7.73mm, Lm = 40mm and s = stage - 1
+
+    :param temp: Ambient temperature, in degrees Celcius
+    :param stage: Particle stage (0-1 = egg, 1-2 = larva, 2+ = metamorphosed)
+    :param active: 0 if stationary, 1 if the particle follows currents
+    :param dt: Time step size, in seconds
+    """
+
+    # Christensen's "flexible settlement" scenario is between lengths 37mm and 43mm,
+    # which corresponds to a larval stage between 1.907 and 2.093
+
+    idx = (1 <= stage) & (stage < 2)
+    s = stage[idx] - 1
+
+    Lm = 40
+    L0 = 7.73
+    L_inf = 218
+
+    L = L0 + s * (Lm - L0)
+    gam = 0.316
+    lamb0 = -1.725
+    lamb1 = 0.136
+    lamb = np.exp(lamb0 + lamb1 * temp[idx])
+
+    dLdt = lamb * np.power(L / L0, gam) * (1 - L / L_inf)
+    L_new = L + dLdt * dt / (60 * 60 * 24)
+    stage[idx] = 1 + (L_new - L0) / (Lm - L0)
+
+    # Deactivate metamorphosed larvae
+    # assert np.all(stage[idx] >= 1)  # stage is only increasing
+    active[idx] = stage[idx] < 2
+
+
+def egg_development(temp, stage, hatch_rate, active, dt):
+    """
+    Egg development according to Christensen et al. (2008), doi:10.1139/F08-073
+
+    Using initialization model `e` (variable maturation)
+
+    The function modifies (in-place) the variables `stage` and `active`
+
+    :param temp: Ambient temperature
+    :param stage: Particle stage (0-1 = egg, 1-2 = larva, 2+ = metamorphosed)
+    :param hatch_rate: Number between 0 and 1 indicating hatch rate
+    :param active: 0 if stationary, 1 if the particle follows currents
+    :param dt: Time step size, in seconds
+    """
+
+    # Increase development level of eggs
+    idx = stage < 1
+    development_days = hatch_time(hatch_rate[idx], temp[idx])
+    stage_increase = dt / (development_days * 60 * 60 * 24)
+    stage[idx] += stage_increase
+
+    # Activate hatched eggs
+    active[idx] = stage[idx] >= 1
+
+
+def get_hatch_time_func():
+    """
+    Total hatch time based on Smigielski et al. (1984), doi: 10.3354/meps014287
+
+    The underlying data table is taken directly from the paper. Interpolation is
+    linear with date and second order in the rate direction.
+    """
+
+    days_tab = np.array([
+        [61, 51, 39, 25],
+        [82, 67, 48, 30],
+        [135, 116, 82, 55],
+    ])
+    temp_tab = np.array([2, 4, 7, 10])
+    rate_tab = np.array([0, 0.5, 1])
+
+    spline = RectBivariateSpline(
+        x=rate_tab,
+        y=temp_tab,
+        z=days_tab,
+        kx=2,
+        ky=1,
+    )
+
+    def hatch_time_fn(rate, temp):
+        """
+        Total hatch time based on Smigielski et al. (1984), doi: 10.3354/meps014287
+
+        The underlying data table is taken directly from the paper. Interpolation is
+        linear with date and second order in the rate direction.
+
+        :param rate: 0 = earliest spawners, 0.5 = median spawners, 1 = latest spawners
+        :param temp: Ambient temperature, in degrees Celcius
+        :return: Total hatch time, in days
+        """
+        temp = np.minimum(temp_tab[-1], np.maximum(temp_tab[0], temp))
+        out = spline(rate.ravel(), temp.ravel(), grid=False)
+        return out.reshape(rate.shape)
+
+    return hatch_time_fn
+
+
+hatch_time = get_hatch_time_func()
