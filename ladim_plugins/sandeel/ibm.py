@@ -19,12 +19,17 @@ class IBM:
         self.grid = grid
         self.forcing = forcing
 
-        egg_development(state['temp'], state['stage'], state['hatch_rate'],
+        egg_development(self.bottom_temp(), state['stage'], state['hatch_rate'],
                         state['active'], self.dt)
 
         larval_development(state['temp'], state['stage'], state['active'], self.dt)
 
         self.vertical_diffuse()
+
+    def bottom_temp(self):
+        i = np.round(self.state['X'] - self.grid.grid.i0).astype('i4')
+        j = np.round(self.state['Y'] - self.grid.grid.j0).astype('i4')
+        return self.forcing.forcing.temp[0, j, i]
 
     def vertical_diffuse(self):
         state = self.state

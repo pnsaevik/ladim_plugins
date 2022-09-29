@@ -34,7 +34,7 @@ particle_release:
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
     - X              # X coordinate of release location
     - Y              # Y coordinate of release location
-    - Z              # Depth of release location
+    - Z              # Depth of release location (when hatched)
     - region         # Region of origin
     - stage          # Larvae stage (0 = egg, 1 = larva, 2 = metamorphosed)
     - hatch_rate     # Hatch rate (0 = early hatcher, 1 = late hatcher)
