@@ -19,6 +19,11 @@ class IBM:
         self.grid = grid
         self.forcing = forcing
 
+        egg_development(state['temp'], state['stage'], state['hatch_rate'],
+                        state['active'], self.dt)
+
+        larval_development(state['temp'], state['stage'], state['active'], self.dt)
+
         self.vertical_diffuse()
 
     def vertical_diffuse(self):
@@ -106,8 +111,8 @@ def egg_development(temp, stage, hatch_rate, active, dt):
 
     # Increase development level of eggs
     idx = stage < 1
-    development_time = hatch_time(hatch_rate[idx], temp[idx])
-    stage_increase = dt / development_time
+    development_days = hatch_time(hatch_rate[idx], temp[idx])
+    stage_increase = dt / (development_days * 60 * 60 * 24)
     stage[idx] += stage_increase
 
     # Activate hatched eggs

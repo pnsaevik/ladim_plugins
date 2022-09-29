@@ -19,22 +19,29 @@ ibm:
     ibm_module: ladim_plugins.sandeel
     vertical_mixing: 0.00005  # [m*2/s]
     max_depth: 50  # [m]
+    variables:
+        - region
+        - stage
+        - hatch_rate
+        - active
+        - temp
 
 
 particle_release:
     release_type: discrete
     variables: 
+    - active         # 0 if standstill, 1 if moving
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
     - X              # X coordinate of release location
     - Y              # Y coordinate of release location
     - Z              # Depth of release location
     - region         # Region of origin
-    - stage          # Larvae stage (0 = egg, 1 = larva)
+    - stage          # Larvae stage (0 = egg, 1 = larva, 2 = metamorphosed)
+    - hatch_rate     # Hatch rate (0 = early hatcher, 1 = late hatcher)
 
     # Converters (if not float)
     release_time: time
     region: int
-    stage: int
 
     # Time-independent variables
     particle_variables: [release_time, region]
@@ -46,7 +53,7 @@ output_variables:
 
     # Variable names
     particle: [release_time]
-    instance: [pid, lat, lon, Z]
+    instance: [pid, lat, lon, Z, stage]
 
     # --- Output format for standard variables ---
 
@@ -70,6 +77,11 @@ output_variables:
     lon:
         ncformat: f4
         long_name: particle longitude
+
+    # Output format for the particle stage
+    stage:
+        ncformat: f4
+        long_name: development stage
 
     # Output format for the particle depth
     Z:

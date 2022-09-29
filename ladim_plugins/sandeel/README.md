@@ -1,7 +1,8 @@
 # Sand eel module
 
-The module represents larvae of sand eel. This is a simple module, only random
-vertical movement is implemented.
+The module represents larvae of sand eel. The IBM behaviour includes egg
+maturation, larval growth and metamorphosis, and constant vertical mixing
+during migration.
 
 
 ## Usage
@@ -13,6 +14,7 @@ Common changes applied to `ladim.yaml`:
 - Stop date of simulation (`time_control.stop_time`)
 - Forcing input file (`gridforce.input_file`)
 - Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Max vertical diffusion depth (`ibm.max_depth`) 
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
@@ -33,5 +35,7 @@ entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
 
 ## History
+
+Update September 2022: Add hatching and metamorphose behaviour
 
 Created by Pål Næverlid Sævik (2022)
