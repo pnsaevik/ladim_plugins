@@ -19,12 +19,20 @@ class IBM:
         self.grid = grid
         self.forcing = forcing
 
+        self.initialize_hatch_rate()
+
         egg_development(self.bottom_temp(), state['stage'], state['hatch_rate'],
                         state['active'], self.dt)
 
         larval_development(state['temp'], state['stage'], state['active'], self.dt)
 
         self.vertical_diffuse()
+
+    def initialize_hatch_rate(self):
+        h = self.state['hatch_rate']
+        idx = (h == 0)
+        if np.any(idx):
+            h[idx] = np.random.rand(np.count_nonzero(idx))
 
     def bottom_temp(self):
         i = np.round(self.state['X'] - self.grid.grid.i0).astype('i4')
