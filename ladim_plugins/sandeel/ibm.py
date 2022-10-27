@@ -41,15 +41,20 @@ class IBM:
 
     def vertical_diffuse(self):
         state = self.state
+        idx = (state['active'] != 0)
+        x = state['X'][idx]
+        y = state['Y'][idx]
+        z = state['Z'][idx]
 
         # Random diffusion velocity
-        rand = np.random.normal(size=len(state.Z))
-        state.Z += rand * np.sqrt(2 * self.D * self.dt)
+        rand = np.random.normal(size=len(z))
+        z += rand * np.sqrt(2 * self.D * self.dt)
 
         # Keep within vertical limits, reflexive condition
         rmin = 0
-        rmax = np.minimum(self.maxdepth, self.grid.sample_depth(state.X, state.Y))
-        state.Z = reflexive(state.Z, rmin, rmax)
+        rmax = np.minimum(self.maxdepth, self.grid.sample_depth(x, y))
+        z = reflexive(z, rmin, rmax)
+        state['Z'][idx] = z
 
 
 def reflexive(r, rmin=-np.inf, rmax=np.inf):
