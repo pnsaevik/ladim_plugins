@@ -1,1 +1,1 @@
-from .ibm import IBM
+from .ibm import IBM, infectivity
