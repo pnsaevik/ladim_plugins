@@ -38,5 +38,5 @@ class Test_infectivity:
         temp = np.array([10, 10, 10])
         sup = np.array([1, 2, 4])
         infect = salmon_lice.infectivity(age, temp, sup)
-        assert infect[0]*2 == infect[1]
-        assert infect[1]*2 == infect[2]
+        assert np.abs(infect[0]*2 - infect[1]) < 1e-7
+        assert np.abs(infect[1]*2 - infect[2]) < 1e-7
