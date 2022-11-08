@@ -36,7 +36,7 @@ class Test_infectivity:
     def test_scales_linearly_with_super(self):
         age = np.array([100, 100, 100])
         temp = np.array([10, 10, 10])
-        sup = np.array([1, 2, 3])
+        sup = np.array([1, 2, 4])
         infect = salmon_lice.infectivity(age, temp, sup)
         assert infect[0]*2 == infect[1]
-        assert infect[1]*3 == infect[2]*2
+        assert infect[1]*2 == infect[2]

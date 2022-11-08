@@ -10,17 +10,17 @@ Documentation and examples are provided for each model.
 
 ## List of available plugins
 
-Name                                                   | Description       
------------------------------------------------------- | ------------------
-[chemicals](ladim_plugins/chemicals)         | Passive tracer    
-[egg](ladim_plugins/egg)                     | Buoyant fish eggs 
-[lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass
-[nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server 
-[release](ladim_plugins/release)             | General module for creating release files
-[salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae
-[sandeel](ladim_plugins/sandeel)             | Sand eel larvae
-[sedimentation](ladim_plugins/sedimentation) | Sinking particles 
-[utils](ladim_plugins/utils)                 | General utility functions for IBMs
+| Name                                         | Description                                                      |
+|----------------------------------------------|------------------------------------------------------------------|
+| [chemicals](ladim_plugins/chemicals)         | Passive tracer                                                   |
+| [egg](ladim_plugins/egg)                     | Buoyant fish eggs                                                |
+| [lunar_eel](ladim_plugins/lunar_eel)         | Glass eels with lunar compass                                    |
+| [nk800met](ladim_plugins/nk800met)           | Module for utilizing forcing data from the met.no thredds server |
+| [release](ladim_plugins/release)             | General module for creating release files                        |
+| [salmon_lice](ladim_plugins/salmon_lice)     | Salmon lice larvae                                               |
+| [sandeel](ladim_plugins/sandeel)             | Sand eel larvae                                                  |
+| [sedimentation](ladim_plugins/sedimentation) | Sinking particles                                                |
+| [utils](ladim_plugins/utils)                 | General utility functions for IBMs                               |
 
 
 ## Installation
@@ -82,6 +82,8 @@ contents of `out.nc` / `out.rls`.
 
 
 ## History
+
+**Version 1.7.1** (November 2022): Additions to the `salmon_lice` module
 
 **Version 1.6.5** (September 2022): Additions to the `sandeel` module
 
