@@ -69,3 +69,42 @@ class IBM:
 
         # Mark particles older than 200 degree days as dead
         state.alive = state.alive & (state.age < 200)
+
+
+# noinspection PyShadowingBuiltins
+def infectivity(age, temp, super=1):
+    """
+    Computes scaled salmon lice infectivity according to Skern-Mauritzen
+    et al. (2020), https://doi.org/10.1016/j.jembe.2020.151429.
+
+    :param age: The age of the salmon lice, in degree-days
+    :param temp: The ambient temperature
+    :param super: The number of lice
+    :returns: The infectivity, scaled by number of lice
+    """
+    coeff = np.array([
+        [-3.466e+1, 7.156e-1, -5.354e-3, 1.191e-5],
+        [+2.306e+0, -3.577e-2, 2.526e-4, -5.541e-7],
+        [-2.585e-2, 0, 0, 0],
+    ])
+
+    # Compute infectivity based on Rasmus' formula
+    T = np.clip(temp, 5, 15)
+    TT = np.array([T ** 0, T ** 1, T ** 2])
+    AA = np.array([age ** 0, age ** 1, age ** 2, age ** 3])
+    q = ((coeff @ AA) * TT).sum(axis=0)
+    ROC_factor = 1.8 / 0.51
+    infect = ROC_factor * np.exp(q) / (1 + np.exp(q))
+
+    # Define function for lower limit of infectivity
+    b1 = 24.79
+    b2 = 0.525
+    cop_age_fn = lambda Temp: Temp * (b1 / (Temp - 10 + b1 * b2)) ** 2
+
+    # Set infectivity to zero outside lower and upper limit
+    lower_limit = cop_age_fn(temp)
+    upper_limit = 200
+    idx_outside = (age < lower_limit) | (age > upper_limit)
+    infect[idx_outside] = 0
+
+    return infect * super
