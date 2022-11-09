@@ -79,13 +79,20 @@ class Test_growth:
 class Test_vertical_distribution:
     @pytest.fixture()
     def grid(self):
-        pass
+        class Grid:
+            @staticmethod
+            def lonlat(x, y):
+                return 5 + np.zeros_like(x), 70 + np.zeros_like(y)
+
+        return Grid()
 
     @pytest.fixture()
     def state(self):
         num = 1000
         return dict(
-            Z=np.linspace(0, 40, 1000),
+            X=np.zeros(num),
+            Y=np.zeros(num),
+            Z=np.linspace(0, 40, num),
             temp=np.ones(num),
             age=np.zeros(num),
             stage=np.ones(num),
@@ -99,9 +106,7 @@ class Test_vertical_distribution:
     @pytest.fixture()
     def shrimp_ibm(self):
         config = dict(
-            ibm=dict(
-                vertical_mixing=0.01,
-            ),
+            ibm=dict(),
             dt=600,
         )
 
@@ -112,8 +117,8 @@ class Test_vertical_distribution:
         Z = []
         t = []
 
-        start = np.datetime64('2000-01-01T00')
-        stop = np.datetime64('2000-01-05T00')
+        start = np.datetime64('2000-03-01T00')
+        stop = np.datetime64('2000-03-05T00')
 
         state['time'] = start
         while stop > state['time']:
@@ -138,7 +143,7 @@ class Test_vertical_distribution:
         )
 
     def test_looks_sensible(self, result):
-        plot = plot_quantile(result.Z)
+        plot = plot_quantile(-result.Z)
         fig = hv.render(plot, backend='matplotlib')
         plt.figure(fig)
         plt.show()

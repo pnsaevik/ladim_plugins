@@ -4,7 +4,11 @@ import numpy as np
 class IBM:
 
     def __init__(self, config):
-        self.vertical_mixing = config['ibm'].get('vertical_mixing', 0)
+        # One entry for each pelagic stage
+        self.vertmix = np.array([0.01, 0.01])
+        self.depth_day = np.array([20, 20])
+        self.depth_ngh = np.array([0, 0])
+        self.speed = np.array([0.001, 0.002])
 
         self.grid = None
         self.state = None
@@ -33,18 +37,45 @@ class IBM:
 
         self.state['age'] += delta_age
         self.state['stage'] += delta_stage
+        self.state['stage'] = np.minimum(6, self.state['stage'])  # 6 is the maximum stage
         self.state['active'] = self.state['stage'] < 6  # Stage 6 does not move with the currents
 
     def mixing(self):
+        int_stage = np.minimum(5, np.int32(self.state['stage'])) - 1
+        vertmix = self.vertmix[int_stage]
+
         z = self.state['Z']
         dw = np.random.normal(size=len(z))
-        dz = np.sqrt(2 * self.vertical_mixing * self.dt) * dw
+        dz = np.sqrt(2 * vertmix * self.dt) * dw
         z += dz
         z[z < 0] *= -1  # Reflective boundary at surface
         self.state['Z'] = z
 
     def diel_migration(self):
-        pass
+        # Extract state parameters
+        time = self.state['time']
+        x = self.state['X']
+        y = self.state['Y']
+        z = self.state['Z']
+
+        # Select parameters based on stage
+        int_stage = np.minimum(5, np.int32(self.state['stage'])) - 1
+        speed = self.speed[int_stage]
+        depth_day = self.depth_day[int_stage]
+        depth_ngh = self.depth_ngh[int_stage]
+
+        # Find preferred depth
+        lon, lat = self.grid.lonlat(x, y)
+        is_day = sunheight(time, lon, lat) > 0
+        preferred_depth = np.where(is_day, depth_day, depth_ngh)
+
+        # Swim towards preferred depth
+        speed_sign = np.zeros(len(z))  # Zero if within preferred range
+        speed_sign[z > preferred_depth] = -1  # Upwards if too deep
+        speed_sign[z < preferred_depth] = 1  # Downwards if too shallow
+        z += self.dt * speed * speed_sign
+
+        self.state['Z'] = z
 
     def old_stuff(self):
         # Init stuff
