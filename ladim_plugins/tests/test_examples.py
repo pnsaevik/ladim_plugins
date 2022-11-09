@@ -26,8 +26,13 @@ modules_with_makrel = [
 @pytest.mark.parametrize("module_name", module_names)
 def test_output_matches_snapshot(module_name):
     out = run_ladim(module_name)
-    # out.to_netcdf(get_module_dir(module_name).joinpath('out.nc'))
-    ref = xr.load_dataset(get_module_dir(module_name).joinpath('out.nc'))
+
+    # Create reference outfile if it does not exist
+    outname = get_module_dir(module_name).joinpath('out.nc')
+    if not outname.exists():
+        out.to_netcdf(outname)
+
+    ref = xr.load_dataset(outname)
     check_equal(out, ref)
 
 
