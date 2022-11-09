@@ -21,6 +21,8 @@ class IBM:
         self.diel_migration()
 
     def growth(self):
+        # Reference paper: Ouellet and Chabot (2005), doi: 10.1007/s00227-005-1625-6
+
         alpha = 156.31578947368422
         beta = 23.315789473684212
 
