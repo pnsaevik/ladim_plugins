@@ -21,7 +21,17 @@ class IBM:
         self.diel_migration()
 
     def growth(self):
-        pass
+        alpha = 156.31578947368422
+        beta = 23.315789473684212
+
+        temp = self.state['temp']
+
+        delta_age = self.dt / 86400
+        delta_stage = 5 * delta_age * temp / (alpha + beta * temp)
+
+        self.state['age'] += delta_age
+        self.state['stage'] += delta_stage
+        self.state['active'] = self.state['stage'] < 6  # Stage 6 does not move with the currents
 
     def mixing(self):
         z = self.state['Z']

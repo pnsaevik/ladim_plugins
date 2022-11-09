@@ -9,7 +9,7 @@ from ladim_plugins.shrimp import ibm
 hv.extension('matplotlib')
 
 
-class Test_vertical_distribution:
+class Test_growth:
     @pytest.fixture()
     def grid(self):
         pass
@@ -17,7 +17,78 @@ class Test_vertical_distribution:
     @pytest.fixture()
     def state(self):
         return dict(
-            Z=np.linspace(0, 1, 5),
+            Z=np.zeros(5),
+            stage=np.ones(5),
+            age=np.zeros(5),
+            temp=np.array([1, 3, 5, 8, 10]),
+            time=np.datetime64('2000-01-01'),
+        )
+
+    @pytest.fixture()
+    def forcing(self):
+        pass
+
+    @pytest.fixture()
+    def shrimp_ibm(self):
+        config = dict(
+            ibm=dict(
+                vertical_mixing=0,
+            ),
+            dt=86400,
+        )
+
+        return ibm.IBM(config)
+
+    @pytest.fixture()
+    def result(self, grid, state, forcing, shrimp_ibm):
+        stage = []
+        t = []
+
+        start = np.datetime64('2000-01-01T00')
+        stop = np.datetime64('2000-02-10T00')
+
+        state['time'] = start
+        while stop > state['time']:
+            stage.append(state['stage'].copy())
+            t.append(state['time'].copy())
+            shrimp_ibm.update_ibm(grid, state, forcing)
+            state['time'] += np.timedelta64(1, 's') * shrimp_ibm.dt
+
+        return xr.Dataset(
+            data_vars=dict(
+                stage=xr.Variable(
+                    dims=('time', 'pid'),
+                    data=stage,
+                ),
+            ),
+            coords=dict(
+                time=xr.Variable(
+                    dims='time',
+                    data=t,
+                ),
+            ),
+        )
+
+    def test_looks_sensible(self, result):
+        plot = plot_particle(result.stage)
+        fig = hv.render(plot, backend='matplotlib')
+        plt.figure(fig)
+        plt.show()
+
+
+class Test_vertical_distribution:
+    @pytest.fixture()
+    def grid(self):
+        pass
+
+    @pytest.fixture()
+    def state(self):
+        num = 1000
+        return dict(
+            Z=np.linspace(0, 40, 1000),
+            temp=np.ones(num),
+            age=np.zeros(num),
+            stage=np.ones(num),
             time=np.datetime64('2000-01-01'),
         )
 
@@ -73,23 +144,6 @@ class Test_vertical_distribution:
         plt.show()
 
 
-def get_ibm_conf():
-    conf = dict(
-        dt=600,
-        stage_duration=[12, 12, 12, 12, 12],  # Development stage duration [days]
-        mindepth_day=[0, 0, 150, 150, 150],  # Minimum preferred depth at daytime [m]
-        maxdepth_day=[40, 40, 200, 200, 200],  # Maximum preferred depth at daytime [m]
-        mindepth_ngh=[0, 0, 0, 0, 0],  # Minimum preferred depth at nighttime [m]
-        maxdepth_ngh=[40, 40, 50, 50, 50],  # Maximum preferred depth at nighttime [m]
-        vertical_mixing=[0.01, 0.01, 0.01, 0.01, 0.01],
-        # Random vertical mixing coefficient [m2/s]
-        vertical_speed=[0.002, 0.002, 0.002, 0.002, 0.002],
-        # Vertical speed if outside preferred depth range [m/s]
-    )
-    conf['devel_rate'] = 1 / (np.asarray(conf['stage_duration']) * 24 * 60 * 60)
-    return conf
-
-
 def plot_quantile(darr):
     q = darr.quantile([.05, .1, .25, 0.5, .75, .9, .95], dim=darr.dims[-1])
 
@@ -118,3 +172,12 @@ def plot_quantile(darr):
     plot = area_lgt * area_med * area_drk * line_mid
 
     return plot
+
+
+def plot_particle(darr):
+    x, pid = np.meshgrid(darr.time.values, np.arange(darr.sizes['pid']), indexing='ij')
+    y = darr.values
+
+    plot = hv.Curve((x.ravel(), y.ravel(), pid.ravel()), kdims='time', vdims=[darr.name, 'pid'])
+
+    return plot.groupby('pid').overlay()
