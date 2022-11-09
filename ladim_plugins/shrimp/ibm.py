@@ -4,6 +4,7 @@ import numpy as np
 class IBM:
 
     def __init__(self, config):
+        self.vertical_mixing = config['ibm'].get('vertical_mixing', 0)
 
         self.grid = None
         self.state = None
@@ -23,7 +24,12 @@ class IBM:
         pass
 
     def mixing(self):
-        pass
+        z = self.state['Z']
+        dw = np.random.normal(size=len(z))
+        dz = np.sqrt(2 * self.vertical_mixing * self.dt) * dw
+        z += dz
+        z[z < 0] *= -1  # Reflective boundary at surface
+        self.state['Z'] = z
 
     def diel_migration(self):
         pass

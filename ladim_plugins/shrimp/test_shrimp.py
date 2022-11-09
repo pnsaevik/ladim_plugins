@@ -28,7 +28,9 @@ class Test_vertical_distribution:
     @pytest.fixture()
     def shrimp_ibm(self):
         config = dict(
-            ibm=dict(),
+            ibm=dict(
+                vertical_mixing=0.01,
+            ),
             dt=600,
         )
 
