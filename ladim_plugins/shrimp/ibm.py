@@ -52,6 +52,13 @@ class IBM:
         self.state['stage'] = np.minimum(6, self.state['stage'])  # 6 is the maximum stage
         self.state['active'] = self.state['stage'] < 6  # Stage 6 does not move with the currents
 
+        # Compute lengths according to P. Ouellet and J.-P. Allard (2006)
+        # doi: 10.1111/j.1365-2419.2005.00394.x
+        # length units: mm
+        tab_len = [6.371, 7.480, 9.144, 11.433, 12.088, 13.175]
+        tab_stg = [1, 2, 3, 4, 5, 6]
+        self.state['length'] = np.interp(self.state['stage'], tab_stg, tab_len)
+
     def mixing(self):
         int_stage = np.minimum(5, np.int32(self.state['stage'])) - 1
         vertmix = self.vertical_mixing[int_stage]
