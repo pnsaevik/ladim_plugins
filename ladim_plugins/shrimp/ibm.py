@@ -1,14 +1,18 @@
 import numpy as np
+import xarray as xr
 
 
 class IBM:
 
     def __init__(self, config):
         # One entry for each pelagic stage
-        self.vertmix = np.array([0.01, 0.01])
-        self.depth_day = np.array([20, 20])
-        self.depth_ngh = np.array([0, 0])
-        self.speed = np.array([0.001, 0.002])
+        self.vertical_mixing = np.array(config['ibm']['vertical_mixing'])  # [m2/s]
+        self.vertical_speed = np.array(config['ibm']['vertical_speed'])  # [m/s]
+
+        self.maxdepth_day = np.array(config['ibm']['maxdepth_day'])  # [m]
+        self.maxdepth_ngh = np.array(config['ibm']['maxdepth_night'])  # [m]
+        self.mindepth_day = np.array(config['ibm']['mindepth_day'])  # [m]
+        self.mindepth_ngh = np.array(config['ibm']['mindepth_night'])  # [m]
 
         self.grid = None
         self.state = None
@@ -42,7 +46,7 @@ class IBM:
 
     def mixing(self):
         int_stage = np.minimum(5, np.int32(self.state['stage'])) - 1
-        vertmix = self.vertmix[int_stage]
+        vertmix = self.vertical_mixing[int_stage]
 
         z = self.state['Z']
         dw = np.random.normal(size=len(z))
@@ -53,26 +57,29 @@ class IBM:
 
     def diel_migration(self):
         # Extract state parameters
-        time = self.state['time']
+        time = getattr(self.state, 'timestamp', self.state['time'])
         x = self.state['X']
         y = self.state['Y']
         z = self.state['Z']
 
         # Select parameters based on stage
         int_stage = np.minimum(5, np.int32(self.state['stage'])) - 1
-        speed = self.speed[int_stage]
-        depth_day = self.depth_day[int_stage]
-        depth_ngh = self.depth_ngh[int_stage]
+        speed = self.vertical_speed[int_stage]
+        maxdepth_day = self.maxdepth_day[int_stage]
+        maxdepth_ngh = self.maxdepth_ngh[int_stage]
+        mindepth_day = self.mindepth_day[int_stage]
+        mindepth_ngh = self.mindepth_ngh[int_stage]
 
         # Find preferred depth
         lon, lat = self.grid.lonlat(x, y)
         is_day = sunheight(time, lon, lat) > 0
-        preferred_depth = np.where(is_day, depth_day, depth_ngh)
+        maxdepth = np.where(is_day, maxdepth_day, maxdepth_ngh)
+        mindepth = np.where(is_day, mindepth_day, mindepth_ngh)
 
         # Swim towards preferred depth
         speed_sign = np.zeros(len(z))  # Zero if within preferred range
-        speed_sign[z > preferred_depth] = -1  # Upwards if too deep
-        speed_sign[z < preferred_depth] = 1  # Downwards if too shallow
+        speed_sign[z > maxdepth] = -1    # Upwards if too deep
+        speed_sign[z < mindepth] = 1     # Downwards if too shallow
         z += self.dt * speed * speed_sign
 
         self.state['Z'] = z

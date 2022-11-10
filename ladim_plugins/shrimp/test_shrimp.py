@@ -95,7 +95,7 @@ class Test_vertical_distribution:
             Z=np.linspace(0, 40, num),
             temp=np.ones(num),
             age=np.zeros(num),
-            stage=np.ones(num),
+            stage=np.ones(num)*3,
             time=np.datetime64('2000-01-01'),
         )
 
@@ -106,7 +106,14 @@ class Test_vertical_distribution:
     @pytest.fixture()
     def shrimp_ibm(self):
         config = dict(
-            ibm=dict(),
+            ibm=dict(
+                mindepth_day=[20, 0, 20, 150, 150],  # Minimum preferred depth at daytime [m]
+                maxdepth_day=[20, 40, 200, 200, 200],  # Maximum preferred depth at daytime [m]
+                mindepth_night=[0, 0, 0, 0, 0],  # Minimum preferred depth at nighttime [m]
+                maxdepth_night=[0, 40, 100, 50, 50],  # Maximum preferred depth at nighttime [m]
+                vertical_mixing=[0.01, 0.01, 0.01, 0.01, 0.01],  # Random vertical mixing coefficient [m2/s]
+                vertical_speed=[0.002, 0.002, 0.002, 0.002, 0.002],  # Vertical speed if outside preferred depth range [m/s]
+            ),
             dt=600,
         )
 
