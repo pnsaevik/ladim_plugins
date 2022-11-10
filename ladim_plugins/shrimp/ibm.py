@@ -24,9 +24,17 @@ class IBM:
         self.state = state
         self.forcing = forcing
 
+        self.initialize()
         self.growth()
         self.mixing()
         self.diel_migration()
+
+    def initialize(self):
+        q = self.state['depth_quantile']
+        is_not_initialized = q == 0
+        num = np.count_nonzero(is_not_initialized)
+        q[is_not_initialized] = np.random.rand(num)
+        self.state['depth_quantile'] = q
 
     def growth(self):
         # Reference paper: Ouellet and Chabot (2005), doi: 10.1007/s00227-005-1625-6
@@ -61,6 +69,7 @@ class IBM:
         x = self.state['X']
         y = self.state['Y']
         z = self.state['Z']
+        q = self.state['depth_quantile']
 
         # Select parameters based on stage
         int_stage = np.minimum(5, np.int32(self.state['stage'])) - 1
@@ -75,11 +84,13 @@ class IBM:
         is_day = sunheight(time, lon, lat) > 0
         maxdepth = np.where(is_day, maxdepth_day, maxdepth_ngh)
         mindepth = np.where(is_day, mindepth_day, mindepth_ngh)
+        preferred_depth = mindepth + (maxdepth - mindepth) * q
 
         # Swim towards preferred depth
         speed_sign = np.zeros(len(z))  # Zero if within preferred range
         speed_sign[z > maxdepth] = -1    # Upwards if too deep
         speed_sign[z < mindepth] = 1     # Downwards if too shallow
+        # speed_sign = np.sign(preferred_depth - z)  # Positive (downwards) if too shallow
         z += self.dt * speed * speed_sign
 
         self.state['Z'] = z

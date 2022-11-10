@@ -90,6 +90,7 @@ class Test_vertical_distribution:
     def state(self):
         num = 1000
         return dict(
+            depth_quantile=np.zeros(num),
             X=np.zeros(num),
             Y=np.zeros(num),
             Z=np.linspace(0, 40, num),
