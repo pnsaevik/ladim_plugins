@@ -29,11 +29,18 @@ class IBM:
         self.diel_migration()
 
     def initialize(self):
+        # Initialize quantile variable
         q = self.state['depth_quantile']
         is_not_initialized = q == 0
         num = np.count_nonzero(is_not_initialized)
         q[is_not_initialized] = np.random.rand(num)
         self.state['depth_quantile'] = q
+
+        # Initialize stage variable
+        s = self.state['stage']
+        is_not_initialized = s == 0
+        if np.any(is_not_initialized):
+            self.state['stage'][is_not_initialized] = 1
 
     def growth(self):
         # Reference paper: Ouellet and Chabot (2005), doi: 10.1007/s00227-005-1625-6
