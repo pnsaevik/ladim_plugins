@@ -1,5 +1,4 @@
 import numpy as np
-import xarray as xr
 
 
 class IBM:
@@ -94,10 +93,10 @@ class IBM:
         preferred_depth = mindepth + (maxdepth - mindepth) * q
 
         # Swim towards preferred depth
-        speed_sign = np.zeros(len(z))  # Zero if within preferred range
-        speed_sign[z > maxdepth] = -1    # Upwards if too deep
-        speed_sign[z < mindepth] = 1     # Downwards if too shallow
-        # speed_sign = np.sign(preferred_depth - z)  # Positive (downwards) if too shallow
+        # speed_sign = np.zeros(len(z))  # Zero if within preferred range
+        # speed_sign[z > maxdepth] = -1    # Upwards if too deep
+        # speed_sign[z < mindepth] = 1     # Downwards if too shallow
+        speed_sign = np.sign(preferred_depth - z)  # Positive (downwards) if too shallow
         z += self.dt * speed * speed_sign
 
         self.state['Z'] = z
