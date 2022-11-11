@@ -83,6 +83,8 @@ contents of `out.nc` / `out.rls`.
 
 ## History
 
+**Version 1.8.0** (November 2022): Added `shrimp` module
+
 **Version 1.7.1** (November 2022): Additions to the `salmon_lice` module
 
 **Version 1.6.5** (September 2022): Additions to the `sandeel` module
