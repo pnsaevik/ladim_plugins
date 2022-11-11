@@ -1,5 +1,4 @@
 import xarray as xr
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -7,9 +6,12 @@ from ladim_plugins.shrimp import ibm
 
 try:
     import holoviews as hv
+    import matplotlib.pyplot as plt
     hv.extension('matplotlib')
+
 except ImportError:
     hv = None
+    plt = None
 
 
 @pytest.mark.skip
