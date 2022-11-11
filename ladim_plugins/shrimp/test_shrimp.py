@@ -9,6 +9,7 @@ from ladim_plugins.shrimp import ibm
 hv.extension('matplotlib')
 
 
+@pytest.mark.skip
 class Test_growth:
     @pytest.fixture()
     def grid(self):
@@ -76,6 +77,7 @@ class Test_growth:
         plt.show()
 
 
+@pytest.mark.skip
 class Test_vertical_distribution:
     @pytest.fixture()
     def grid(self):
