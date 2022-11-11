@@ -71,7 +71,10 @@ class IBM:
 
     def diel_migration(self):
         # Extract state parameters
-        time = getattr(self.state, 'timestamp', self.state['time'])
+        if hasattr(self.state, 'timestamp'):
+            time = self.state.timestamp
+        else:
+            time = self.state['time']
         x = self.state['X']
         y = self.state['Y']
         z = self.state['Z']

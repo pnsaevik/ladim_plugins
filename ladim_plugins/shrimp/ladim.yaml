@@ -19,14 +19,21 @@ ibm:
     ibm_module: ladim_plugins.shrimp
 
     # Simulation parameters
-    vertical_mixing: 0           # Diffusivity in the vertical direction [m^2/s]
+    mindepth_day: [20, 20, 20, 20, 20]   # Minimum preferred depth at daytime [m]
+    maxdepth_day: [20, 20, 200, 200, 200]   # Maximum preferred depth at daytime [m]
+    mindepth_night: [0, 0, 0, 0, 0]   # Minimum preferred depth at nighttime [m]
+    maxdepth_night: [0, 0, 100, 100, 100]   # Maximum preferred depth at nighttime [m]
+    vertical_mixing: [0.01, 0.01, 0.25, 0.25, 0.25]   # Random vertical mixing coefficient [m2/s]
+    vertical_speed: [0.001, 0.001, 0.005, 0.005, 0.005]   # Vertical speed if outside preferred depth range [m/s]
 
     variables:
       - number      # Number of actual particles per simulation particle
       - temp        # Ambient ocean temperature [degrees Celcius]
       - salt        # Ambient ocean salinity [psu]
-      - age         # Age of particle [degree-days]
       - stage       # Larval stage [1 = newly hatched, 6 = first non-pelagic stage]
+      - length      # Larva length [mm]
+      - depth_quantile  # A number between 0 and 1 (whether the larva prefers deep or shallow waters)
+      - age         # Age of particle [days]
 
 
 particle_release:
@@ -39,7 +46,7 @@ particle_release:
     - Z              # Depth of release location [m]
     - group_id       # Custom id used to group particles in post processing
     - number         # Number of actual eggs/larvae per simulation particle
-    - age            # Larvae age [degree days]
+    - stage          # Larval stage [1 = newly hatched, 6 = first non-pelagic stage]
 
 
     # Converters (if not float)
