@@ -18,6 +18,10 @@ class IBM:
         self.forcing = None
         self.dt = config['dt']
 
+        # Check if active parameter is in state (raises error if not present)
+        if 'active' not in config['ibm']['variables']:
+            raise KeyError('In ladim.yaml: Add "active" to ibm.variables list')
+
     def update_ibm(self, grid, state, forcing):
         self.grid = grid
         self.state = state
