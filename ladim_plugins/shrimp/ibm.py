@@ -45,17 +45,22 @@ class IBM:
     def growth(self):
         # Reference paper: Ouellet and Chabot (2005), doi: 10.1007/s00227-005-1625-6
 
-        alpha = 156.31578947368422
-        beta = 23.315789473684212
+        # Coefficients are re-fitted using Figure 3 in the paper, and values at stage 6:
+        # temp[:] = [3.15, 5.31, 7.67]
+        # age[:] = [76.1, 53.6, 43.4]
+        # (stage - 1) * (alpha + beta * temp) = age * temp
 
-        temp = self.state['temp']
+        alpha = 34.98593627
+        beta = 4.12176015
+
+        temp = np.clip(self.state['temp'], 3, 8)
 
         delta_age = self.dt / 86400
-        delta_stage = 5 * delta_age * temp / (alpha + beta * temp)
+        delta_stage = delta_age * temp / (alpha + beta * temp)
 
         self.state['age'] += delta_age
         self.state['stage'] += delta_stage
-        self.state['stage'] = np.minimum(6, self.state['stage'])  # 6 is the maximum stage
+        self.state['stage'] = np.clip(self.state['stage'], 1, 6)  # 6 is the maximum stage
         self.state['active'] = self.state['stage'] < 6  # Stage 6 does not move with the currents
 
         # Compute lengths according to P. Ouellet and J.-P. Allard (2006)
