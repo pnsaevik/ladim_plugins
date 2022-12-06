@@ -48,7 +48,7 @@ particle_release:
     - group_id       # Custom id used to group particles in post processing
     - number         # Number of actual eggs/larvae per simulation particle
     - stage          # Larval stage [1 = newly hatched, 6 = first non-pelagic stage]
-    - active
+    - active         # One if particles start out as mobile
 
 
     # Converters (if not float)
