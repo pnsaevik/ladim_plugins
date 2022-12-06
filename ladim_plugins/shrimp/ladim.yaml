@@ -34,6 +34,7 @@ ibm:
       - length      # Larva length [mm]
       - depth_quantile  # A number between 0 and 1 (whether the larva prefers deep or shallow waters)
       - age         # Age of particle [days]
+      - active      # Zero if the particles are stationary
 
 
 particle_release:
@@ -47,6 +48,7 @@ particle_release:
     - group_id       # Custom id used to group particles in post processing
     - number         # Number of actual eggs/larvae per simulation particle
     - stage          # Larval stage [1 = newly hatched, 6 = first non-pelagic stage]
+    - active
 
 
     # Converters (if not float)
@@ -54,6 +56,8 @@ particle_release:
     release_time: time
     group_id: int
     number: int
+    active: int
+
     particle_variables: [release_time, group_id]
 
 
