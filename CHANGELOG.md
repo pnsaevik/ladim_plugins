@@ -8,6 +8,8 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 ## [Unreleased] - 2023-01-24
 ### Added
 - Changelog document
+### Fixed
+- In module `shrimp`: Bug where forcing variables were not updated 
 
 ## [1.8.0] - 2022-11
 ### Added

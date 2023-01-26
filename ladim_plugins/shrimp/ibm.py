@@ -28,9 +28,18 @@ class IBM:
         self.forcing = forcing
 
         self.initialize()
+        self.update_ibm_forcing()
         self.growth()
         self.mixing()
         self.diel_migration()
+
+    def update_ibm_forcing(self):
+        x = self.state['X']
+        y = self.state['Y']
+        z = self.state['Z']
+
+        self.state['temp'] = self.forcing.field(x, y, z, 'temp')
+        self.state['salt'] = self.forcing.field(x, y, z, 'salt')
 
     def initialize(self):
         # Initialize quantile variable
