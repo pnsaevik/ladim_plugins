@@ -2,6 +2,7 @@ from ladim_plugins import utils
 import numpy as np
 import xarray as xr
 import pytest
+import sqlite3
 
 
 class Test_light:
@@ -167,3 +168,28 @@ class Test_ladim_raster:
             [[2, 1], [0, 1], [0, 0]],
             [[1, 0], [0, 0], [0, 1]],
         ]
+
+
+class Test_converter_sqlite:
+    @pytest.fixture(scope='class')
+    def ladim_dset(self):
+        return xr.Dataset(
+            data_vars=dict(
+                lon=xr.Variable('particle_instance', [5, 5, 6, 6, 5, 6]),
+                lat=xr.Variable('particle_instance', [60, 60, 60, 61, 60, 62]),
+                particle_count=xr.Variable('time', [4, 2]),
+                instance_offset=xr.Variable((), 0),
+                release_time=xr.Variable('particle', [0, 0, 0, 0]),
+                pid=xr.Variable('particle_instance', [0, 1, 2, 3, 1, 2]),
+            ),
+            coords=dict(
+                time=np.array([12345678, 12345679]),
+            ),
+        )
+
+    def test_can_write_to_sqlite_connection(self, ladim_dset):
+
+        dset = xr.Dataset()
+        conn = sqlite3.connect(':memory:')
+
+        utils.to_sqlite(dset, conn)
