@@ -187,9 +187,15 @@ class Test_converter_sqlite:
             ),
         )
 
-    def test_can_write_to_sqlite_connection(self, ladim_dset):
+    def test_adds_tables(self, ladim_dset):
 
         dset = xr.Dataset()
         conn = sqlite3.connect(':memory:')
 
         utils.to_sqlite(dset, conn)
+
+        res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
+        table_names = [n for (n, ) in res.fetchall()]
+
+        assert 'particle' in table_names
+        assert 'particle_instance' in table_names
