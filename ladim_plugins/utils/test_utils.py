@@ -1,7 +1,9 @@
 from ladim_plugins import utils
+from ladim_plugins.utils import converter
 import numpy as np
 import xarray as xr
 import pytest
+import sqlite3
 
 
 class Test_light:
@@ -166,4 +168,72 @@ class Test_ladim_raster:
         assert raster.bincount.values.tolist() == [
             [[2, 1], [0, 1], [0, 0]],
             [[1, 0], [0, 0], [0, 1]],
+        ]
+
+
+class Test_converter_sqlite:
+    @pytest.fixture(scope='class')
+    def ladim_dset(self):
+        return xr.Dataset(
+            data_vars=dict(
+                lon=xr.Variable('particle_instance', [5, 5, 6, 6, 5, 6]),
+                lat=xr.Variable('particle_instance', [60, 60, 60, 61, 60, 62]),
+                particle_count=xr.Variable('time', [4, 2]),
+                instance_offset=xr.Variable((), 0),
+                release_time=xr.Variable('particle', [0, 0, 0, 0]),
+                farmid=xr.Variable('particle', [1, 2, 3, 4]),
+                pid=xr.Variable('particle_instance', [0, 1, 2, 3, 1, 2]),
+            ),
+            coords=dict(
+                time=np.array([12345678, 12345679]),
+            ),
+        )
+
+    def test_adds_tables(self, ladim_dset):
+
+        conn = sqlite3.connect(':memory:')
+        converter.to_sqlite(ladim_dset, conn)
+        res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
+        table_names = [n for (n, ) in res.fetchall()]
+
+        assert 'particle' in table_names
+        assert 'particle_instance' in table_names
+
+    def test_adds_particle_columns(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        converter.to_sqlite(ladim_dset, con)
+
+        res = con.execute("PRAGMA table_info(particle)")
+        col_names = [v[1] for v in res.fetchall()]
+        assert col_names == ['release_time', 'farmid']
+
+    def test_adds_instance_columns(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        converter.to_sqlite(ladim_dset, con)
+
+        res = con.execute("PRAGMA table_info(particle_instance)")
+        col_names = [v[1] for v in res.fetchall()]
+        assert col_names == ['time', 'lon', 'lat', 'pid']
+
+    def test_adds_particle_data(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        converter.to_sqlite(ladim_dset, con)
+
+        res = con.execute("SELECT * FROM particle")
+        values = np.array(res.fetchall())
+        assert values.tolist() == [[0, 1], [0, 2], [0, 3], [0, 4]]
+
+    def test_adds_instance_data(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        converter.to_sqlite(ladim_dset, con)
+
+        res = con.execute("SELECT * FROM particle_instance")
+        values = np.array(res.fetchall())
+        assert values.tolist() == [
+            [12345678, 5, 60, 0],
+            [12345678, 5, 60, 1],
+            [12345678, 6, 60, 2],
+            [12345678, 6, 61, 3],
+            [12345679, 5, 60, 1],
+            [12345679, 6, 62, 2],
         ]
