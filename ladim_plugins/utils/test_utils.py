@@ -189,13 +189,26 @@ class Test_converter_sqlite:
 
     def test_adds_tables(self, ladim_dset):
 
-        dset = xr.Dataset()
         conn = sqlite3.connect(':memory:')
-
-        utils.to_sqlite(dset, conn)
-
+        utils.to_sqlite(ladim_dset, conn)
         res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
         table_names = [n for (n, ) in res.fetchall()]
 
         assert 'particle' in table_names
         assert 'particle_instance' in table_names
+
+    def test_adds_particle_columns(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        utils.to_sqlite(ladim_dset, con)
+
+        res = con.execute("PRAGMA table_info(particle)")
+        col_names = {v[1] for v in res.fetchall()}
+        assert col_names == {'release_time', 'pid'}
+
+    def test_adds_instance_columns(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        utils.to_sqlite(ladim_dset, con)
+
+        res = con.execute("PRAGMA table_info(particle_instance)")
+        col_names = {v[1] for v in res.fetchall()}
+        assert col_names == {'time', 'lat', 'pid', 'lon'}
