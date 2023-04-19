@@ -203,16 +203,16 @@ class Test_converter_sqlite:
         utils.to_sqlite(ladim_dset, con)
 
         res = con.execute("PRAGMA table_info(particle)")
-        col_names = {v[1] for v in res.fetchall()}
-        assert col_names == {'release_time', 'farmid'}
+        col_names = [v[1] for v in res.fetchall()]
+        assert col_names == ['release_time', 'farmid']
 
     def test_adds_instance_columns(self, ladim_dset):
         con = sqlite3.connect(':memory:')
         utils.to_sqlite(ladim_dset, con)
 
         res = con.execute("PRAGMA table_info(particle_instance)")
-        col_names = {v[1] for v in res.fetchall()}
-        assert col_names == {'time', 'lat', 'pid', 'lon'}
+        col_names = [v[1] for v in res.fetchall()]
+        assert col_names == ['time', 'lon', 'lat', 'pid']
 
     def test_adds_particle_data(self, ladim_dset):
         con = sqlite3.connect(':memory:')
@@ -221,3 +221,18 @@ class Test_converter_sqlite:
         res = con.execute("SELECT * FROM particle")
         values = np.array(res.fetchall())
         assert values.tolist() == [[0, 1], [0, 2], [0, 3], [0, 4]]
+
+    def test_adds_instance_data(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        utils.to_sqlite(ladim_dset, con)
+
+        res = con.execute("SELECT * FROM particle_instance")
+        values = np.array(res.fetchall())
+        assert values.tolist() == [
+            [12345678, 5, 60, 0],
+            [12345678, 5, 60, 1],
+            [12345678, 6, 60, 2],
+            [12345678, 6, 61, 3],
+            [12345679, 5, 60, 1],
+            [12345679, 6, 62, 2],
+        ]
