@@ -1,6 +1,26 @@
 import numpy as np
 
 
+def ladim_file_to_sqlite(fname_in_pattern, fname_out):
+    import glob
+    import xarray as xr
+    import sqlite3
+
+    fnames_in = sorted(glob.glob(fname_in_pattern))
+
+    with sqlite3.connect(fname_out) as con:
+        cur = con.cursor()
+
+        with xr.open_dataset(fnames_in[0], decode_times=False) as dset:
+            add_particle_table(dset, cur)
+            add_instance_table(dset, cur)
+            add_particle_values(dset, cur)
+
+        for ladim_fname in fnames_in:
+            with xr.open_dataset(ladim_fname, decode_times=False) as dset:
+                add_instance_values(dset, cur)
+
+
 def to_sqlite(dset, con):
     cur = con.cursor()
     add_particle_table(dset, cur)

@@ -1,4 +1,5 @@
 from ladim_plugins import utils
+from ladim_plugins.utils import converter
 import numpy as np
 import xarray as xr
 import pytest
@@ -191,7 +192,7 @@ class Test_converter_sqlite:
     def test_adds_tables(self, ladim_dset):
 
         conn = sqlite3.connect(':memory:')
-        utils.to_sqlite(ladim_dset, conn)
+        converter.to_sqlite(ladim_dset, conn)
         res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
         table_names = [n for (n, ) in res.fetchall()]
 
@@ -200,7 +201,7 @@ class Test_converter_sqlite:
 
     def test_adds_particle_columns(self, ladim_dset):
         con = sqlite3.connect(':memory:')
-        utils.to_sqlite(ladim_dset, con)
+        converter.to_sqlite(ladim_dset, con)
 
         res = con.execute("PRAGMA table_info(particle)")
         col_names = [v[1] for v in res.fetchall()]
@@ -208,7 +209,7 @@ class Test_converter_sqlite:
 
     def test_adds_instance_columns(self, ladim_dset):
         con = sqlite3.connect(':memory:')
-        utils.to_sqlite(ladim_dset, con)
+        converter.to_sqlite(ladim_dset, con)
 
         res = con.execute("PRAGMA table_info(particle_instance)")
         col_names = [v[1] for v in res.fetchall()]
@@ -216,7 +217,7 @@ class Test_converter_sqlite:
 
     def test_adds_particle_data(self, ladim_dset):
         con = sqlite3.connect(':memory:')
-        utils.to_sqlite(ladim_dset, con)
+        converter.to_sqlite(ladim_dset, con)
 
         res = con.execute("SELECT * FROM particle")
         values = np.array(res.fetchall())
@@ -224,7 +225,7 @@ class Test_converter_sqlite:
 
     def test_adds_instance_data(self, ladim_dset):
         con = sqlite3.connect(':memory:')
-        utils.to_sqlite(ladim_dset, con)
+        converter.to_sqlite(ladim_dset, con)
 
         res = con.execute("SELECT * FROM particle_instance")
         values = np.array(res.fetchall())
