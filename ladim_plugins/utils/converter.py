@@ -5,18 +5,23 @@ def ladim_file_to_sqlite(fname_in_pattern, fname_out):
     import glob
     import xarray as xr
     import sqlite3
+    import logging
+    logger = logging.getLogger(__name__)
 
     fnames_in = sorted(glob.glob(fname_in_pattern))
 
+    logger.info(f'Create file {fname_out}')
     with sqlite3.connect(fname_out) as con:
         cur = con.cursor()
 
         with xr.open_dataset(fnames_in[0], decode_times=False) as dset:
+            logger.info('Create tables')
             add_particle_table(dset, cur)
             add_instance_table(dset, cur)
             add_particle_values(dset, cur)
 
         for ladim_fname in fnames_in:
+            logger.info(f'Add particle data from {ladim_fname}')
             with xr.open_dataset(ladim_fname, decode_times=False) as dset:
                 add_instance_values(dset, cur)
 
