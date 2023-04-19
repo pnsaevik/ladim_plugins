@@ -180,6 +180,7 @@ class Test_converter_sqlite:
                 particle_count=xr.Variable('time', [4, 2]),
                 instance_offset=xr.Variable((), 0),
                 release_time=xr.Variable('particle', [0, 0, 0, 0]),
+                farmid=xr.Variable('particle', [1, 2, 3, 4]),
                 pid=xr.Variable('particle_instance', [0, 1, 2, 3, 1, 2]),
             ),
             coords=dict(
@@ -203,7 +204,7 @@ class Test_converter_sqlite:
 
         res = con.execute("PRAGMA table_info(particle)")
         col_names = {v[1] for v in res.fetchall()}
-        assert col_names == {'release_time', 'pid'}
+        assert col_names == {'release_time', 'farmid'}
 
     def test_adds_instance_columns(self, ladim_dset):
         con = sqlite3.connect(':memory:')
@@ -212,3 +213,11 @@ class Test_converter_sqlite:
         res = con.execute("PRAGMA table_info(particle_instance)")
         col_names = {v[1] for v in res.fetchall()}
         assert col_names == {'time', 'lat', 'pid', 'lon'}
+
+    def test_adds_particle_data(self, ladim_dset):
+        con = sqlite3.connect(':memory:')
+        utils.to_sqlite(ladim_dset, con)
+
+        res = con.execute("SELECT * FROM particle")
+        values = np.array(res.fetchall())
+        assert values.tolist() == [[0, 1], [0, 2], [0, 3], [0, 4]]
