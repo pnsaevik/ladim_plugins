@@ -1,4 +1,4 @@
-name: Test python application
+name: pytest
 
 on: [push, workflow_dispatch]
 
