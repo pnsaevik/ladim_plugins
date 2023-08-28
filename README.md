@@ -1,4 +1,4 @@
-![CircleCI](https://circleci.com/gh/pnsaevik/ladim_plugins.svg?style=svg)
+![Pytest](https://github.com/pnsaevik/ladim_plugins/actions/workflows/python-testing.yml/badge.svg)
 
 # Plugins for LADiM
 This repository contains plugins for the _Lagrangian Advection and Diffusion
