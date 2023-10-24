@@ -1,6 +1,10 @@
 name: Publish python package
 
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - "master"
+
 
 jobs:
   build:
@@ -55,8 +59,8 @@ jobs:
       with:
         python-version: "3.x"
     - name: Install package
-      run: pip install ladim_aggregate
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Test installation
-      run: pytest
+      run: pip install ladim_plugins
+    - name: Install pytest
+      run: pip install pytest
+    - name: Run tests
+      run: pytest -Wignore --pyargs ladim_plugins
