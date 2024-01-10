@@ -224,7 +224,7 @@ class Test_make_release:
     "features": [
         {
             "type": "Feature",
-            "properties": { },
+            "properties": { "myprop": 101 },
             "geometry": {
                 "type": "MultiPolygon",
                 "coordinates": [
@@ -235,7 +235,7 @@ class Test_make_release:
         },
         {
             "type": "Feature",
-            "properties": { },
+            "properties": { "myprop": 102 },
             "geometry": {
                 "type": "MultiPolygon",
                 "coordinates": [
@@ -277,6 +277,7 @@ class Test_make_release:
             2.699994927300078,
             5.715325911762657
         ]
+        assert result['myprop'] == [101, 102, 102, 101, 101, 102, 101, 102, 102, 101]
 
     def test_can_use_offset_polygon_as_sampling_area(self, conf0):
         conf0['location'] = dict(
