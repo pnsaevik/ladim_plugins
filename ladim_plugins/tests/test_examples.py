@@ -54,7 +54,7 @@ def check_equal(new, ref):
     assert new.variables.keys() == ref.variables.keys()
     assert new.coords.keys() == ref.coords.keys()
     assert new.data_vars.keys() == ref.data_vars.keys()
-    assert new.dims.items() == ref.dims.items()
+    assert new.sizes.items() == ref.sizes.items()
 
     new_dict = {k: v.values.tolist() for k, v in new.variables.items()}
     ref_dict = {k: v.values.tolist() for k, v in ref.variables.items()}
