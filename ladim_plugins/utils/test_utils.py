@@ -56,7 +56,7 @@ class Test_ladim_raster:
                 particle_count=xr.Variable('particle_count', [4, 2]),
             ),
             coords=dict(
-                time=np.array(['2000-01-02', '2000-01-03']).astype('datetime64[D]'),
+                time=np.array(['2000-01-02', '2000-01-03']).astype('datetime64[ns]'),
             ),
         )
 
