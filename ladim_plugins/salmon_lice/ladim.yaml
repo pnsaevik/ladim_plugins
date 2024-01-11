@@ -11,7 +11,7 @@ files:
 
 
 gridforce:
-    module: ladim.gridforce.ROMS
+    module: ladim_plugins.salmon_lice
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
     ibm_forcing: [temp, salt]
 
