@@ -7,7 +7,7 @@ import yaml
 import xarray as xr
 import pytest
 import numpy as np
-import pkg_resources
+import importlib.resources
 from ladim_plugins import release
 
 
@@ -63,7 +63,8 @@ def check_equal(new, ref):
 
 def run_makrel(module_name):
     package = 'ladim_plugins.' + module_name
-    with pkg_resources.resource_stream(package, 'release.yaml') as config_file:
+    traversable = importlib.resources.files(package).joinpath('release.yaml')
+    with traversable.open() as config_file:
         conf = yaml.safe_load(config_file)
 
     import io
@@ -86,7 +87,8 @@ def run_ladim(module_name):
 def get_config(module_name):
     # Load yaml config string
     package = 'ladim_plugins.' + module_name
-    with pkg_resources.resource_stream(package, 'ladim.yaml') as config_file:
+    traversable = importlib.resources.files(package).joinpath('ladim.yaml')
+    with traversable.open() as config_file:
         config_string = config_file.read()
 
     # Append module dir to file names so that ladim can find the config files
