@@ -79,7 +79,7 @@ class IBM:
             pid, pidx_old, pidx_new = np.intersect1d(self.pid, state.pid, return_indices=True)
             onland = ((self.x[pidx_old] == X[pidx_new]) &
                       (self.y[pidx_old] == Y[pidx_new]) &
-                      np.bool8(a[pidx_new])
+                      np.bool_(a[pidx_new])
                       )
             num_onland = np.count_nonzero(onland)
             pidx_new_onland = pidx_new[onland]

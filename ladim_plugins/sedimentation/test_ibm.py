@@ -152,7 +152,7 @@ class Test_ladis:
             return np.zeros_like(x)
 
         def diffuse_fn(x, _):
-            return np.sqrt(2*x)
+            return np.sqrt(2*np.maximum(0, x))
 
         sol = x0
         t = t0
@@ -182,7 +182,7 @@ class Test_ladis:
             return np.zeros_like(x)
 
         def diffuse_fn(x, _):
-            return x
+            return np.maximum(0, x)
 
         sol = x0
         t = t0
@@ -322,7 +322,7 @@ class Test_get_settled_particles:
             coords=dict(
                 time=xr.Variable(
                     'time',
-                    np.array(["2000-01-01", "2000-01-02"]).astype('datetime64[D]')
+                    np.array(["2000-01-01", "2000-01-02"]).astype('datetime64[ns]')
                 ),
             )
         )

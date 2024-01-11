@@ -151,7 +151,7 @@ def sinkvel_egg(mu_w, dens_w, dens_egg, diam_egg):
     # Calculate maximum diameter in Stokes formula
     dens_diff = dens_w - dens_egg
     dmax = (
-        (9.0 * mu_w * mu_w) / (1025.0 * 9.81 * np.abs(dens_diff))
+        (9.0 * mu_w * mu_w) / (1025.0 * 9.81 * (np.abs(dens_diff) + 1e-16))
     ) ** (1 / 3)
 
     small_W = -(1 / 18) * (1 / mu_w) * 9.81 * (diam_egg ** 2) * dens_diff

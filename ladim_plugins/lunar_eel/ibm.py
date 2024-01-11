@@ -81,8 +81,8 @@ def _load_ephemeris():
     pkname = 'ladim_plugins.lunar_eel'
 
     try:
-        from importlib import resources
-        with resources.path(pkname, 'de421.bsp') as fname:
+        from importlib.resources import files, as_file
+        with as_file(files(pkname).joinpath('de421.bsp')) as fname:
             return load_file(fname)
     except ImportError:
         import pkg_resources

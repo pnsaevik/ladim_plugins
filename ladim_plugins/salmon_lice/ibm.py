@@ -94,7 +94,7 @@ def infectivity(age, temp, super=1):
     AA = np.array([age ** 0, age ** 1, age ** 2, age ** 3])
     q = ((coeff @ AA) * TT).sum(axis=0)
     ROC_factor = 1.8 / 0.51
-    infect = ROC_factor * np.exp(q) / (1 + np.exp(q))
+    infect = ROC_factor / (1 + np.exp(-q))
 
     # Define function for lower limit of infectivity
     b1 = 24.79

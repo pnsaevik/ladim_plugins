@@ -468,11 +468,9 @@ class Test_divergence:
 
 class Test_xy2ll:
     def test_returns_boundary_value_when_outside_grid(self):
-        import pkg_resources
-        try:
-            forcing = pkg_resources.resource_filename(
-                'ladim_plugins.chemicals', 'forcing.nc')
-
+        from importlib.resources import files, as_file
+        traversible = files('ladim_plugins.chemicals').joinpath('forcing.nc')
+        with as_file(traversible) as forcing:
             config = dict(
                 gridforce=dict(
                     grid_file=forcing,
@@ -491,9 +489,6 @@ class Test_xy2ll:
             x = np.array([1000000])
             y = np.array([1000000])
             grid.xy2ll(x, y)
-
-        finally:
-            pkg_resources.cleanup_resources()
 
 
 class Test_vertdiff:
