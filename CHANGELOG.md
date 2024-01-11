@@ -5,6 +5,11 @@ All notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.4] - 2024-01-11
+### Fixed
+- Updated various deprecated code in modules and test framework
+- Package now works for python 3.12
+
 ## [1.9.3] - 2023-10-24
 ### Added
 - Auto upload to PyPI  
