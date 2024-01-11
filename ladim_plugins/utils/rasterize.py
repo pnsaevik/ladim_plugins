@@ -104,7 +104,11 @@ def change_ladim_crs(ladim_dset, grid_dset):
     transformer = Transformer.from_crs("epsg:4326", target_crs)
     x, y = transformer.transform(ladim_dset.lat.values, ladim_dset.lon.values)
 
-    logger.info(f'Reproject particle coordinates from lat/lon to "{target_crs.to_proj4()}"')
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        proj4str = {target_crs.to_proj4()}
+    logger.info(f'Reproject particle coordinates from lat/lon to "{proj4str}"')
 
     return ladim_dset.assign(**{
         crs_xcoord: xr.Variable(ladim_dset.lon.dims, x),
