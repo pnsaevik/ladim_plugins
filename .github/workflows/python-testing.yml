@@ -1,6 +1,11 @@
 name: pytest
 
-on: [push, workflow_dispatch]
+on:
+  - push
+  - workflow_dispatch
+  - schedule:
+      # Run schedule every Monday on 02:00 UTC
+      - cron: '00 02 * * 1'
 
 permissions:
   contents: read
