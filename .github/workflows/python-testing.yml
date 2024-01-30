@@ -1,9 +1,9 @@
 name: pytest
 
 on:
-  - push
-  - workflow_dispatch
-  - schedule:
+  push:
+  workflow_dispatch:
+  schedule:
       # Run schedule every Monday on 02:00 UTC
       - cron: '00 02 * * 1'
 
