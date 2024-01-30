@@ -1,13 +1,14 @@
 name: Publish python package
 
 on:
-  workflow_dispatch:
-
+  push:
+    branches:
+      - "master"
 
 jobs:
   build:
     name: Build distribution
-    # if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
