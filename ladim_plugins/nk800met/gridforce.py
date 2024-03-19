@@ -52,7 +52,10 @@ class Grid:
         return np.interp(k, depth, np.arange(len(depth)))
 
     def ll2xy(self, lon, lat):
-        x, y = self.from_wgs84.transform(np.array(lon), np.array(lat))
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')  # Might throw warning on single-element lat/lon
+            x, y = self.from_wgs84.transform(np.array(lon), np.array(lat))
         dx, dy = self.sample_metric(np.array(0), np.array(0))
         return x / dx, y / dy
 

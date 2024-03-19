@@ -45,7 +45,7 @@ class IBM:
         self.forcing = forcing
         self.state = state
 
-        if 'active' in self.state.ibm_variables:
+        if self.has_active():
             has_been_buried_before = (self.state.active != 1)
         else:
             has_been_buried_before = None
@@ -58,13 +58,20 @@ class IBM:
         self.kill_old()
         self.store()
 
-        if 'active' in self.state.ibm_variables:
+        if self.has_active():
             is_active = (self.state.active != 0)
             self.state.active[is_active & has_been_buried_before] = 2
 
+    def has_active(self):
+        try:
+            _ = self.state['active']
+            return True
+        except KeyError:
+            return False
+
     def active(self):
-        if 'active' in self.state.ibm_variables:
-            return self.state.active
+        if self.has_active():
+            return self.state['active']
         else:
             return np.broadcast_to(1, self.state.X.shape)
 
@@ -117,12 +124,12 @@ class IBM:
 
         # Store new vertical position
         self.state.Z[a] = Z
-        if 'active' in self.state.ibm_variables:
+        if self.has_active():
             self.state.active[a] = ~at_seabed
 
         # Kill buried particles if no resuspension
         if not self.taucrit_fn:
-            self.state.alive[a] &= ~at_seabed
+            self.state['alive'][a] &= ~at_seabed
 
     def diffuse(self):
         # Get parameters
@@ -154,8 +161,8 @@ class IBM:
 
     def kill_old(self):
         state = self.state
-        state.age += state.dt
-        state.alive &= state.age <= self.lifespan
+        state['age'] += state.dt
+        state['alive'] &= state['age'] <= self.lifespan
 
     def store(self):
         if not self.output_file:

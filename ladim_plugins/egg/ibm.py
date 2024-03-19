@@ -1,4 +1,5 @@
 import numpy as np
+import typing
 
 
 class IBM:
@@ -7,27 +8,35 @@ class IBM:
         self.vertical_diffusion = (self.D > 0)
         self.egg_diam = config['ibm']['egg_diam']
         self.dt = config['dt']
+        self.model = dict(grid=None, state=None, forcing=None)  # type: typing.Any
 
     def update_ibm(self, grid, state, forcing):
+        self.model['grid'] = grid
+        self.model['state'] = state
+        self.model['forcing'] = forcing
+        self.update()
+
+    def update(self):
+        state = self.model['state']
+        forcing = self.model['forcing']
         egg_diam = self.egg_diam
 
         # Update forcing
-        state.temp = forcing.field(state.X, state.Y, state.Z, 'temp')
-        state.salt = forcing.field(state.X, state.Y, state.Z, 'salt')
+        state['temp'] = forcing.field(state['X'], state['Y'], state['Z'], 'temp')
+        state['salt'] = forcing.field(state['X'], state['Y'], state['Z'], 'salt')
+        temp, salt, buoy = state['temp'], state['salt'], state['egg_buoy']
 
         # Calculating density
-        dens_water = calc_density(state.temp, state.salt)
+        dens_water = calc_density(temp, salt)
 
         # Calculate dynamic molecular viscosity
-        dens_egg = calc_density(state.temp, state.egg_buoy)
-        my_w = 0.001*(1.7915 - 0.0538*state.temp + 0.0007*(state.temp**2) + 0.0023*state.salt)
+        dens_egg = calc_density(temp, buoy)
+        my_w = 0.001*(1.7915 - 0.0538*temp + 0.0007*(temp**2) + 0.0023*salt)
 
         # Calculate maximum diameter in Stokes formula
         dmax = (9.0*my_w*my_w/(1025.0*9.81*np.abs(dens_water - dens_egg)))**(1/3)
 
         # Calculate vertical velocity
-
-        W = np.zeros_like(state.X)
         W = np.where(
             egg_diam <= dmax,
             (1/18)*(1/my_w)*9.81*(egg_diam**2)*np.abs(dens_water - dens_egg),
@@ -41,14 +50,12 @@ class IBM:
             W += rand * (2 * self.D / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top
-        state.Z += W * self.dt
-        state.Z[state.Z < 0] *= -1
+        state['Z'] += W * self.dt
+        state['Z'][state['Z'] < 0] *= -1
+        state['Z'][state['Z'] >= 200.0] = 199.0
 
         # Age in degree-days
-        state.age += state.temp * state.dt / 86400
-
-        # For z-version, do not go below 100 m
-        state.Z[state.Z >= 200.0] = 199.0
+        state['age'] += temp * self.dt / 86400
 
 
 def calc_density(temp, salt):

@@ -165,10 +165,6 @@ class Test_vertdiff:
         dt = 100
         vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
 
-        class Stub:
-            def __getitem__(self, item):
-                return getattr(self, item)
-
         ibm = IBM(
             dict(
                 dt=dt,
@@ -212,10 +208,6 @@ class Test_vertdiff:
         AKs = 0.01
         dt = 100
         vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
-
-        class Stub:
-            def __getitem__(self, item):
-                return getattr(self, item)
 
         ibm = IBM(
             dict(
@@ -261,10 +253,6 @@ class Test_vertdiff:
         dt = 100
         vertdiff = lambda z: AKs/100 + AKs*99/100 * ((depth/2 < z) & (z < depth/2 + dx))
 
-        class Stub:
-            def __getitem__(self, item):
-                return getattr(self, item)
-
         ibm = IBM(
             dict(
                 dt=dt,
@@ -299,3 +287,11 @@ class Test_vertdiff:
         post_distribution = np.histogram(state.Z, bins=bins)[0]
         deviation = np.linalg.norm(np.divide(post_distribution, pre_distribution) - 1)
         assert deviation < 0.1
+
+
+class Stub:
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def __setitem__(self, item, value):
+        setattr(self, item, value)

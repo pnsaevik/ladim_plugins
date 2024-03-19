@@ -55,7 +55,7 @@ class IBM:
         x = self.state.X
         y = self.state.Y
         z = self.state.Z
-        self.state.Z += self.dt * self.forcing.forcing.wvel(x, y, z)
+        self.state['Z'] += self.dt * self.forcing.forcing.wvel(x, y, z)
         self.reflect()
 
     def horzdiff(self):
@@ -126,13 +126,13 @@ class IBM:
             Z1[below_seabed] = 2*H[below_seabed] - Z1[below_seabed]  # Reflexive bottom
 
             # Diffusive step and reflective boundary conditions
-            self.state.Z += np.sqrt(2 * sample_K(x, y, Z1)) * dW  # Diffusive step
+            self.state['Z'] += np.sqrt(2 * sample_K(x, y, Z1)) * dW  # Diffusive step
             self.reflect()
 
     def diffuse_const(self):
         # Uniform stochastic differential
         dW = (np.random.rand(len(self.state.Z)) * 2 - 1) * np.sqrt(3 * self.dt)
-        self.state.Z += np.sqrt(2 * self.D) * dW
+        self.state['Z'] += np.sqrt(2 * self.D) * dW
         self.reflect()
 
     def reflect(self):
@@ -143,7 +143,7 @@ class IBM:
         below_seabed = z > H
         z[z < 0] *= -1  # Reflexive boundary at top
         z[below_seabed] = 2 * H[below_seabed] - z[below_seabed]  # Reflexive bottom
-        self.state.Z = z
+        self.state['Z'] = z
 
     def reposition(self):
         # If particles have not moved: Assume they ended up on land.
