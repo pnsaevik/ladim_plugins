@@ -97,8 +97,8 @@ class IBM:
 
             state['X'] = X
             state['Y'] = Y
-            self.x = state.X
-            self.y = state.Y
+            self.x = np.copy(state.X)
+            self.y = np.copy(state.Y)
             self.pid = state.pid
 
     def resuspend(self):
