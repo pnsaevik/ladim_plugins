@@ -63,10 +63,10 @@ class IBM:
 
         # Random diffusion velocity
         rand = np.random.normal(size=len(state.Z))
-        state.Z += rand * np.sqrt(2 * self.D * self.dt)
+        state['Z'] += rand * np.sqrt(2 * self.D * self.dt)
 
         # Keep within vertical limits, reflexive condition
-        state.Z = reflexive(state.Z, *self.vertical_limits)
+        state['Z'] = reflexive(state.Z, *self.vertical_limits)
 
 
 def reflexive(r, rmin=-np.inf, rmax=np.inf):

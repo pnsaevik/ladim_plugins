@@ -83,8 +83,8 @@ class IBM:
 
     def kill_old(self):
         state = self.state
-        state.age += state.dt
-        state.alive = state.alive & (state.age <= self.lifespan)
+        state['age'] += state.dt
+        state['alive'] = state.alive & (state.age <= self.lifespan)
 
     def shear_velocity_btm(self):
         if self._ustar_tstep < self.state.timestep:

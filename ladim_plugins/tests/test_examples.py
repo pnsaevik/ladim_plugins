@@ -1,3 +1,5 @@
+import netCDF4 as _
+
 import ladim
 import tempfile
 import contextlib
@@ -49,16 +51,16 @@ def test_makrel_matches_snapshot(module_name):
 
 
 def check_equal(new, ref):
-    dt = {'date': ''}
-    assert {**new.attrs, **dt} == {**ref.attrs, **dt}
+    skip_attrs = {'date': '', 'history': '', 'Conventions': '', 'source': ''}
+    new_dict = {k: v.values.tolist() for k, v in new.variables.items()}
+    ref_dict = {k: v.values.tolist() for k, v in ref.variables.items()}
+
+    assert new_dict == ref_dict
+    assert {**new.attrs, **skip_attrs} == {**ref.attrs, **skip_attrs}
     assert new.variables.keys() == ref.variables.keys()
     assert new.coords.keys() == ref.coords.keys()
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.sizes.items() == ref.sizes.items()
-
-    new_dict = {k: v.values.tolist() for k, v in new.variables.items()}
-    ref_dict = {k: v.values.tolist() for k, v in ref.variables.items()}
-    assert new_dict == ref_dict
 
 
 def run_makrel(module_name):

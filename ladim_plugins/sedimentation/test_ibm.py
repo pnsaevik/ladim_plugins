@@ -10,6 +10,12 @@ class Stub:
     def __getattr__(self, item):
         return self._dic[item]
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+    def __setitem__(self, item, value):
+        setattr(self, item, value)
+
 
 class Test_update:
     @staticmethod

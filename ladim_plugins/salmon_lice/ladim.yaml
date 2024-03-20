@@ -1,8 +1,8 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 04:00:00
-    stop_time      : 2015-09-07 04:05:00
-    reference_time : 2000-01-01 04:00:00
+    start_time     : 2022-06-01 01:00:00
+    stop_time      : 2022-06-01 01:05:00
+    reference_time : 1970-01-01 00:00:00
 
 
 files:
@@ -11,9 +11,9 @@ files:
 
 
 gridforce:
-    module: ladim.gridforce.ROMS
+    module: ladim_plugins.salmon_lice
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
-    ibm_forcing: [temp, salt]
+    ibm_forcing: [temp, salt, AKs]
 
 
 ibm:

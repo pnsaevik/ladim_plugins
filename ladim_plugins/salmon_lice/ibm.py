@@ -25,15 +25,15 @@ class IBM:
 
     def update_ibm(self, grid, state, forcing):
         # Mortality
-        state.super *= self.mortality_factor
+        state['super'] *= self.mortality_factor
 
         # Update forcing
-        state.temp = forcing.field(state.X, state.Y, state.Z, "temp")
-        state.salt = forcing.field(state.X, state.Y, state.Z, "salt")
+        state['temp'] = forcing.field(state.X, state.Y, state.Z, "temp")
+        state['salt'] = forcing.field(state.X, state.Y, state.Z, "salt")
 
         # Age in degree-days
-        state.age += state.temp * state.dt / 86400
-        state.days += 1.0*(state.dt/86400)
+        state['age'] += state.temp * state.dt / 86400
+        state['days'] += 1.0*(state.dt/86400)
 
         # Light at depth
         lon, lat = grid.lonlat(state.X, state.Y)
@@ -61,14 +61,14 @@ class IBM:
             W += rand * (2 * self.D / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top
-        state.Z += W * self.dt
-        state.Z[state.Z < 0] *= -1
-
-        # For z-version, do not go below 20 m
-        state.Z[state.Z >= 20.0] = 19.0
+        Z = state['Z']
+        Z += W * self.dt
+        Z[Z < 0] *= -1
+        Z[Z >= 20.0] = 19.0
+        state['Z'] = Z
 
         # Mark particles older than 200 degree days as dead
-        state.alive = state.alive & (state.age < 200)
+        state['alive'] &= (state.age < 200)
 
 
 # noinspection PyShadowingBuiltins

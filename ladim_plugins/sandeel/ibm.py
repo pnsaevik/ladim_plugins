@@ -24,7 +24,8 @@ class IBM:
         egg_development(self.bottom_temp(), state['stage'], state['hatch_rate'],
                         state['active'], self.dt)
 
-        larval_development(state['temp'], state['stage'], state['active'], self.dt)
+        temp = forcing.field(state['X'], state['Y'], state['Z'], 'temp')
+        larval_development(temp, state['stage'], state['active'], self.dt)
 
         self.vertical_diffuse()
 
