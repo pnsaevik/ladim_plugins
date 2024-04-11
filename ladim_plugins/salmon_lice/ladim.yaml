@@ -24,6 +24,9 @@ ibm:
     - days        # Age of particle [days]
     - temp        # Particle ambient temperature [Celcius]
     - salt        # Particle ambient salinity [1]
+    - salt_preference
+    - infect
+    - stage
 
     salinity_model: new  # 'old' or 'new' (default)
     vertical_mixing: 0.001  # [m^2/s]
@@ -56,7 +59,7 @@ output_variables:
 
     # Variable names
     particle: [release_time, farmid]
-    instance: [pid, X, Y, Z, super, age, days, temp, salt]
+    instance: [pid, X, Y, Z, super, age, days, temp, salt, salinity_preference, infect, stage]
 
     # --- Output format for standard variables ---
 
@@ -110,6 +113,10 @@ output_variables:
         ncformat: f4
         long_name: salinity
         standard_name: sea_water_salinity
+
+    salinity_preference: {ncformat: f4}
+    infect: {ncformat: f4}
+    stage: {ncformat: f4}
 
     days:
         ncformat: f4

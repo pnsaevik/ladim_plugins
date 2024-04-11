@@ -46,6 +46,7 @@ provided by `sandvik2019_ladim.yaml` and `sandvik2019_particles.rls`.
 
 ## History
 
+April 2024: Major overhaul of the IBM module
 November 2022: Added function to compute salmon lice infectivity 
 
 2019: Refined by Anne Dagrun Sandvik and Pål Næverlid Sævik to account
@@ -54,3 +55,9 @@ for improved understanding of salmon lice freshwater avoidance behaviour.
 Created by Ingrid Askeland Johnsen (2014).
 
 
+## Model assumptions
+
+### Ageing
+
+The IBM variable `age` represents the age of each lice particle in degree-days.
+Stage development is deterministic.   
