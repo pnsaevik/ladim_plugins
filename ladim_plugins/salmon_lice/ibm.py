@@ -135,16 +135,21 @@ class IBM:
         is_copepod = state['stage'] >= 1
 
         # Compute individual freshwater avoidance limit
-        salt_pref_min = 23
-        salt_pref_max = 31
-        salt_limit = salt_pref_min + state['salt_preference'] * (salt_pref_max - salt_pref_min)
+        salt_pref_min_cop = 23
+        salt_pref_max_cop = 31
+        salt_limit_cop = salt_pref_min_cop + state['salt_preference'] * (salt_pref_max_cop - salt_pref_min_cop)
+        salt_pref_min_nup = 32
+        salt_pref_max_nup = 32
+        salt_limit_nup = salt_pref_min_nup + state['salt_preference'] * (salt_pref_max_nup - salt_pref_min_nup)
+        salt_limit = np.where(is_copepod, salt_limit_cop, salt_limit_nup)
         is_too_little_salt = state['salt'] < salt_limit
 
         # Compute darkness indicator
         lon, lat = self.model['grid'].lonlat(x, y)
         light0 = light.surface_light(timestamp, lon, lat)
         Eb = light0 * np.exp(-self.k * state['Z'])
-        is_too_dark = Eb < 0.01
+        light_min = 0.01
+        is_too_dark = Eb < light_min
 
         # Compute depth indicator
         depth_max = 20
