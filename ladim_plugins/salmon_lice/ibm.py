@@ -131,43 +131,78 @@ class IBM:
         #
         # 3. Default: Don't swim
 
+        # Check larval stage
+        is_copepod = state['stage'] >= 1
+
         # Compute individual freshwater avoidance limit
         salt_pref_min = 23
         salt_pref_max = 31
         salt_limit = salt_pref_min + state['salt_preference'] * (salt_pref_max - salt_pref_min)
-        low_salt = state['salt'] < salt_limit
+        is_too_little_salt = state['salt'] < salt_limit
 
         # Compute darkness indicator
-        lon, lat = self.model['grid'].lonlat(x[~low_salt], y[~low_salt])
+        lon, lat = self.model['grid'].lonlat(x, y)
         light0 = light.surface_light(timestamp, lon, lat)
-        Eb = light0 * np.exp(-self.k * state['Z'][~low_salt])
-        is_bright = Eb >= 0.01
+        Eb = light0 * np.exp(-self.k * state['Z'])
+        is_too_dark = Eb < 0.01
 
-        velocity = self.swim_vel * np.ones_like(state['Z'])     # Positive = downwards
-        velocity[~low_salt] = -velocity[~low_salt] * is_bright  # Upwards if high salt, unless there is darkness
+        # Compute depth indicator
+        depth_max = 20
+        is_too_deep = state['Z'] > depth_max
 
-        state['Z'] += velocity * self.dt
+        # Determine swim direction
+        # Interpretation: The conditions are listed by increasing priority
+        swim_direction = -np.ones(state['Z'].shape, dtype='i2')  # Negative = upwards
+        swim_direction[is_too_dark & ~is_copepod] = 0
+        swim_direction[is_too_little_salt] = 1
+        swim_direction[is_too_deep] = -1
+
+        state['Z'] += self.swim_vel * swim_direction * self.dt
 
     def diffusion(self):
+        """
+        Diffusion scheme by LaBolle et al. (2000), doi: 10.1029/1999WR900224
+
+        Mixing coefficient from ocean model is divided into discrete sections and
+        capped from above and below to avoid numerical errors
+        """
         if not self.vertical_diffusion:
             return
 
         state = self.model['state']
-        num_particles = len(state['Z'])
-        x, y = state['X'], state['Y']
-        mix_depth = 5
-        vert_mix_fn = self.model['forcing'].forcing.vert_mix
+        X0, Y0, Z0 = state['X'], state['Y'], state['Z']
+        depth = self.model['grid'].sample_depth(X0, Y0)
+        dt = self.dt
 
-        rand = np.random.normal(size=num_particles)
-        vert_mix = vert_mix_fn(x, y, np.broadcast_to(mix_depth, x.shape))
-        W = rand * (2 * vert_mix / self.dt) ** 0.5
+        mix_depth_bins = 10
+        max_diff_coeff = 1e-2
+        min_diff_coeff = 1e-5
 
-        # Update vertical position, using reflexive boundary condition at the top
-        Z = state['Z']
-        Z += W * self.dt
-        Z[Z < 0] *= -1
-        Z[Z >= 20.0] = 19.0
-        state['Z'] = Z
+        def vert_mix_fn(xx, yy, zz):
+            # Compute coarse-binned mixing coefficient
+            dz = mix_depth_bins
+            z_coarse = (zz // dz) * dz + 0.5*dz
+            vert_mix_value = self.model['forcing'].forcing.vert_mix(xx, yy, z_coarse)
+            return np.clip(vert_mix_value, min_diff_coeff, max_diff_coeff)
+
+        # Uniform stochastic differential
+        dW = (np.random.rand(len(Z0)) * 2 - 1) * np.sqrt(3 * dt)
+
+        # Intermediate diffusion step
+        vert_mix_0 = vert_mix_fn(X0, Y0, Z0)
+        Z1 = Z0 + np.sqrt(2 * vert_mix_0) * dW  # Diffusive step
+        Z1[Z1 < 0] *= -1  # Reflexive boundary at top
+        below_seabed = Z1 > depth
+        Z1[below_seabed] = 2 * depth[below_seabed] - Z1[below_seabed]  # Reflexive bottom
+
+        # Final diffusion step
+        vert_mix_1 = vert_mix_fn(X0, Y0, Z1)
+        Z2 = Z0 + np.sqrt(2 * vert_mix_1) * dW  # Diffusive step
+        Z2[Z2 < 0] *= -1  # Reflexive boundary at top
+        below_seabed = Z2 > depth
+        Z2[below_seabed] = 2 * depth[below_seabed] - Z2[below_seabed]  # Reflexive bottom
+
+        state['Z'] = Z2
 
 
 # noinspection PyShadowingBuiltins
