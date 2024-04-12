@@ -44,7 +44,7 @@ class IBM:
         idx_new_particles = state['salt_preference'][:] == 0
 
         if np.any(idx_new_particles):
-            names = ['salt_preference']
+            names = ['salt_preference', 'depth_preference']
             num = np.count_nonzero(idx_new_particles)
             newdatas = np.random.rand(len(names) * num).reshape((len(names), num))
             for newdata, name in zip(newdatas, names):
@@ -152,12 +152,16 @@ class IBM:
         is_too_dark = Eb < light_min
 
         # Compute depth indicator
-        depth_max = 20
-        is_too_deep = state['Z'] > depth_max
+        depth_pref_min = 0
+        depth_pref_max = 20
+        depth_limit = depth_pref_min + state['depth_preference'] *  (depth_pref_max - depth_pref_min)
+        is_too_deep = state['Z'] > 20
+        is_comfortable_depth = state['Z'] < depth_limit
 
         # Determine swim direction
         # Interpretation: The conditions are listed by increasing priority
         swim_direction = -np.ones(state['Z'].shape, dtype='i2')  # Negative = upwards
+        swim_direction[is_comfortable_depth] = 0
         swim_direction[is_too_dark & ~is_copepod] = 0
         swim_direction[is_too_little_salt] = 1
         swim_direction[is_too_deep] = -1

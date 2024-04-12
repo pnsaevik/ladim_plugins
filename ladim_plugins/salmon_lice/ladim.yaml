@@ -25,6 +25,7 @@ ibm:
     - temp        # Particle ambient temperature [Celcius]
     - salt        # Particle ambient salinity [1]
     - salt_preference
+    - depth_preference
     - infect
     - stage
 
