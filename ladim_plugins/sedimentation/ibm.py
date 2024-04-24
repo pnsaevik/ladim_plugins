@@ -29,6 +29,7 @@ class IBM:
 
         has_been_buried_before = (self.state.active != 1)
 
+        self.initialize()
         self.resuspend()
         self.diffuse()
         self.sink()
@@ -37,6 +38,14 @@ class IBM:
 
         is_active = (self.state.active != 0)
         self.state.active[is_active & has_been_buried_before] = 2
+
+    def initialize(self):
+        state = self.state
+        idx_new_particles = state['sink_vel'][:] == 0
+        num_new_particles = np.count_nonzero(idx_new_particles)
+
+        if num_new_particles:
+            state['sink_vel'][idx_new_particles] = sinkvel(num_new_particles)
 
     def resuspend(self):
         if self.taucrit_fn is None:
@@ -95,7 +104,7 @@ class IBM:
             y = self.state.Y
             h = self.grid.sample_depth(x, y)
 
-            u_btm, v_btm = self.forcing.velocity(x, y, h, tstep=0)
+            u_btm, v_btm = self.forcing.velocity(x, y, h)
             U2 = u_btm*u_btm + v_btm*v_btm
             c = 0.003
             self._ustar = np.sqrt(c * U2)

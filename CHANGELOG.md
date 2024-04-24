@@ -5,6 +5,9 @@ All notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2024-04-24
+### Added
+- Minor feature in sedimentation module
 
 ## [2.0.0] - 2024-03-20
 ### Changed
