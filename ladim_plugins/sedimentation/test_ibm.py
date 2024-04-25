@@ -75,6 +75,17 @@ class Test_update:
 
         assert np.all(state.Z == 10)
 
+    def test_does_not_resuspend_taucrit_is_not_given(self):
+        ibmconf = dict(lifespan=100, vertical_mixing=0.01)
+        grid, state, forcing = self.gsf(num=5, hvel=1)
+        state['sink_vel'][:] = 1e-7
+        config = dict(dt=state.dt, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        my_ibm.update_ibm(grid, state, forcing)
+
+        assert np.all(state.Z == 10)
+
     def test_sinking_when_mix_of_pelagic_and_benthic_particles(self):
         ibmconf = dict(lifespan=100, taucrit=1, vertical_mixing=0)
         grid, state, forcing = self.gsf(num=5, wvel=1)

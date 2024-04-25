@@ -177,6 +177,9 @@ def ladis(x0, t0, t1, v, K):
 
 
 def get_taucrit_fn(subconf):
+    if subconf is None:
+        return None
+
     if not isinstance(subconf, dict):
         subconf = dict(method='constant', value=subconf)
 
