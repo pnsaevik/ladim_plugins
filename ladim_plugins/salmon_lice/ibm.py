@@ -179,13 +179,14 @@ class IBM:
             return
 
         state = self.model['state']
-        X0, Y0, Z0 = state['X'], state['Y'], state['Z']
+        X0, Y0 = state['X'], state['Y']
         depth = self.model['grid'].sample_depth(X0, Y0)
         dt = self.dt
 
-        mix_depth_bins = 10
+        mix_depth_bins = 1
         max_diff_coeff = 1e-2
         min_diff_coeff = 1e-5
+        vertdiff_dt = mix_depth_bins**2 / (6 * max_diff_coeff)
 
         def vert_mix_fn(xx, yy, zz):
             # Compute coarse-binned mixing coefficient
@@ -194,24 +195,31 @@ class IBM:
             vert_mix_value = self.model['forcing'].forcing.vert_mix(xx, yy, z_coarse)
             return np.clip(vert_mix_value, min_diff_coeff, max_diff_coeff)
 
-        # Uniform stochastic differential
-        dW = (np.random.rand(len(Z0)) * 2 - 1) * np.sqrt(3 * dt)
+        current_time = 0
+        while current_time < dt:
+            old_time = current_time
+            current_time = np.minimum(dt, current_time + vertdiff_dt)
+            ddt = current_time - old_time
+            Z0 = self.model['state']['Z']
 
-        # Intermediate diffusion step
-        vert_mix_0 = vert_mix_fn(X0, Y0, Z0)
-        Z1 = Z0 + np.sqrt(2 * vert_mix_0) * dW  # Diffusive step
-        Z1[Z1 < 0] *= -1  # Reflexive boundary at top
-        below_seabed = Z1 > depth
-        Z1[below_seabed] = 2 * depth[below_seabed] - Z1[below_seabed]  # Reflexive bottom
+            # Uniform stochastic differential
+            dW = (np.random.rand(len(Z0)) * 2 - 1) * np.sqrt(3 * ddt)
 
-        # Final diffusion step
-        vert_mix_1 = vert_mix_fn(X0, Y0, Z1)
-        Z2 = Z0 + np.sqrt(2 * vert_mix_1) * dW  # Diffusive step
-        Z2[Z2 < 0] *= -1  # Reflexive boundary at top
-        below_seabed = Z2 > depth
-        Z2[below_seabed] = 2 * depth[below_seabed] - Z2[below_seabed]  # Reflexive bottom
+            # Intermediate diffusion step
+            vert_mix_0 = vert_mix_fn(X0, Y0, Z0)
+            Z1 = Z0 + np.sqrt(2 * vert_mix_0) * dW  # Diffusive step
+            Z1[Z1 < 0] *= -1  # Reflexive boundary at top
+            below_seabed = Z1 > depth
+            Z1[below_seabed] = 2 * depth[below_seabed] - Z1[below_seabed]  # Reflexive bottom
 
-        state['Z'] = Z2
+            # Final diffusion step
+            vert_mix_1 = vert_mix_fn(X0, Y0, Z1)
+            Z2 = Z0 + np.sqrt(2 * vert_mix_1) * dW  # Diffusive step
+            Z2[Z2 < 0] *= -1  # Reflexive boundary at top
+            below_seabed = Z2 > depth
+            Z2[below_seabed] = 2 * depth[below_seabed] - Z2[below_seabed]  # Reflexive bottom
+
+            state['Z'] = Z2
 
 
 # noinspection PyShadowingBuiltins
