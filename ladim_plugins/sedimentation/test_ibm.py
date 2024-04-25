@@ -281,10 +281,23 @@ class Test_vertical_mixing:
         )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + hvel] * 2)
         state = Stub(
-            X=zrl(zr), Y=zrl(zr), Z=zr + 10, active=zrl(zr), alive=zr == 0,
+            X=zrl(zr), Y=zrl(zr), Z=zr + 10, active=zrl(zr) + 1, alive=zr == 0,
             age=zrl(zr), sink_vel=zr + wvel, dt=dt, timestep=0,
         )
         return grid, forcing, state
+
+    def test_no_diffusion_if_mixing_not_given(self):
+        ibmconf = dict(lifespan=100)
+
+        grid, forcing, state = self.gfs(num=5)
+        state['sink_vel'][:] = 1
+        state['Z'][:] = 0
+        config = dict(dt=state.dt, ibm=ibmconf)
+        my_ibm = ibm.IBM(config)
+
+        assert np.all(state.Z == 0)
+        my_ibm.update_ibm(grid, state, forcing)
+        assert np.all(state.Z == state.dt)
 
     def test_vertical_movement_when_method_constant(self):
         ibmconf = dict(

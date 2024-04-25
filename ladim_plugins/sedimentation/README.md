@@ -81,7 +81,9 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
-Update April 2024: Released particles now gain sinking velocity automatically
+Update April 2024: Released particles gain sinking velocity automatically. Resuspension
+and vertical diffusion can be skipped.
+
 Update May 2021: Linear interpolation of bathymetry.
 
 Created by Marcos Carvajalino Fernandez and Pål Næverlid Sævik (2020).

@@ -7,7 +7,7 @@ class IBM:
         self.lifespan = config['ibm']['lifespan']
 
         # Vertical mixing [m*2/s]
-        self.vdiff_fn = get_vdiff_fn(config['ibm']['vertical_mixing'])
+        self.vdiff_fn = get_vdiff_fn(config['ibm'].get('vertical_mixing', None))
         self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', None))
 
         # Store time step value to calculate age
@@ -73,6 +73,9 @@ class IBM:
         self.state.active[a] = ~at_seabed
 
     def diffuse(self):
+        if self.vdiff_fn is None:
+            return
+
         # Get parameters
         a = self.state.active != 0
         x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
@@ -248,6 +251,9 @@ def get_taucrit_fn_grain_size(source, varname, method):
 
 
 def get_vdiff_fn(subconf):
+    if subconf is None:
+        return None
+
     if not isinstance(subconf, dict):
         subconf = dict(method='constant', value=subconf)
 
