@@ -46,6 +46,7 @@ class Test_update:
     def test_does_resuspend_when_high_velocity(self):
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
         grid, state, forcing = self.gsf(num=5, hvel=1)
+        state['sink_vel'][:] = 1e-7
         config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
 
@@ -56,6 +57,7 @@ class Test_update:
     def test_resuspended_particles_have_altered_active_flag(self):
         ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
         grid, state, forcing = self.gsf(num=5, hvel=1)
+        state['sink_vel'][:] = 1e-7
         config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
 
@@ -284,6 +286,7 @@ class Test_vertical_mixing:
         )
 
         grid, forcing, state = self.gfs(num=5)
+        state['sink_vel'][:] = 1e-7
         config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
 
