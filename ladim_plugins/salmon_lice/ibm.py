@@ -121,50 +121,50 @@ class IBM:
         x, y, z = state['X'], state['Y'], state['Z']
         timestamp = state.timestamp
 
-        # --- Compute swimming direction ---
-        #
-        # The algorithm is as follows:
-        #
-        # 1. If low salinity: Swim downwards
-        #
-        # 2. Otherwise, check light. If daytime, swim upwards.
-        #
-        # 3. Default: Don't swim
-
         # Check larval stage
         is_copepod = state['stage'] >= 1
 
-        # Compute individual freshwater avoidance limit
-        salt_pref_min_cop = 23
-        salt_pref_max_cop = 31
+        # --- Compute individual freshwater avoidance limit ---
+        salt_pref_min_cop = 16
+        salt_pref_max_cop = 32
         salt_limit_cop = salt_pref_min_cop + state['salt_preference'] * (salt_pref_max_cop - salt_pref_min_cop)
-        salt_pref_min_nup = 32
+
+        salt_pref_min_nup = 28
         salt_pref_max_nup = 32
         salt_limit_nup = salt_pref_min_nup + state['salt_preference'] * (salt_pref_max_nup - salt_pref_min_nup)
+
         salt_limit = np.where(is_copepod, salt_limit_cop, salt_limit_nup)
         is_too_little_salt = state['salt'] < salt_limit
 
-        # Compute darkness indicator
+        # --- Compute darkness indicator ---
+        light_limit_cop = 0
+        light_limit_nup = 0.01
+        light_limit = np.where(is_copepod, light_limit_cop, light_limit_nup)
+
         lon, lat = self.model['grid'].lonlat(x, y)
         light0 = light.surface_light(timestamp, lon, lat)
         Eb = light0 * np.exp(-self.k * state['Z'])
-        light_min = 0.01
-        is_too_dark = Eb < light_min
+        is_too_dark_to_swim = Eb < light_limit
 
-        # Compute depth indicator
-        depth_pref_min = 0
-        depth_pref_max = 20
-        depth_limit = depth_pref_min + state['depth_preference'] *  (depth_pref_max - depth_pref_min)
-        is_too_deep = state['Z'] > 20
+        # --- Compute depth indicator ---
+
+        # Commented out: Linear depth preference
+        # depth_pref_min = 0
+        # depth_pref_max = 20
+        # depth_limit = depth_pref_min + state['depth_preference'] * (depth_pref_max - depth_pref_min)
+
+        # Exponential depth preference
+        depth_pref_scale = 5
+        depth_limit = -depth_pref_scale * np.log(1 - state['depth_preference'])
+
         is_comfortable_depth = state['Z'] < depth_limit
 
-        # Determine swim direction
+        # --- Determine swim direction ---
         # Interpretation: The conditions are listed by increasing priority
         swim_direction = -np.ones(state['Z'].shape, dtype='i2')  # Negative = upwards
         swim_direction[is_comfortable_depth] = 0
-        swim_direction[is_too_dark & ~is_copepod] = 0
+        swim_direction[is_too_dark_to_swim] = 0
         swim_direction[is_too_little_salt] = 1
-        swim_direction[is_too_deep] = -1
 
         state['Z'] += self.swim_vel * swim_direction * self.dt
 
