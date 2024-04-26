@@ -183,7 +183,7 @@ class IBM:
         depth = self.model['grid'].sample_depth(X0, Y0)
         dt = self.dt
 
-        mix_depth_bins = 1
+        mix_depth_bins = 5
         max_diff_coeff = 1e-2
         min_diff_coeff = 1e-5
         vertdiff_dt = mix_depth_bins**2 / (6 * max_diff_coeff)
@@ -191,7 +191,7 @@ class IBM:
         def vert_mix_fn(xx, yy, zz):
             # Compute coarse-binned mixing coefficient
             dz = mix_depth_bins
-            z_coarse = (zz // dz) * dz + 0.5*dz
+            z_coarse = np.maximum(0.25 * dz, ((zz - 0.5 * dz) // dz) * dz + dz)
             vert_mix_value = self.model['forcing'].forcing.vert_mix(xx, yy, z_coarse)
             return np.clip(vert_mix_value, min_diff_coeff, max_diff_coeff)
 
