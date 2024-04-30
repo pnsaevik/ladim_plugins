@@ -13,8 +13,15 @@ class Forcing(ladim.gridforce.ROMS.Forcing):
         super().__init__(config, grid)
 
     def vert_mix(self, X, Y, Z):
-        i0 = self._grid.i0
-        j0 = self._grid.j0
-        K, A = z2s(self._grid.z_w, X - i0, Y - j0, Z)
+        MAXIMUM_K = len(self._grid.Cs_w) - 2
+        MINIMUM_K = 1
+        MINIMUM_D = 1e-7
+
+        I = np.int32(np.round(X)) - self._grid.i0
+        J = np.int32(np.round(Y)) - self._grid.j0
+        K, A = z2s(self._grid.z_w, I, J, Z)
+        K_nearest = np.round(K - A).astype(np.int32)
+        K_nearest = np.minimum(MAXIMUM_K, K_nearest)
+        K_nearest = np.maximum(MINIMUM_K, K_nearest)
         F = self['ln_AKs']
-        return np.exp(sample3D(F, X - i0, Y - j0, K, A, method="nearest"))
+        return np.maximum(MINIMUM_D, np.exp(F[K_nearest, J, I]))
