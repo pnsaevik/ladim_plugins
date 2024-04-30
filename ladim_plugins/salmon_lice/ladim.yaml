@@ -13,7 +13,7 @@ files:
 gridforce:
     module: ladim_plugins.salmon_lice
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
-    ibm_forcing: [temp, salt, AKs]
+    ibm_forcing: [temp, salt, ln_AKs]
 
 
 ibm:
