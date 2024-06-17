@@ -95,10 +95,10 @@ output_variables:
 
     # Output format for the particle active indicator
     active:
-        ncformat: i4,
-        long_name: particle active mask,
+        ncformat: i4
+        long_name: particle active mask
         # flag_values: [0, 1],
-        flag_meanings: inactive active,
+        flag_meanings: inactive active
 
 
 numerics:

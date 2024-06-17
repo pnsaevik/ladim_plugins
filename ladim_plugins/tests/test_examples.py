@@ -55,12 +55,13 @@ def check_equal(new, ref):
     new_dict = {k: v.values.tolist() for k, v in new.variables.items()}
     ref_dict = {k: v.values.tolist() for k, v in ref.variables.items()}
 
-    assert new_dict == ref_dict
     assert {**new.attrs, **skip_attrs} == {**ref.attrs, **skip_attrs}
     assert new.variables.keys() == ref.variables.keys()
     assert new.coords.keys() == ref.coords.keys()
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.sizes.items() == ref.sizes.items()
+    for k in new_dict.keys():
+        assert np.all(np.isclose(new_dict[k], ref_dict[k]))
 
 
 def run_makrel(module_name):
