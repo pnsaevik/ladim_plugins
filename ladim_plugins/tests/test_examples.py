@@ -61,9 +61,7 @@ def check_equal(new, ref):
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.sizes.items() == ref.sizes.items()
     for k in new_dict.keys():
-        new_values = new_dict[k].values
-        ref_values = ref_dict[k].values
-        assert np.isclose(new_values, ref_values)
+        assert np.all(np.isclose(new_dict[k], ref_dict[k]))
 
 
 def run_makrel(module_name):
