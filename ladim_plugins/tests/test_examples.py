@@ -60,7 +60,10 @@ def check_equal(new, ref):
     assert new.coords.keys() == ref.coords.keys()
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.sizes.items() == ref.sizes.items()
-    # assert new_dict == ref_dict
+    for k in new_dict.keys():
+        new_values = new_dict[k].values
+        ref_values = ref_dict[k].values
+        assert np.isclose(new_values, ref_values)
 
 
 def run_makrel(module_name):
