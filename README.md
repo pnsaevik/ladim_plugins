@@ -1,5 +1,3 @@
-![Pytest](https://github.com/pnsaevik/ladim_plugins/actions/workflows/python-testing.yml/badge.svg)
-
 # Plugins for LADiM
 This repository contains plugins for the _Lagrangian Advection and Diffusion
 Model_ (LADiM), which is the particle tracking software used at the Institute
