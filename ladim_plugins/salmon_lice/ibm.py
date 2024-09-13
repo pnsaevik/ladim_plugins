@@ -67,15 +67,14 @@ class IBM:
         state['alive'] &= (state.age < 200)
 
 
-# noinspection PyShadowingBuiltins
-def infectivity(age, temp, super=1):
+def infectivity(age, temp, mult=1):
     """
     Computes scaled salmon lice infectivity according to Skern-Mauritzen
     et al. (2020), https://doi.org/10.1016/j.jembe.2020.151429.
 
     :param age: The age of the salmon lice, in degree-days
     :param temp: The ambient temperature
-    :param super: The number of lice
+    :param mult: The number of lice (default = 1)
     :returns: The infectivity, scaled by number of lice
     """
     coeff = np.array([
@@ -103,4 +102,4 @@ def infectivity(age, temp, super=1):
     idx_outside = (age < lower_limit) | (age > upper_limit)
     infect[idx_outside] = 0
 
-    return infect * super
+    return infect * mult
