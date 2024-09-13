@@ -54,5 +54,3 @@ November 2022: Added function to compute salmon lice infectivity
 for improved understanding of salmon lice freshwater avoidance behaviour.
 
 Created by Ingrid Askeland Johnsen (2014).
-
-
