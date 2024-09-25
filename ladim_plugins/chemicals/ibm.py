@@ -3,18 +3,24 @@ import numpy as np
 
 class IBM:
     def __init__(self, config):
-        self.D = config["ibm"].get('vertical_mixing', 0)  # Vertical mixing [m*2/s]
+        ibmconf = config.get('ibm', dict())
+
+        # Time before a particle is taken out of the simulation [seconds]
+        self.lifespan = ibmconf.get('lifespan', None)
+
+        self.D = ibmconf.get('vertical_mixing', 0)  # Vertical mixing [m*2/s]
         self.dt = config['dt']
-        self.vertdiff_dt = config["ibm"].get('vertdiff_dt', self.dt)  # Vertical diffusion timestep [s]
-        self.vertdiff_dz = config["ibm"].get('vertdiff_dz', 0)  # Spacing of vertical diffusion sampling [m]
-        self.vertdiff_max = config["ibm"].get('vertdiff_max', np.inf)  # Maximal vertical diffusion [m2/s]
-        self.horzdiff_type = config["ibm"].get('horzdiff_type', None)
-        self.horzdiff_max = config["ibm"].get('horzdiff_max', np.inf)
-        self.horzdiff_min = config["ibm"].get('horzdiff_min', 0)
+        self.vertdiff_dt = ibmconf.get('vertdiff_dt', self.dt)  # Vertical diffusion timestep [s]
+        self.vertdiff_dz = ibmconf.get('vertdiff_dz', 0)  # Spacing of vertical diffusion sampling [m]
+        self.vertdiff_max = ibmconf.get('vertdiff_max', np.inf)  # Maximal vertical diffusion [m2/s]
+        self.horzdiff_type = ibmconf.get('horzdiff_type', None)
+        self.horzdiff_max = ibmconf.get('horzdiff_max', np.inf)
+        self.horzdiff_min = ibmconf.get('horzdiff_min', 0)
+        self.vertadv = ibmconf.get('vertical_advection', True)
         self.x = np.array([])
         self.y = np.array([])
         self.pid = np.array([])
-        self.land_collision = config["ibm"].get('land_collision', 'reposition')
+        self.land_collision = ibmconf.get('land_collision', 'reposition')
         self.grid = None
         self.state = None
         self.forcing = None
@@ -37,11 +43,12 @@ class IBM:
         elif self.land_collision == "coastal_diffusion":
             self.coastal_diffusion()
 
-        self.advect()
+        if self.vertadv:
+            self.advect()
 
         if isinstance(self.D, str):
             self.diffuse_labolle()
-        else:
+        elif self.D:
             self.diffuse_const()
 
         if self.horzdiff_type == 'smagorinsky':
@@ -50,6 +57,9 @@ class IBM:
         if self.land_collision == "reposition":
             self.store_position()
 
+        if self.lifespan is not None:
+            self.kill_old()
+
     def advect(self):
         # Vertical advection
         x = self.state.X
@@ -57,6 +67,11 @@ class IBM:
         z = self.state.Z
         self.state['Z'] += self.dt * self.forcing.forcing.wvel(x, y, z)
         self.reflect()
+
+    def kill_old(self):
+        state = self.state
+        state['age'] += self.dt
+        state['alive'] = state.alive & (state.age <= self.lifespan)
 
     def horzdiff(self):
         # Itô backwards scheme (LaBolle et al. 2000) for horizontal diffusion
