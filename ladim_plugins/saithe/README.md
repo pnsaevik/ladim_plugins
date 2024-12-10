@@ -9,7 +9,9 @@ upon birth. The module is based on the `larvae` module.
 Modify `ladim.yaml` and `particles.rls` to suit your needs.
 
 The config file `ladim.yaml` contains configuration parameters. See in-file
-comments for details.
+comments for details. Compared to the `larvae` module, this module has an
+additional parameter `extra_spreading` (True/False), which determines if
+individual directional behaviour should be turned on.
 
 The file `particles.rls` is a tab-delimited text file containing particle
 release time and location, as well as particle attributes at the release time.
