@@ -89,6 +89,7 @@ class IBM:
 
         # Compute displacement
         is_directed = ~np.isnan(self.state['direction'])
+        is_directed &= (self.state.age > self.hatch_day)  # Exclude eggs
         d = self.state['direction'][is_directed]
         x0 = self.state.X[is_directed]
         y0 = self.state.Y[is_directed]
