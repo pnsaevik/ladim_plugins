@@ -69,7 +69,7 @@ class IBM:
 
         # --- Execute vertical movement ---
         Z = state.Z + W * self.dt
-        Z = np.maximum(np.minimum(Z, self.max_depth), self.min_depth)
+        Z[~is_egg] = np.clip(Z[~is_egg], self.min_depth, self.max_depth)
         state['Z'] = Z
 
     def spread(self):
