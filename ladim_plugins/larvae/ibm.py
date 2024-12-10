@@ -86,7 +86,7 @@ class IBM:
         state['weight'][~is_egg] = weight + self.growth(temp_larvae, weight, self.dt)
 
         # --- Egg sinking velocity ---
-        W = np.zeros(is_egg.shape, dtype=np.float32)
+        W = np.zeros(np.shape(is_egg), dtype=np.float32)
         T, S = state.temp[is_egg], state.salt[is_egg]
         W[is_egg] = sinkvel_egg(
             mu_w=viscosity(T, S),

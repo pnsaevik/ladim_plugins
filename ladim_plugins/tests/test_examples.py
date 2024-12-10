@@ -33,6 +33,8 @@ def test_output_matches_snapshot(module_name):
     outname = get_module_dir(module_name).joinpath('out.nc')
     if not outname.exists():
         out.to_netcdf(outname)
+        with open(str(outname) + '.yaml', 'w', encoding='utf-8') as fp:
+            yaml.safe_dump(out.to_dict(), fp)
 
     ref = xr.load_dataset(outname)
     check_equal(out, ref)
