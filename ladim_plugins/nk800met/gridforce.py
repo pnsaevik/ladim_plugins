@@ -73,14 +73,27 @@ class Grid:
 
 class Forcing:
     def __init__(self, config, grid):
-        self.dbase = grid.dbase
-        self.z2k = grid.z2k
         self.timeconfig = dict(start=config['start_time'], step=config['dt'])
         self.current_time = None
+
+        self._grid = grid
+        server = config['gridforce'].get('input_file', None)
+        self.dbase = OnlineDatabase(server)
+        dset = self.dbase.get_dset(config['start_time'])
+        self.dvars = dict(
+            h=dset.variables['h'][:].filled(0),
+            depth=dset.variables['depth'][:].filled(0),
+            dx=np.diff(dset.variables['X'][:].filled(0)),
+            dy=np.diff(dset.variables['Y'][:].filled(0)),
+        )
 
     def update(self, t):
         self.current_time = self.timeconfig['start'] + np.timedelta64(
             self.timeconfig['step'] * t, 's')
+
+    def z2k(self, k):
+        depth = self.dvars['depth']
+        return np.interp(k, depth, np.arange(len(depth)))
 
     def velocity(self, x, y, z, tstep):
         dt = np.timedelta64(int(self.timeconfig['step']), 's')

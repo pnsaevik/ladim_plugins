@@ -5,6 +5,11 @@ All notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-01-29
+### Changed
+- Updated gridforce modules of "chemicals" and "nk800met" to facilitate
+  future Ladim improvements
+
 ## [2.3.2] - 2024-12-10
 ### Added
 - Saithe module with individual directional behaviour

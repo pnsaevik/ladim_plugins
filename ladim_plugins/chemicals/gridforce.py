@@ -279,6 +279,14 @@ class Forcing:
         self.file_idx = file_idx
         self.frame_idx = frame_idx
         self._nc = None
+        self.steps = steps
+        self._files = files
+        self.initialization_finished = False
+
+    def _remaining_initialization(self):
+        if self.initialization_finished:
+            return
+        steps = self.steps
 
         # Read old input
         # requires at least one input before start
@@ -339,8 +347,7 @@ class Forcing:
             # No forcing at start, should already be excluded
             raise SystemExit(3)
 
-        self.steps = steps
-        self._files = files
+        self.initialization_finished = True
 
     # ===================================================
     @staticmethod
@@ -442,6 +449,8 @@ class Forcing:
     # TODO: Implement a switch for turning it on again if wanted
     def update(self, t):
         """Update the fields to time step t"""
+
+        self._remaining_initialization()
 
         # Read from config?
         interpolate_velocity_in_time = True
