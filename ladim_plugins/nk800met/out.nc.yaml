@@ -1,0 +1,113 @@
+attrs:
+  Conventions: CF-1.8
+  date: '2025-02-03'
+  history: Created by ladim 2.0.5
+  institution: Institute of Marine Research
+  source: Lagrangian Advection and Diffusion Model
+coords:
+  time:
+    attrs:
+      long_name: time
+      standard_name: time
+      units: seconds since 1970-01-01
+    data:
+    - 1577837700
+    - 1577838000
+    - 1577838300
+    - 1577838600
+    dims:
+    - time
+data_vars:
+  X:
+    attrs:
+      long_name: particle X-coordinate
+    data:
+    - 1.9999756813049316
+    - 1.9898085594177246
+    - 1.0000087022781372
+    - 1.9809250831604004
+    - 1.0131957530975342
+    - 0.9999611377716064
+    - 1.9731414318084717
+    - 1.0265146493911743
+    - 1.0006989240646362
+    dims:
+    - particle_instance
+  Y:
+    attrs:
+      long_name: particle Y-coordinate
+    data:
+    - 3.0000123977661133
+    - 3.003683567047119
+    - 1.9999862909317017
+    - 3.0148093700408936
+    - 2.017721652984619
+    - 3.999967575073242
+    - 3.0335533618927
+    - 2.041735887527466
+    - 4.027876377105713
+    dims:
+    - particle_instance
+  Z:
+    attrs:
+      long_name: particle depth
+      positive: down
+      standard_name: depth_below_surface
+      units: m
+    data:
+    - 0.0
+    - 0.0
+    - 10.0
+    - 0.0
+    - 10.0
+    - 20.0
+    - 0.0
+    - 10.0
+    - 20.0
+    dims:
+    - particle_instance
+  instance_offset:
+    attrs:
+      long_name: particle instance offset for file
+    data: 0
+    dims: []
+  particle_count:
+    attrs:
+      long_name: number of particles in a given timestep
+      ragged_row_count: particle count at nth timestep
+    data:
+    - 1
+    - 2
+    - 3
+    - 3
+    dims:
+    - time
+  pid:
+    attrs:
+      long_name: particle identifier
+    data:
+    - 0
+    - 0
+    - 1
+    - 0
+    - 1
+    - 2
+    - 0
+    - 1
+    - 2
+    dims:
+    - particle_instance
+  release_time:
+    attrs:
+      long_name: particle release time
+      units: seconds since 1970-01-01
+    data:
+    - 1577837700.0
+    - 1577838000.0
+    - 1577838300.0
+    dims:
+    - particle
+dims:
+  particle: 3
+  particle_instance: 9
+  time: 4
