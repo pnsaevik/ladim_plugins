@@ -36,7 +36,7 @@ def test_output_matches_snapshot(module_name):
         with open(str(outname) + '.yaml', 'w', encoding='utf-8') as fp:
             yaml.safe_dump(out.to_dict(), fp)
 
-    ref = xr.load_dataset(outname)
+    ref = xr.load_dataset(outname, decode_cf=False)
     check_equal(out, ref)
 
 
@@ -86,7 +86,7 @@ def run_ladim(module_name):
         ladim.main(get_config(module_name))
 
         # Read and return output data
-        return xr.load_dataset(test_dir.joinpath('out.nc'), decode_cf=True)
+        return xr.load_dataset(test_dir.joinpath('out.nc'), decode_cf=False)
 
 
 def get_config(module_name):
