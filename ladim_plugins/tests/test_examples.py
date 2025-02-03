@@ -86,7 +86,7 @@ def run_ladim(module_name):
         ladim.main(get_config(module_name))
 
         # Read and return output data
-        return xr.load_dataset(test_dir.joinpath('out.nc'))
+        return xr.load_dataset(test_dir.joinpath('out.nc'), decode_cf=True)
 
 
 def get_config(module_name):
