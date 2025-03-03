@@ -63,8 +63,8 @@ class IBM:
         Z[Z >= 20.0] = 19.0
         state['Z'] = Z
 
-        # Mark particles older than 200 degree days as dead
-        state['alive'] &= (state.age < 200)
+        # Mark particles older than 170 degree days as dead
+        state['alive'] &= (state.age < 170)
 
 
 def infectivity(age, temp, mult=1):

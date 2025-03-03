@@ -5,6 +5,10 @@ All notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1]
+### Changed
+- Salmon lice particles now dies at 170 degree-days instead of 200
+
 ## [2.4.0] - 2025-01-29
 ### Changed
 - Updated gridforce modules of "chemicals" and "nk800met" to facilitate
