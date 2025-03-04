@@ -213,3 +213,7 @@ def test_sunheight():
         lat=60,
     )
     assert 6 < result < 7
+
+def test_fail():
+    result=1+1
+    assert result >4
