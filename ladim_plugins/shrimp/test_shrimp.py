@@ -214,6 +214,3 @@ def test_sunheight():
     )
     assert 6 < result < 7
 
-def test_fail():
-    result=1+1
-    assert result >4
