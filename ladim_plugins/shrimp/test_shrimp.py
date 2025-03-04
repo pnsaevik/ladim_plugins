@@ -204,3 +204,13 @@ def plot_particle(darr):
     plot = hv.Curve((x.ravel(), y.ravel(), pid.ravel()), kdims='time', vdims=[darr.name, 'pid'])
 
     return plot.groupby('pid').overlay()
+
+
+def test_sunheight():
+    result = ibm.sunheight(
+        time='2022-01-02 11:00',
+        lon=5,
+        lat=60,
+    )
+    assert 6 < result < 7
+
