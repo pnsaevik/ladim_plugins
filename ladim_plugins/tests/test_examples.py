@@ -104,6 +104,9 @@ def get_config(module_name):
         module_dir, config_dict['files']['particle_release_file'])
     config_dict['gridforce']['input_file'] = os.path.join(
         module_dir, config_dict['gridforce']['input_file'])
+    if 'fjord_index_file' in config_dict['ibm']:
+        config_dict['ibm']['fjord_index_file'] = os.path.join(
+            module_dir, config_dict['ibm']['fjord_index_file'])
 
     # Re-serialize as yaml
     import io
