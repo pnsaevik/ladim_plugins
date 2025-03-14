@@ -1,5 +1,5 @@
 import numpy as np
-from random import randint
+
 
 class IBM:
     def __init__(self, config):
@@ -30,9 +30,9 @@ class IBM:
             yv = [fjord_index[y-1,x],fjord_index[y,x],fjord_index[y+1,x]]
 
             r = np.where(xv==min(xv))[0] # liste x-retn som er nermere havet
-            xdir = delta[r[randint(0,len(r)-1)]] # trekker tilf i lista
+            xdir = delta[r[np.random.randint(0,len(r))]] # trekker tilf i lista
             r = np.where(yv==min(yv))[0]
-            ydir = delta[r[randint(0,len(r)-1)]]
+            ydir = delta[r[np.random.randint(0,len(r))]]
 
             # beregner svommedist i x eller y retn
             if xdir == 0:
@@ -40,7 +40,7 @@ class IBM:
             elif ydir == 0:
                 r = 1
             else:
-                r = randint(0,1)
+                r = np.random.randint(0,2)
             ddx.append(r * swim_vel * xdir * self.dt /dx)
             ddy.append((1-r) * swim_vel * ydir * self.dt /dy)
 
