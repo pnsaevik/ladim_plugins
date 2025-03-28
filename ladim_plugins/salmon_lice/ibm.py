@@ -67,14 +67,17 @@ class IBM:
         state['alive'] &= (state.age < 170)
 
 
-def infectivity(age, temp, mult=1):
+# The arguments in this function are named so that they are consistent with
+# variable names used in the ibm module. As such, it can be used directly
+# in tools like crecon (ladim_aggregate).
+def infectivity(age, temp, super=1):
     """
     Computes scaled salmon lice infectivity according to Skern-Mauritzen
     et al. (2020), https://doi.org/10.1016/j.jembe.2020.151429.
 
     :param age: The age of the salmon lice, in degree-days
     :param temp: The ambient temperature
-    :param mult: The number of lice (default = 1)
+    :param super: The number of lice (default = 1)
     :returns: The infectivity, scaled by number of lice
     """
     coeff = np.array([
@@ -102,4 +105,4 @@ def infectivity(age, temp, mult=1):
     idx_outside = (age < lower_limit) | (age > upper_limit)
     infect[idx_outside] = 0
 
-    return infect * mult
+    return infect * super
