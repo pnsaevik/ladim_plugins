@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import generic_filter
+from scipy.ndimage import generic_filter, binary_dilation
 
 
 class IBM:
@@ -149,3 +149,31 @@ def distance(matrix, max_dist=None):
             break
 
     return distmat
+
+
+def fjord_index(land, ocean_dist):
+    """
+    Compute fjord index matrix
+
+    Computes the distance from any sea cell to the open ocean. An ocean cell is
+    defined as any cell that is "far from land", i.e., the distance to land is
+    larger than ocean_dist. Distance to land is measured as the number of cells
+    in the shortest (taxicab distance) sea-cell route to land.
+
+    :param land: A matrix where 1 denotes land cells and 0 denotes sea cells
+    :param ocean_dist: Distance to open ocean (number of cells)
+    :return: Fjord index matrix
+    """
+    land = np.asarray(land).astype(bool).astype('int32')
+
+    # This function gives 0 on ocean and -1 elsewhere
+    is_not_ocean = binary_dilation(
+        input=land,
+        structure=_TAXICAB_FOOTPRINT,
+        iterations=ocean_dist - 1,
+    )
+
+    # This formula gives 0 on ocean, -2 on land and -1 elsewhere
+    input_matrix = -np.asarray(is_not_ocean, dtype='int32') - land
+
+    return distance(input_matrix)
