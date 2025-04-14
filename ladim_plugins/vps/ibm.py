@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.ndimage import generic_filter
 
 
 class IBM:
@@ -8,7 +9,15 @@ class IBM:
         self.dt = config["dt"]
         self.fjord_index_file = config["ibm"]["fjord_index_file"]
 
+        self.grid = None
+        self.state = None
+        self.forcing = None
+
     def update_ibm(self, grid, state, forcing):
+        self.grid = grid
+        self.state = state
+        self.forcing = forcing
+
         fjord_index = np.load(self.fjord_index_file)
 
         state.age += state.dt #/ 86400
@@ -63,6 +72,80 @@ class IBM:
             state.Z[state.Z >= 2.0] = 2.0 - (state.Z[state.Z >= 2.0] - 2.0)
  
         # Mark particles in the ocean as dead
-        state.alive = (state.alive) & (fjord_index[list(map(int,state.Y)),list(map(int,state.X))] > 0) 
+        state.alive = state.alive & (fjord_index[list(map(int,state.Y)),list(map(int,state.X))] > 0)
 
-  
+
+def _dilate_filter(items):
+    up, left, center, right, down = items
+    if center != -1:
+        return center
+
+    nonnegative_neighbours = [n for n in (up, left, right, down) if n >= 0]
+    if not nonnegative_neighbours:
+        return center
+    else:
+        return min(nonnegative_neighbours) + 1
+
+
+_TAXICAB_FOOTPRINT = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+
+
+def dilate(matrix):
+    """
+    Compute dilation of a distance matrix
+
+    A "distance matrix" is a numpy array of integers where the value of each
+    element represent the taxicab distance to some sources, marked as zeros
+    in the matrix. There are also some special values: -1 means that the cell
+    has an unknown distance to the nearest source, and -2 means that the cell
+    represents an obstacle. A "dilation" means that we assign a positive
+    value to all cells on the boundary, i.e., cells with value -1 that are
+    also neighbours to a nonnegative cell. The new value is one larger than
+    the smallest nonnegative neighbour. Repeated applications of the dilate
+    function will build a distance matrix where all positive values represent
+    the taxicab distance to the sources.
+
+    :param matrix: The input distance matrix
+    :return: Updated distance matrix
+    """
+
+    return generic_filter(
+      input=matrix,
+      function=_dilate_filter,
+      footprint=_TAXICAB_FOOTPRINT,
+      mode='constant',
+      cval=-2,
+    )
+
+
+def distance(matrix, max_dist=None):
+    """
+    Compute distance matrix
+
+    A "distance matrix" is a numpy array of integers where the value of each
+    element represent the taxicab distance to some sources. In the input matrix,
+    sources should be marked as zeros, obstacles should be marked as -2, and all
+    other elements should be -1. In the output matrix, all elements of -1 are
+    replaced with the shortest distance to a nearby source cell, if any route is
+    found.
+
+    :param matrix: An initial matrix, containing values of -2 (obstacle), -1
+        (unknown distance) and 0 (source cells)
+    :param max_dist: If defined, set the maximal number of dilation iterations
+        to perform.
+    :return: Distance matrix
+    """
+    matrix = np.asarray(matrix)
+    assert len(matrix.shape) == 2
+
+    distmat = matrix
+    if max_dist is None:
+      max_dist = np.size(matrix)
+
+    for i in range(max_dist):
+        old_distmat = distmat
+        distmat = dilate(distmat)
+        if np.all(distmat == old_distmat):
+            break
+
+    return distmat
