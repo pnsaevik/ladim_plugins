@@ -1,9 +1,5 @@
 import numpy as np
 from scipy.ndimage import generic_filter, binary_dilation
-import logging
-
-
-logger = logging.getLogger(__name__)
 
 
 class IBM:
@@ -35,10 +31,6 @@ class IBM:
         u, v = self.forcing.forcing.fish_velocity(x, y)
         has_not_reached_ocean = (u != 0) | (v != 0)
         state['alive'] &= has_not_reached_ocean
-        logger.info(x)
-        logger.info(y)
-        logger.info(u)
-        logger.info(v)
 
 
 def _dilate_filter(items):
