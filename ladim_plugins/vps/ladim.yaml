@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2022-06-01 01:00:00
-    stop_time      : 2022-06-01 01:05:00
+    start_time     : 2015-09-07 01:00:00
+    stop_time      : 2015-09-07 01:50:00
     reference_time : 1970-01-01 00:00:00
 
 
@@ -11,50 +11,54 @@ files:
 
 
 gridforce:
-    module: ladim.gridforce.ROMS
+    module: ladim_plugins.vps
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
+
+    # CHANGE TO 10 in production code
+    ocean_distance: 1  # Definition: Distance [km] from land to open ocean
 
 
 ibm:
     module: ladim_plugins.vps
-    fjord_index_file: fjord_index.npy
-    land_mask_file: forcing.nc
+    #fjord_index_file: fjord_index.npy
+
+    max_depth: 2  # Max depth of fish [m]
+
     variables:
     - size  # Length of particles/fish released [m]
     - age # Age of particles [s]
 
 
 particle_release:
-    release_type: continuous
-    release_frequency: [60, s]  # Normally: [1, h]
-    variables: 
+    release_type: discrete
+    variables:
     - mult           # Number of particles released
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
     - X              # X coordinate of release location
     - Y              # Y coordinate of release location
     - Z              # Depth of release location
-    - size           # Length of particles/fish released [m]
+    - river_id       # Internal id number, source river
 
     # Converters (if not float)
     mult: int
     release_time: time
-    particle_variables: [release_time, farmid]
+    particle_variables: [release_time, river_id]
 
 
 output_variables:
     # Output period, format [value, unit], unit = s, m, h, or d
-    outper: [60, s]  # Normally: [1, h]
+    outper: [600, 's']  # Normally: [1, h]
     # Uncomment the entry below to split output file into daily files
     # numrec: 24
 
     # Variable names
-    particle: [release_time]
-    instance: [pid, X, Y, Z]
+    particle: [release_time, river_id]
+    instance: [pid, X, Y, Z, age]
 
     # --- Output format for standard variables ---
 
     release_time:
-        ncformat: f8
+        ncformat: i8
         long_name: particle release time
         units: seconds since reference_time
 
@@ -85,19 +89,14 @@ output_variables:
         standard_name: sea_water_temperature
         units: Celcius
 
-    farmid:
+    river_id:
         ncformat: i4
-        long_name: fish farm location number
+        long_name: river id number
 
     age:
-        ncformat: f4
-        long_name: particle age in degree-days
-        units: Celcius days
-        standard_name: integral_of_sea_water_temperature_wrt_time
-
-    super:
-        ncformat: f4
-        long_name: number of individuals in instance
+        ncformat: i4
+        long_name: time since river departure
+        units: seconds
 
     salt:
         ncformat: f4
@@ -112,6 +111,6 @@ output_variables:
 
 numerics:
     # Model time step, [value, unit]
-    dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
-    advection: RK4  # either EF, RK2 or RK4 (recommended)
+    dt: [ 600, 's']     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
+    advection: EF  # either EF, RK2 or RK4 (recommended)
     diffusion: 1.0  # [m*2/s]

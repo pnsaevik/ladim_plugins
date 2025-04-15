@@ -4,10 +4,9 @@ from scipy.ndimage import generic_filter, binary_dilation
 
 class IBM:
     def __init__(self, config):
-        self.D = config["ibm"].get('vertical_mixing', 1e-4)  # Vertical mixing [m*2/s]
-        self.vertical_diffusion = self.D > 0
         self.dt = config["dt"]
-        self.fjord_index_file = config["ibm"]["fjord_index_file"]
+        self.max_depth = config["ibm"].get('max_depth', 2)  # [m]
+        self.max_age = 2**30  # [s]
 
         self.grid = None
         self.state = None
@@ -18,61 +17,20 @@ class IBM:
         self.state = state
         self.forcing = forcing
 
-        fjord_index = np.load(self.fjord_index_file)
+        # Vertical positioning
+        state['Z'] = np.random.uniform(0, self.max_depth, size=len(state['Z']))
 
-        state.age += state.dt #/ 86400
-        swim_vel = state.size # assume 1bl/sec   
+        # Ageing
+        state['age'] = state['age'] + self.dt
+        is_not_too_old = state['age'] < self.max_age
+        state['alive'] &= is_not_too_old
 
-        # Find direction towards the ocean from the fjord index
-        # Horizontal swimming:
-        delta = [-1, 0, 1]
-        ddx = []
-        ddy = []
-
-        for n in range(len(state.X)):
-            x = int(state.X[n])
-            y = int(state.Y[n])
-            dx, dy = grid.sample_metric(state.X[n], state.Y[n])
-           # swim_vel = float(state.size[n]) # assume 1bl/sek
-
-            xv = [fjord_index[y,x-1],fjord_index[y,x],fjord_index[y,x+1]]
-            yv = [fjord_index[y-1,x],fjord_index[y,x],fjord_index[y+1,x]]
-
-            r = np.where(xv==min(xv))[0] # liste x-retn som er nermere havet
-            xdir = delta[r[np.random.randint(0,len(r))]] # trekker tilf i lista
-            r = np.where(yv==min(yv))[0]
-            ydir = delta[r[np.random.randint(0,len(r))]]
-
-            # beregner svommedist i x eller y retn
-            if xdir == 0:
-                r = 0
-            elif ydir == 0:
-                r = 1
-            else:
-                r = np.random.randint(0,2)
-            ddx.append(r * swim_vel * xdir * self.dt /dx)
-            ddy.append((1-r) * swim_vel * ydir * self.dt /dy)
-
-        # Oppdaterer X, og Y posisjon
-        state.X += ddx
-        state.Y += ddy
-        # Vertical swimming velocity
-        W = np.zeros_like(state.X)
-
-        # Random vertical diffusion velocity
-        if self.vertical_diffusion:
-            rand = np.random.normal(size=len(W))
-            W += rand * (2*self.D/self.dt)**0.5
-
-            # Update vertical position
-            state.Z += W * self.dt
-
-            # For z-version, reflective boundaries
-            state.Z[state.Z < 0.0] = abs(state.Z[state.Z < 0.0])
-            state.Z[state.Z >= 2.0] = 2.0 - (state.Z[state.Z >= 2.0] - 2.0)
- 
-        # Mark particles in the ocean as dead
-        state.alive = state.alive & (fjord_index[list(map(int,state.Y)),list(map(int,state.X))] > 0)
+        # If reached ocean
+        x = self.state['X']
+        y = self.state['Y']
+        u, v = self.forcing.forcing.fish_velocity(x, y)
+        has_not_reached_ocean = (u != 0) | (v != 0)
+        state['alive'] &= has_not_reached_ocean
 
 
 def _dilate_filter(items):
@@ -177,3 +135,58 @@ def fjord_index(land, ocean_dist):
     input_matrix = -np.asarray(is_not_ocean, dtype='int32') - land
 
     return distance(input_matrix)
+
+
+def _descent_filter_type(items):
+    up, left, center, right, down = items
+    if center <= 0:
+        return 0
+
+    nonnegative_neighbours = [n for n in items if n >= 0]
+    smallest_neighbour = min(nonnegative_neighbours)
+
+    idx_smallest = next(
+        i for i, n
+        in enumerate((center, left, right, down, up))
+        if n == smallest_neighbour
+    )
+
+    return idx_smallest
+
+
+def descent(weights):
+    """
+    Compute directional vector for moving towards smaller weights
+
+    Return two arrays u, v of the same size as the input array weights,
+    representing the velocities in the x and y direction, respectively, when
+    moving from higher to smaller weights. Negative weights are treated as
+    obstacles.
+
+    The function is based on taxicab connectivity, which means that the
+    velocity is either left (u = -1, v = 0), right (u = 1, v = 0),
+    up (u = 0, v = 1), down (u = 0, v = -1) or zero (u = v = 0).
+
+    :param weights: Input array weights
+    :return: Arrays u, v representing velocity in the direction of smaller weights
+    """
+    if np.size(weights) == 0:
+        return (np.zeros(np.shape(weights)), ) * 2
+
+    # Compute direction
+    # 0 = zero, 1 = left, 2 = right, 3 = down, 4 = up
+    idx_direction = generic_filter(
+        input=weights,
+        function=_descent_filter_type,
+        footprint=_TAXICAB_FOOTPRINT,
+        mode='constant',
+        cval=-1,
+    )
+
+    u_values = np.array([0, -1, 1, 0, 0])
+    v_values = np.array([0, 0, 0, -1, 1])
+
+    u = u_values[idx_direction]
+    v = v_values[idx_direction]
+
+    return u, v

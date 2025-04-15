@@ -106,3 +106,41 @@ class Test_fjord_index:
             [0, 0, 0, 1, 2, -2, -2, -2, -2, 8],
             [0, 0, 0, 1, 2, -2, 12, 11, 10, 9],
         ]
+
+
+class Test_descent:
+    def test_accepts_empty_array(self):
+        weights = [[]]
+        u, v = ibm.descent(weights)
+        assert u.tolist() == [[]]
+        assert v.tolist() == [[]]
+
+    def test_accepts_single_element_array(self):
+        weights = [[1]]
+        u, v = ibm.descent(weights)
+        assert u.tolist() == [[0]]
+        assert v.tolist() == [[0]]
+
+    def test_computes_directional_vectors(self):
+        weights = [
+            [ 5,  4,  3, -1,  9,  8,  7],
+            [ 0,  0,  0, -1, -1, -1,  6],
+            [ 1,  0,  0, -1,  1, -1,  5],
+            [ 2,  1,  0, -1,  2,  3,  4],
+            [ 3,  2,  1, -1, -1, -1, -1],
+        ]
+        u, v = ibm.descent(weights)
+        assert u.tolist() == [
+            [ 0,  0,  0,  0,  1,  1,  0],
+            [ 0,  0,  0,  0,  0,  0,  0],
+            [ 1,  0,  0,  0,  0,  0,  0],
+            [ 1,  1,  0,  0,  0, -1, -1],
+            [ 1,  1,  0,  0,  0,  0,  0],
+        ]
+        assert v.tolist() == [
+            [-1, -1, -1,  0,  0,  0, -1],
+            [ 0,  0,  0,  0,  0,  0, -1],
+            [ 0,  0,  0,  0,  0,  0, -1],
+            [ 0,  0,  0,  0,  1,  0,  0],
+            [ 0,  0,  1,  0,  0,  0,  0],
+        ]
