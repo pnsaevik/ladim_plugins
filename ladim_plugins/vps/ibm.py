@@ -28,7 +28,6 @@ class IBM:
         state['age'] = state['age'] + self.dt
         is_not_too_old = state['age'] < self.max_age
         state['alive'] &= is_not_too_old
-        logger.info(state['age'])
 
         # If reached ocean
         x = self.state['X']
@@ -36,6 +35,8 @@ class IBM:
         u, v = self.forcing.forcing.fish_velocity(x, y)
         has_not_reached_ocean = (u != 0) | (v != 0)
         state['alive'] &= has_not_reached_ocean
+        logger.info(x)
+        logger.info(y)
         logger.info(u)
         logger.info(v)
 
