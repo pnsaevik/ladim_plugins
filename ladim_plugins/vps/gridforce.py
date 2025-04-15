@@ -1,5 +1,9 @@
 import ladim.gridforce.ROMS
 import numpy as np
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Grid(ladim.gridforce.ROMS.Grid):
@@ -24,12 +28,19 @@ class Forcing(ladim.gridforce.ROMS.Forcing):
         return ocean_dist_cells
 
     def _compute_fish_velocity(self):
+        logger.info('Compute fjord index')
         from . import ibm
         land = 1 - np.asarray(self._grid.M).astype('int32')
         fjord_idx = ibm.fjord_index(land, self._ocean_dist_cells())
         u, v = ibm.descent(fjord_idx)
         self._fish_u = u * self.fish_swim_speed
         self._fish_v = v * self.fish_swim_speed
+        logger.info(self._ocean_dist_cells())
+        logger.info(land)
+        logger.info(fjord_idx)
+        logger.info(u)
+        logger.info(v)
+        logger.info('Finished computing fjord index')
 
     @property
     def fish_u(self):
