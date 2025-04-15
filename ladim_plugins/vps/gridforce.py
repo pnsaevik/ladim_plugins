@@ -25,6 +25,9 @@ class Forcing(ladim.gridforce.ROMS.Forcing):
         ocean_dist_km = self.ocean_distance
         cell_size_km = self._grid.dx[0, 0] / 1000
         ocean_dist_cells = int(np.round(ocean_dist_km / cell_size_km))
+        logger.info(
+            f'{ocean_dist_km} -- {cell_size_km}'
+        )
         return ocean_dist_cells
 
     def _compute_fish_velocity(self):
