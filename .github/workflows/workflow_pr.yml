@@ -6,11 +6,11 @@ on:
       - "master"
 
 jobs:
-  check_version:
+  check_version_job:
     uses: ./.github/workflows/action_newversion.yml
-  check_changelog:
+  check_changelog_job:
     uses: ./.github/workflows/action_changelog.yml
-  build_pypi:
+  build_pypi_job:
     uses: ./.github/workflows/action_pypi_build.yml
 
   # The pytest check is already run elsewhere

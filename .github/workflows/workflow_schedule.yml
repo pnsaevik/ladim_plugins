@@ -7,5 +7,5 @@ on:
       - cron: '00 02 * * 1'
 
 jobs:
-  scheduled-testing:
+  scheduled_testing_job:
     uses: ./.github/workflows/action_pytest.yml
