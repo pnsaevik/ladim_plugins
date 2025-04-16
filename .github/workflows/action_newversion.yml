@@ -5,7 +5,7 @@ on: workflow_call
 jobs:
   compare-versions:
     runs-on: ubuntu-latest
-
+    name: Compare versions
     steps:
       - name: Checkout
         uses: actions/checkout@v4

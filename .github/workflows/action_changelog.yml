@@ -3,9 +3,9 @@ name: Ensure changelog entry exists
 on: workflow_call
 
 jobs:
-  compare-versions:
+  check_changelog:
     runs-on: ubuntu-latest
-    name: Compare versions
+    name: Check changelog
     steps:
       - name: Checkout
         uses: actions/checkout@v4
