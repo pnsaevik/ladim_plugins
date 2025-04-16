@@ -11,6 +11,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Check that changelog entry exists
         run: |
-          VERSION=$(git show ladim_plugins/__init__.py | grep '^__version__' | sed -E 's/^__version__\s*=\s*.(.*).\s*/\1/')
+          VERSION=$(cat ladim_plugins/__init__.py | grep '^__version__' | sed -E 's/^__version__\s*=\s*.(.*).\s*/\1/')
           echo "Version: $VERSION"
           grep -F "## [$VERSION] -" CHANGELOG.md
