@@ -1,20 +1,11 @@
-name: pytest
+name: Test package
 
-on:
-  push:
-  workflow_dispatch:
-  schedule:
-      # Run schedule every Monday on 02:00 UTC
-      - cron: '00 02 * * 1'
-
-permissions:
-  contents: read
+on: workflow_call
 
 jobs:
-  build:
-
+  pytest-jobs:
     runs-on: ubuntu-latest
-
+    name: Run pytest
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python (latest)

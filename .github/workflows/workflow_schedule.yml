@@ -1,0 +1,11 @@
+name: Scheduled testing
+
+on:
+  workflow_dispatch: {}
+  schedule:
+      # Run schedule every Monday on 02:00 UTC
+      - cron: '00 02 * * 1'
+
+jobs:
+  scheduled-testing:
+    uses: ./.github/workflows/action_pytest.yml
