@@ -25,7 +25,6 @@ ibm:
     max_depth: 2  # Max depth of fish [m]
 
     variables:
-    - size  # Length of particles/fish released [m]
     - age # Age of particles [s]
 
 

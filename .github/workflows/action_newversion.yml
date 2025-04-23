@@ -1,0 +1,20 @@
+name: Check version bump
+
+on: workflow_call
+
+jobs:
+  compare-versions:
+    runs-on: ubuntu-latest
+    name: Compare versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+           fetch-depth: 2
+      - name: Check that new version is different from old one
+        run: |
+          OLD_VERSION=$(git show HEAD^1:ladim_plugins/__init__.py | grep '^__version__')
+          NEW_VERSION=$(git show HEAD:ladim_plugins/__init__.py | grep '^__version__')
+          echo "Previous commit: $OLD_VERSION"
+          echo "Current commit: $NEW_VERSION"
+          [ "$OLD_VERSION" != "$NEW_VERSION" ]
