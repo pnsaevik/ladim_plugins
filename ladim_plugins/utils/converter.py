@@ -72,3 +72,76 @@ def add_instance_values(dset, cur):
         tvals = np.repeat(dset['time'][tidx].values, iidx.stop - iidx.start)
         values = np.array([tvals] + [dset[c][iidx].values for c in cols])
         cur.executemany(cmd, values.T.tolist())
+
+
+def ladim_file_to_parquet(fname_in_pattern, fname_out):
+    from pathlib import Path
+    import glob
+    import logging
+    logger = logging.getLogger(__name__)
+
+    paths_in = sorted(Path(p) for p in glob.iglob(fname_in_pattern))
+    path_out = Path(fname_out)
+    if len(paths_in) == 0:
+        raise OSError(f'No input files found: {fname_in_pattern}')
+    if not path_out.is_dir():
+        raise OSError(f'Output path does not exist: {path_out}')
+    if any(path_out.iterdir()):
+        raise OSError(f'Output directory is not empty: {path_out}')
+
+    (path_out / 'particle').mkdir(exist_ok=False, parents=False)
+    outfile_pattern = str(path_out / 'particle' / 'part.{:06}.parquet')
+    for i, chunk in enumerate(load_ladim_particle_chunks(paths_in[0])):
+        fname_chunk = outfile_pattern.format(i)
+        logger.info(f'Write chunk to file: {fname_chunk}')
+        chunk.to_parquet(path=fname_chunk, engine='pyarrow', compression='snappy', index=True)
+
+    (path_out / 'instance').mkdir(exist_ok=False, parents=False)
+    outfile_pattern = str(path_out / 'instance' / 'part.{:06}.parquet')
+    for i, chunk in enumerate(load_ladim_instance_chunks(paths_in)):
+        fname_chunk = outfile_pattern.format(i)
+        logger.info(f'Write chunk to file: {fname_chunk}')
+        chunk.to_parquet(path=fname_chunk, engine='pyarrow', compression='snappy', index=False)
+
+
+def load_ladim_instance_chunks(paths):
+    import xarray as xr
+
+    for path in paths:
+        with xr.open_dataset(path, decode_cf=False, engine='h5netcdf') as dset:
+            iterator = load_ladim_instance_chunks_from_dataset(dset)
+            for chunk in iterator:
+                yield chunk
+
+
+def load_ladim_instance_chunks_from_dataset(dset):
+    ddset = dset.drop_dims(['time', 'particle']).drop_vars('instance_offset')
+    start = 0
+    for tidx in range(dset.sizes['time']):
+        stop = start + dset['particle_count'][tidx].item()
+        subset = ddset.isel(particle_instance=slice(start, stop))
+        df = subset.to_dataframe()
+        df['time'] = dset['time'][tidx].item()
+        yield df
+        start = stop
+
+
+def load_ladim_particle_chunks(path):
+    import xarray as xr
+    with xr.open_dataset(path, decode_cf=False, engine='h5netcdf') as dset:
+        iterator = load_ladim_particle_chunks_from_dataset(dset)
+        for chunk in iterator:
+            yield chunk
+
+
+def load_ladim_particle_chunks_from_dataset(dset):
+    ddset = dset.drop_dims(['time', 'particle_instance']).drop_vars('instance_offset')
+    sz = int(1e7)
+    start = 0
+    num_particles = dset.sizes['particle']
+    while start < num_particles:
+        stop = start + sz
+        subset = ddset.isel(particle=slice(start, stop))
+        df = subset.to_dataframe()
+        yield df
+        start = stop
