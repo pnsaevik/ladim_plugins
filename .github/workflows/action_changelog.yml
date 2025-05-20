@@ -1,0 +1,16 @@
+name: Ensure changelog entry exists
+
+on: workflow_call
+
+jobs:
+  check_changelog:
+    runs-on: ubuntu-latest
+    name: Check changelog
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check that changelog entry exists
+        run: |
+          VERSION=$(cat ladim_plugins/__init__.py | grep '^__version__' | sed -E 's/^__version__\s*=\s*.(.*).\s*/\1/')
+          echo "Version: $VERSION"
+          grep -F "## [$VERSION] -" CHANGELOG.md
