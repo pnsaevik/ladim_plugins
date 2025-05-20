@@ -50,6 +50,7 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+May 2025: Bugfix in gridforce module
 September 2024: Added lifespan option
 December 2021: Added coastal hyperdiffusion as a land collision avoidance method
 September 2021: Added heterogeneous diffusion
