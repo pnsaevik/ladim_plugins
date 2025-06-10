@@ -171,7 +171,6 @@ class Test_ladim_raster:
         ]
 
 
-@pytest.mark.skip(reason="Debugging unclosed sqlite connection")
 class Test_converter_sqlite:
     @pytest.fixture(scope='class')
     def ladim_dset(self):
@@ -195,14 +194,16 @@ class Test_converter_sqlite:
         with sqlite3.connect(':memory:') as conn:
             yield conn
 
-    def test_adds_tables(self, ladim_dset, conn):
-        converter.to_sqlite(ladim_dset, conn)
-        res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
+    def test_adds_tables(self, ladim_dset):
+        with sqlite3.connect(':memory:') as conn:
+            converter.to_sqlite(ladim_dset, conn)
+            res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
         table_names = [n for (n, ) in res.fetchall()]
 
         assert 'particle' in table_names
         assert 'particle_instance' in table_names
 
+    @pytest.mark.skip(reason="Debugging unclosed sqlite connection")
     def test_adds_particle_columns(self, ladim_dset, conn):
         converter.to_sqlite(ladim_dset, conn)
 
@@ -210,6 +211,7 @@ class Test_converter_sqlite:
         col_names = [v[1] for v in res.fetchall()]
         assert col_names == ['release_time', 'farmid']
 
+    @pytest.mark.skip(reason="Debugging unclosed sqlite connection")
     def test_adds_instance_columns(self, ladim_dset, conn):
         converter.to_sqlite(ladim_dset, conn)
 
@@ -217,6 +219,7 @@ class Test_converter_sqlite:
         col_names = [v[1] for v in res.fetchall()]
         assert col_names == ['time', 'lon', 'lat', 'pid']
 
+    @pytest.mark.skip(reason="Debugging unclosed sqlite connection")
     def test_adds_particle_data(self, ladim_dset, conn):
         converter.to_sqlite(ladim_dset, conn)
 
@@ -224,6 +227,7 @@ class Test_converter_sqlite:
         values = np.array(res.fetchall())
         assert values.tolist() == [[0, 1], [0, 2], [0, 3], [0, 4]]
 
+    @pytest.mark.skip(reason="Debugging unclosed sqlite connection")
     def test_adds_instance_data(self, ladim_dset, conn):
         converter.to_sqlite(ladim_dset, conn)
 
