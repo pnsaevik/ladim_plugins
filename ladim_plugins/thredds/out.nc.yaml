@@ -1,0 +1,72 @@
+attrs:
+  Conventions: CF-1.8
+  date: '2025-08-04'
+  history: Created by ladim 2.1.6
+  institution: Institute of Marine Research
+  source: Lagrangian Advection and Diffusion Model
+coords:
+  time:
+    attrs:
+      long_name: time
+      standard_name: time
+      units: seconds since 1970-01-01
+    data:
+    - 1654045200
+    - 1654045500
+    dims:
+    - time
+data_vars:
+  instance_offset:
+    attrs:
+      long_name: particle instance offset for file
+    data: 0
+    dims: []
+  lat:
+    attrs:
+      long_name: particle latitude
+      standard_name: latitude
+      units: degrees_north
+    data:
+    - 60.0
+    - 60.0
+    dims:
+    - particle_instance
+  lon:
+    attrs:
+      long_name: particle longitude
+      standard_name: longitude
+      units: degrees_east
+    data:
+    - 4.0
+    - 4.0
+    dims:
+    - particle_instance
+  particle_count:
+    attrs:
+      long_name: number of particles in a given timestep
+      ragged_row_count: particle count at nth timestep
+    data:
+    - 1
+    - 1
+    dims:
+    - time
+  pid:
+    attrs:
+      long_name: particle identifier
+    data:
+    - 0
+    - 0
+    dims:
+    - particle_instance
+  release_time:
+    attrs:
+      long_name: particle release time
+      units: seconds since 1970-01-01
+    data:
+    - 1654045200.0
+    dims:
+    - particle
+dims:
+  particle: 1
+  particle_instance: 2
+  time: 2
