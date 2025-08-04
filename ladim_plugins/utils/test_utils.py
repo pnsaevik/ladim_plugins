@@ -1,6 +1,6 @@
+import numpy as np
 from ladim_plugins import utils
 from ladim_plugins.utils import converter
-import numpy as np
 import xarray as xr
 import pytest
 import sqlite3
@@ -188,10 +188,16 @@ class Test_converter_sqlite:
                 time=np.array([12345678, 12345679]),
             ),
         )
-
-    def test_adds_tables(self, ladim_dset):
-
+    
+    @pytest.fixture(scope='function')
+    def conn(self):
         conn = sqlite3.connect(':memory:')
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    def test_adds_tables(self, ladim_dset, conn):
         converter.to_sqlite(ladim_dset, conn)
         res = conn.execute("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';")
         table_names = [n for (n, ) in res.fetchall()]
@@ -199,35 +205,31 @@ class Test_converter_sqlite:
         assert 'particle' in table_names
         assert 'particle_instance' in table_names
 
-    def test_adds_particle_columns(self, ladim_dset):
-        con = sqlite3.connect(':memory:')
-        converter.to_sqlite(ladim_dset, con)
+    def test_adds_particle_columns(self, ladim_dset, conn):
+        converter.to_sqlite(ladim_dset, conn)
 
-        res = con.execute("PRAGMA table_info(particle)")
+        res = conn.execute("PRAGMA table_info(particle)")
         col_names = [v[1] for v in res.fetchall()]
         assert col_names == ['release_time', 'farmid']
 
-    def test_adds_instance_columns(self, ladim_dset):
-        con = sqlite3.connect(':memory:')
-        converter.to_sqlite(ladim_dset, con)
+    def test_adds_instance_columns(self, ladim_dset, conn):
+        converter.to_sqlite(ladim_dset, conn)
 
-        res = con.execute("PRAGMA table_info(particle_instance)")
+        res = conn.execute("PRAGMA table_info(particle_instance)")
         col_names = [v[1] for v in res.fetchall()]
         assert col_names == ['time', 'lon', 'lat', 'pid']
 
-    def test_adds_particle_data(self, ladim_dset):
-        con = sqlite3.connect(':memory:')
-        converter.to_sqlite(ladim_dset, con)
+    def test_adds_particle_data(self, ladim_dset, conn):
+        converter.to_sqlite(ladim_dset, conn)
 
-        res = con.execute("SELECT * FROM particle")
+        res = conn.execute("SELECT * FROM particle")
         values = np.array(res.fetchall())
         assert values.tolist() == [[0, 1], [0, 2], [0, 3], [0, 4]]
 
-    def test_adds_instance_data(self, ladim_dset):
-        con = sqlite3.connect(':memory:')
-        converter.to_sqlite(ladim_dset, con)
+    def test_adds_instance_data(self, ladim_dset, conn):
+        converter.to_sqlite(ladim_dset, conn)
 
-        res = con.execute("SELECT * FROM particle_instance")
+        res = conn.execute("SELECT * FROM particle_instance")
         values = np.array(res.fetchall())
         assert values.tolist() == [
             [12345678, 5, 60, 0],

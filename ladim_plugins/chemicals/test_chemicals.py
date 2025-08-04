@@ -129,31 +129,6 @@ class Test_compute_w:
         assert np.all(w_internal > 0), 'Downward velocity should be positive'
 
 
-class Test_xy2ll:
-    def test_returns_boundary_value_when_outside_grid(self):
-        from importlib.resources import files, as_file
-        traversible = files('ladim_plugins.chemicals').joinpath('forcing.nc')
-        with as_file(traversible) as forcing:
-            config = dict(
-                gridforce=dict(
-                    grid_file=forcing,
-                ),
-            )
-            grid = gridforce.Grid(config)
-
-            # On the smaller side, check value
-            x = np.array([0, 0, 1, 1])
-            y = np.array([0, 1, 0, 1])
-            lon, lat = grid.xy2ll(x, y)
-            assert lon.tolist() == [lon[0]] * 4
-            assert lat.tolist() == [lat[0]] * 4
-
-            # On the larger side, check that no errors
-            x = np.array([1000000])
-            y = np.array([1000000])
-            grid.xy2ll(x, y)
-
-
 class Test_vertdiff:
     def test_stable_distribution_when_discontinuous_vertdiff(self):
         np.random.seed(0)

@@ -9,9 +9,16 @@ Surface ligth module
 # University of Bergen
 
 import numpy as np
+from typing import Union
 
 
-def light(time, lon, lat, depth=0, extinction_coef=0.2):
+def light(
+    time,
+    lon,
+    lat,
+    depth: Union[float, np.ndarray] = 0,
+    extinction_coef: Union[float, np.ndarray] = 0.2
+):
     light_0 = surface_light(time, lon, lat)
     return light_0 * np.exp(-extinction_coef * depth)
 

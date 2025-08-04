@@ -3,6 +3,7 @@
 
 # IDE configuration
 .idea/*
+settings.json
 
 # Build files
 /build/*

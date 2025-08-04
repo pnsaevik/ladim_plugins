@@ -11,7 +11,9 @@ def ladim_file_to_sqlite(fname_in_pattern, fname_out):
     fnames_in = sorted(glob.glob(fname_in_pattern))
 
     logger.info(f'Create file {fname_out}')
-    with sqlite3.connect(fname_out) as con:
+
+    con = sqlite3.connect(fname_out)
+    try:
         cur = con.cursor()
 
         with xr.open_dataset(fnames_in[0], decode_times=False) as dset:
@@ -24,7 +26,11 @@ def ladim_file_to_sqlite(fname_in_pattern, fname_out):
             logger.info(f'Add particle data from {ladim_fname}')
             with xr.open_dataset(ladim_fname, decode_times=False) as dset:
                 add_instance_values(dset, cur)
+        
+        cur.close()
 
+    finally:
+        con.close()
 
 def to_sqlite(dset, con):
     cur = con.cursor()
@@ -32,6 +38,7 @@ def to_sqlite(dset, con):
     add_instance_table(dset, cur)
     add_particle_values(dset, cur)
     add_instance_values(dset, cur)
+    cur.close()
 
 
 def add_particle_table(dset, cur):
