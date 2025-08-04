@@ -5,6 +5,10 @@ All notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-05-01 
+### Added
+- Auto fjord index computation in VPS module 
+
 ## [2.5.2] - 2025-05-20
 ### Fixed
 - Gridforce module in chemicals plugin now inherits from main ladim gridforce.
