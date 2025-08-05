@@ -1,8 +1,6 @@
 import numpy as np
 from netCDF4 import Dataset, num2date
-import glob
 import datetime
-import threading
 from ladim.sample import sample2D, bilin_inv
 import logging
 
@@ -28,107 +26,48 @@ class Grid:
             logger.error("Could not open grid file " + grid_file)
             raise SystemExit(1)
 
-        # Subgrid
-        jmax, imax = ncid.variables["h"].shape
-        whole_grid = [0, imax, 0, jmax]
-        if config["gridforce"].get('subgrid', None):
-            limits = list(config["gridforce"]["subgrid"])
-        else:
-            limits = whole_grid
+        try:
+            # Subgrid
+            jmax, imax = ncid.variables["h"].shape
+            whole_grid = [1, imax - 1, 1, jmax - 1]
+            if config["gridforce"].get('subgrid', None):
+                limits = list(config["gridforce"]["subgrid"])
+            else:
+                limits = whole_grid
 
-        # Allow None if no imposed limitation
-        for ind, val in enumerate(limits):
-            if val is None:
-                limits[ind] = whole_grid[ind]
+            # Allow None if no imposed limitation
+            for ind, val in enumerate(limits):
+                if val is None:
+                    limits[ind] = whole_grid[ind]
 
-        self.i0, self.i1, self.j0, self.j1 = limits
-        self.imax = self.i1 - self.i0
-        self.jmax = self.j1 - self.j0
+            self.i0, self.i1, self.j0, self.j1 = limits
+            i0, i1, j0, j1 = limits
 
-        # Limits for where velocities are defined
-        self.xmin = float(self.i0)
-        self.xmax = float(self.i1 - 1)
-        self.ymin = float(self.j0)
-        self.ymax = float(self.j1 - 1)
+            # Read some variables
+            self.H = ncid.variables["h"][j0:j1, i0:i1]
+            self.M = ncid.variables["mask_rho"][j0:j1, i0:i1].astype(int)
+            self.dx = 1.0 / np.asarray(ncid.variables["pm"][j0:j1, i0:i1])
+            self.dy = 1.0 / np.asarray(ncid.variables["pn"][j0:j1, i0:i1])
+            self.lon = np.asarray(ncid.variables["lon_rho"][j0:j1, i0:i1])
+            self.lat = np.asarray(ncid.variables["lat_rho"][j0:j1, i0:i1])
 
-        # Slices
-        #   rho-points
-        self.I = slice(self.i0, self.i1)
-        self.J = slice(self.j0, self.j1)
-        #   U and V-points
-        self.Iu = slice(self.i0 - 1, self.i1)
-        self.Ju = self.J
-        self.Iv = self.I
-        self.Jv = slice(self.j0 - 1, self.j1)
-
-        # Vertical grid
-
-        if "Vinfo" in config["gridforce"]:
-            Vinfo = config["gridforce"]["Vinfo"]
-            self.N = Vinfo["N"]
-            self.hc = Vinfo["hc"]
-            self.Vstretching = Vinfo.get("Vstretching", 1)
-            self.Vtransform = Vinfo.get("Vtransform", 1)
-            self.Cs_r = s_stretch(
-                self.N,
-                Vinfo["theta_s"],
-                Vinfo["theta_b"],
+            self.z_r = sdepth(
+                H=self.H,
+                Hc=ncid.variables["hc"].getValue(),
+                C=ncid.variables["Cs_r"][:],
                 stagger="rho",
-                Vstretching=self.Vstretching,
-            )
-            self.Cs_w = s_stretch(
-                self.N,
-                Vinfo["theta_s"],
-                Vinfo["theta_b"],
-                stagger="w",
-                Vstretching=self.Vstretching,
+                Vtransform=ncid.variables["Vtransform"].getValue(),
             )
 
-        else:
-            self.hc = ncid.variables["hc"].getValue()
-            self.Cs_r = ncid.variables["Cs_r"][:]
-            self.Cs_w = ncid.variables["Cs_w"][:]
-            self.N = len(self.Cs_r)
-            # Vertical transform
-            try:
-                self.Vtransform = ncid.variables["Vtransform"].getValue()
-            except KeyError:
-                self.Vtransform = 1  # Default = old way
+            # Backwards-compatibility stuff
+            self.xmin = None
+            self.ymin = None
+            self.xmax = None
+            self.ymax = None
 
-        # Read some variables
-        self.H = ncid.variables["h"][self.J, self.I]
-        self.M = ncid.variables["mask_rho"][self.J, self.I].astype(int)
-        # self.Mu = ncid.variables['mask_u'][self.Ju, self.Iu]
-        # self.Mv = ncid.variables['mask_v'][self.Jv, self.Iv]
-        self.dx = 1.0 / ncid.variables["pm"][self.J, self.I]
-        self.dy = 1.0 / ncid.variables["pn"][self.J, self.I]
-        self.lon = ncid.variables["lon_rho"][self.J, self.I]
-        self.lat = ncid.variables["lat_rho"][self.J, self.I]
-        self.angle = ncid.variables["angle"][self.J, self.I]
-
-        self.z_r = sdepth(
-            self.H, self.hc, self.Cs_r, stagger="rho", Vtransform=self.Vtransform
-        )
-        self.z_w = sdepth(
-            self.H, self.hc, self.Cs_w, stagger="w", Vtransform=self.Vtransform
-        )
-
-        # Land masks at u- and v-points
-        M = self.M
-        Mu = np.zeros((self.jmax, self.imax + 1), dtype=int)
-        Mu[:, 1:-1] = M[:, :-1] * M[:, 1:]
-        Mu[:, 0] = M[:, 0]
-        Mu[:, -1] = M[:, -1]
-        self.Mu = Mu
-
-        Mv = np.zeros((self.jmax + 1, self.imax), dtype=int)
-        Mv[1:-1, :] = M[:-1, :] * M[1:, :]
-        Mv[0, :] = M[0, :]
-        Mv[-1, :] = M[-1, :]
-        self.Mv = Mv
-
-        # Close the file(s)
-        ncid.close()
+        finally:
+            # Close the file(s)
+            ncid.close()
 
     def sample_metric(self, X, Y):
         """Sample the metric coefficients
@@ -168,10 +107,10 @@ class Grid:
     def ingrid(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Returns True for points inside the subgrid"""
         return (
-            (self.xmin + 0.5 < X)
-            & (X < self.xmax - 0.5)
-            & (self.ymin + 0.5 < Y)
-            & (Y < self.ymax - 0.5)
+            (self.i0 + 0.5 < X)
+            & (X < self.i1 - 0.5)
+            & (self.j0 + 0.5 < Y)
+            & (Y < self.j1 - 0.5)
         )
 
     def onland(self, X, Y):
@@ -279,17 +218,24 @@ class FieldCache:
         self.varnames = list(set(varnames))
         self.cache = dict()
 
-    def prepare(self, i, j, k, l):
-        # The function loads required blocks into memory
-        # At present, the ijk coordinates are disregarded
+    def update(self, time_index):
+        """
+        Update cached variables
+
+        The time index is the field-scoped fractional
+        time variable. The function loads necessary
+        time steps (before/after) into memory, and deletes
+        obsolete times.
+        :param time_index: Fractional time index
+        """
 
         # Delete old entries
         for time_block in self.cache.keys():
-            if time_block < int(l):
+            if time_block < int(time_index):
                 del self.cache[time_block]
 
         # Load new entries
-        for time_block in [int(l), int(l) + 1]:
+        for time_block in [int(time_index), int(time_index) + 1]:
             if time_block in self.cache:
                 continue
 
@@ -452,7 +398,7 @@ class Forcing:
 
     def update(self, t):
         i, j, k, l = self.transformer.field_indices([0], [0], [0], t)
-        self.cache.prepare(i, j, k, l)
+        self.cache.update(l)
         self._current_time_step = t
         return
 
@@ -583,14 +529,6 @@ def sdepth(H, Hc, C, stagger="rho", Vtransform=1):
     Returns an array with ndim = H.ndim + 1 and
     shape = cs_r.shape + H.shape with the depths of the
     mid-points in the s-levels.
-
-    Typical usage::
-
-    >>> fid = Dataset(roms_file)
-    >>> H = fid.variables['h'][:, :]
-    >>> C = fid.variables['Cs_r'][:]
-    >>> Hc = fid.variables['hc'].getValue()
-    >>> z_rho = sdepth(H, Hc, C)
 
     """
     H = np.asarray(H)
