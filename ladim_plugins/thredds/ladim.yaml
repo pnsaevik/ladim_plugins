@@ -18,8 +18,11 @@ gridforce:
     module: ladim_plugins.thredds
 
     # Replace with string pattern for the thredds server, or remove line
-    input_file: forcing.nc
+    # input_file: forcing.nc
+    input_file: https://thredds.met.no/thredds/dodsC/fou-hi/new_norkyst800m/his/ocean_his.an.{year:04}{month:02}{day:02}.nc
 
+    # subgrid: [i0, i1, j0, j1]
+    subgrid: [100, 110, 200, 215]
 
 particle_release:
     variables: [release_time, lat, lon, Z]
@@ -29,7 +32,7 @@ particle_release:
 
 output_variables:
     # Frequency of output
-    outper: [5, m]
+    outper: [1, m]
 
     # Variables included in output
     particle: [release_time]
@@ -66,7 +69,7 @@ output_variables:
 
 numerics:
     # Model time step
-    dt: [5, m]     # Format = [value, unit]
+    dt: [1, m]     # Format = [value, unit]
     # Advection method, EF, RK2, or RK4
     advection: EF
     diffusion: 0    # [m/s**2]

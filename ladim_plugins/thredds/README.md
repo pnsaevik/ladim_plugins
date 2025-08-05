@@ -11,8 +11,8 @@ the forcing input keyword `gridforce.input_file` in `ladim.yaml` must be changed
 string pattern for the thredds server. Currently, the default string pattern is
 ```python
 default_pattern = (
-    "https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/"
-    "NorKyst-800m_ZDEPTHS_his.an.{year:04}{month:02}{day:02}00.nc"
+    "https://thredds.met.no/thredds/dodsC/fou-hi/new_norkyst800m/his/"
+    "ocean_his.an.{year:04}{month:02}{day:02}.nc"
 )
 ``` 
 
