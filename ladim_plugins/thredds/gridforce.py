@@ -8,15 +8,44 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def gridfile_name_from_conf(conf):
+    pattern = conf['gridforce'].get('input_file', None)
+    t = conf['start_time'].astype(datetime.datetime)
+    return pattern.format(year=t.year, month=t.month, day=t.day)
+
+
+def subgrid_from_conf_or_dset(conf, dset):
+    """Return subgrid from config, or use dataset bounds as backup"""
+
+    jmax, imax = dset.variables["h"].shape
+    whole_grid = [0, imax - 1, 0, jmax - 1]
+
+    if conf['gridforce'].get('subgrid', None):
+        limits = list(conf['gridforce']['subgrid'])
+    else:    
+        limits = whole_grid
+
+    # If 'None' elements, replace with wholegrid value
+    for ind, val in enumerate(limits):
+        if val is None:
+            limits[ind] = whole_grid[ind]
+
+    return limits
+
+
+def subgrid_from_conf(conf):
+    grid_file = gridfile_name_from_conf(conf)
+    with Dataset(grid_file) as dset:
+        return subgrid_from_conf_or_dset(conf, dset)
+
+
 class Grid:
     def __init__(self, config):
 
         logger.info("Initializing ROMS-type grid object")
 
         # Get url of first input file
-        pattern = config['gridforce'].get('input_file', None)
-        t = config['start_time'].astype(datetime.datetime)
-        grid_file = pattern.format(year=t.year, month=t.month, day=t.day)
+        grid_file = gridfile_name_from_conf(config)
 
         # Open file
         try:
@@ -28,17 +57,7 @@ class Grid:
 
         try:
             # Subgrid
-            jmax, imax = ncid.variables["h"].shape
-            whole_grid = [1, imax - 1, 1, jmax - 1]
-            if config["gridforce"].get('subgrid', None):
-                limits = list(config["gridforce"]["subgrid"])
-            else:
-                limits = whole_grid
-
-            # Allow None if no imposed limitation
-            for ind, val in enumerate(limits):
-                if val is None:
-                    limits[ind] = whole_grid[ind]
+            limits = subgrid_from_conf_or_dset(config, ncid)
 
             self.i0, self.i1, self.j0, self.j1 = limits
             i0, i1, j0, j1 = limits
@@ -51,13 +70,7 @@ class Grid:
             self.lon = np.asarray(ncid.variables["lon_rho"][j0:j1, i0:i1])
             self.lat = np.asarray(ncid.variables["lat_rho"][j0:j1, i0:i1])
 
-            self.z_r = sdepth(
-                H=self.H,
-                Hc=ncid.variables["hc"].getValue(),
-                C=ncid.variables["Cs_r"][:],
-                stagger="rho",
-                Vtransform=ncid.variables["Vtransform"].getValue(),
-            )
+            self.z_r = get_zrho_from_dset(ncid, h=self.H)
 
             # Backwards-compatibility stuff
             self.xmin = None
@@ -173,10 +186,6 @@ class ThreddsSource:
 
         with Dataset(url_first) as dset:
             first_times = self._load_times(dset)
-            if self.i_block_size < 0:
-                self.i_block_size = dset.dimensions['xi_rho'].size - self.i_block_offset
-            if self.j_block_size < 0:
-                self.j_block_size = dset.dimensions['eta_rho'].size - self.j_block_offset
             self.k_block_size = dset.dimensions['s_rho'].size
 
         self.start_time = first_times[0]
@@ -185,13 +194,15 @@ class ThreddsSource:
     @staticmethod
     def _load_times(dset):
         dset['ocean_time'].set_auto_mask(False)
-        return num2date(
+        dt_arr = num2date(
             times=dset['ocean_time'][:],
             units=dset['ocean_time'].units,
             calendar=getattr(dset['ocean_time'], 'calendar', 'standard'),
             only_use_cftime_datetimes=False,
             only_use_python_datetimes=True,
-        ).astype('datetime64[us]')
+        )
+        assert isinstance(dt_arr, np.ndarray)
+        return dt_arr.astype('datetime64[us]')
 
     def url(self, time):
         return timestring_formatter(self.url_pattern, time)
@@ -201,12 +212,14 @@ class ThreddsSource:
         j0 = self.j_block_offset + self.j_block_size * j_block
         i1 = i0 + self.i_block_size
         j1 = j0 + self.j_block_size
+        k0 = 0
+        k1 = self.k_block_size
 
         time = self.start_time + self.timestep_size * time_block
         with Dataset(self.url(time)) as dset:
             times = self._load_times(dset)
             l0 = int(get_fractional_index(times, time))
-            data = dset[varname][l0, :, j0:j1, i0:i1]
+            data = dset[varname][l0, k0:k1, j0:j1, i0:i1]
             if hasattr(data, 'filled'):
                 data = data.filled(0)
         return data
@@ -364,14 +377,14 @@ class Forcing:
         logger.info("Initiating forcing")
 
         # Initialize the Thredds source
-        subgrid = config['gridforce'].get('subgrid', [0, None, 0, None])
+        subgrid = subgrid_from_conf(config)
         url_pattern = config['gridforce']['input_file']
         self.source = ThreddsSource(
             url_pattern=url_pattern,
             url_first=timestring_formatter(url_pattern, config['gridforce']['start_time']),
             blocks=dict(
-                i=dict(offset=subgrid[0], size=-1 if subgrid[1] is None else subgrid[1] - subgrid[0]),
-                j=dict(offset=subgrid[2], size=-1 if subgrid[3] is None else subgrid[3] - subgrid[2]),
+                i=dict(offset=subgrid[0], size=subgrid[1] - subgrid[0]),
+                j=dict(offset=subgrid[2], size=subgrid[3] - subgrid[2]),
             )
         )
 
@@ -393,7 +406,7 @@ class Forcing:
             field_dt=self.source.timestep_size,
         )
 
-        self._current_time_step = None
+        self._current_time_step = 0
         self._grid = grid
 
     def update(self, t):
@@ -579,3 +592,31 @@ def z2s_frac(z_rho, i, j, z):
     frac = np.clip(frac_unclipped, 0, 1)
 
     return k + frac
+
+
+def get_zrho_from_dset(dset, h=None, hc=None, cs_r=None, vtrans=None):
+
+    # --- Get key values from dataset unless explicitly specified ---
+    if h is None:
+        h = dset.variables['h'][:]
+    
+    if hc is None:
+        hc = dset.variables['hc'].getValue()
+    
+    if cs_r is None:
+        cs_r = dset.variables["Cs_r"][:]
+
+    if vtrans is None and 'Vtransform' in dset.variables:
+        vtrans = dset.variables["Vtransform"].getValue()
+    
+    # --- Use default values if something is missing ---
+
+    if vtrans is None:
+        if cs_r[0] < -1:
+            vtrans = 1
+        else:
+            vtrans = 2
+    
+    # Pass variables to sdepth function
+    z_rho = sdepth(H=h, Hc=hc, C=cs_r, stagger="rho", Vtransform=vtrans)
+    return z_rho
