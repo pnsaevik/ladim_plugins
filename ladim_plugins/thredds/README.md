@@ -1,21 +1,15 @@
-# NK800 model with S-coordinates from met.no
+# Thredds module
 
-The module simplifies the use of NorKyst800 S-coordinate forcing data from the
-THREDDS server https://thredds.met.no/.
+The module enables using a Thredds server to provide s-coordinate 
+ROMS netCDF files as forcing data.
 
 
 ## Usage
 
 Modify `ladim.yaml` and `particles.rls` to suit your needs. In particluar, 
 the forcing input keyword `gridforce.input_file` in `ladim.yaml` must be changed to contain a
-string pattern for the thredds server. Currently, the default string pattern is
-```python
-default_pattern = (
-    "https://thredds.met.no/thredds/dodsC/fou-hi/new_norkyst800m/his/"
-    "ocean_his.an.{year:04}{month:02}{day:02}.nc"
-)
-``` 
-
+string pattern for the thredds server. An example string is given as a
+commented line.
 The format string follows standard python conventions. 
 
 Other common changes applied to `ladim.yaml`:
@@ -44,4 +38,4 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
-Created by Pål Næverlid Sævik (2025).
+Created by Pål Næverlid Sævik as part of the ADepoPlan project (2025).
