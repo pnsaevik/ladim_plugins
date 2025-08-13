@@ -2,8 +2,8 @@
 
 time_control:
     # Start and stop of simulation
-    start_time     : 2023-03-08 01:00:00
-    stop_time      : 2023-03-08 01:05:00
+    start_time     : 2022-06-01 01:00:00
+    stop_time      : 2022-06-01 01:05:00
     reference_time : 1970-01-01 00:00:00
 
 
@@ -18,8 +18,8 @@ gridforce:
     module: ladim_plugins.thredds
 
     # Replace with string pattern for the thredds server, or remove line
-    # input_file: forcing.nc
-    input_file: https://thredds-testing-area.firum.fo/thredds/dodsC/adepoplan/development_26m/test1_{year:04}{month:02}{day:02}.nc
+    input_file: forcing.nc
+    # input_file: https://thredds-testing-area.firum.fo/thredds/dodsC/adepoplan/development_26m/test1_{year:04}{month:02}{day:02}.nc
 
     # subgrid: [i0, i1, j0, j1]
     # subgrid: [100, 110, 200, 215]
