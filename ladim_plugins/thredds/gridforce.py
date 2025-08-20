@@ -243,7 +243,7 @@ class FieldCache:
         """
 
         # Delete old entries
-        for time_block in self.cache.keys():
+        for time_block in list(self.cache.keys()):
             if time_block < int(time_index):
                 del self.cache[time_block]
 
