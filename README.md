@@ -23,12 +23,10 @@ Documentation and examples are provided for each model.
 
 ## Installation
 
-Install using the following commands (the first command can be skipped if
-LADiM is already present on your system):
+Install using the following command
 
 ```
-pip install git+https://github.com/pnsaevik/ladim.git
-pip install git+https://github.com/pnsaevik/ladim_plugins.git
+pip install ladim_plugins
 ```
 
 The installation can be tested with the command
