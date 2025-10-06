@@ -16,6 +16,9 @@ class Stub:
     def __setitem__(self, item, value):
         setattr(self, item, value)
 
+    def __contains__(self, item):
+        return item in self._dic
+
 
 class Test_update:
     @staticmethod
@@ -222,7 +225,7 @@ class Test_ladis:
 
 
 def get_grainsize_fixture_fname():
-    import ladim_plugins.tests
+    import ladim_plugins.sedimentation
     import os
     return os.path.join(
         os.path.dirname(ladim_plugins.sedimentation.__file__), 'grainsize.nc')

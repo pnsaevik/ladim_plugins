@@ -1,4 +1,5 @@
 import numpy as np
+import typing
 
 
 class IBM:
@@ -14,9 +15,9 @@ class IBM:
         self.dt = config['dt']
 
         # Reference to other modules
-        self.grid = None
-        self.forcing = None
-        self.state = None
+        self.grid = None        # type: typing.Any
+        self.forcing = None     # type: typing.Any
+        self.state = None       # type: typing.Any
 
         # Variables for lazy evaluation
         self._ustar = None
@@ -46,6 +47,22 @@ class IBM:
 
         if num_new_particles:
             state['sink_vel'][idx_new_particles] = sinkvel(num_new_particles)
+
+        if "jitter" in state:
+            idx_new_jitter_particles = state['jitter'][:] >= 0
+            num_new_jitter_particles = np.count_nonzero(idx_new_jitter_particles)
+
+            if num_new_jitter_particles:
+                jitter_r = state['jitter'][idx_new_jitter_particles]
+                jitter_x, jitter_y = circle_rand(num_new_jitter_particles)
+                x = state['X'][idx_new_jitter_particles]
+                y = state['Y'][idx_new_jitter_particles]                
+                grid_x, grid_y = self.grid.sample_metric(x, y)
+                dx_coord = jitter_x * jitter_r / grid_x
+                dy_coord = jitter_y * jitter_r / grid_y
+                state['X'][idx_new_jitter_particles] = x + dx_coord
+                state['Y'][idx_new_jitter_particles] = y + dy_coord
+                state['jitter'][idx_new_jitter_particles] = -1
 
     def resuspend(self):
         if self.taucrit_fn is None:
@@ -113,6 +130,7 @@ class IBM:
             self._ustar = np.sqrt(c * U2)
             self._ustar_tstep = self.state.timestep
 
+        assert self._ustar is not None
         return self._ustar
 
 
@@ -342,3 +360,14 @@ def get_settled_particles(dset):
                   if v.dims == ('particle_instance',)}
     all_vars = {**dict(pid=pid), **pid_vars, **pinst_vars}
     return xr.Dataset(all_vars).assign_coords(pid=pid)
+
+
+def circle_rand(n):
+    """
+    Return a set of random positions within the unit circle
+    """
+    r = np.sqrt(np.random.rand(n))       # radius (sqrt ensures uniform density)
+    theta = np.random.rand(n) * 2 * np.pi  # angle in radians
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
+    return x, y
