@@ -2,8 +2,8 @@
 
 &deftime time_control:
     # Start and stop of simulation
-    start_time     : 2025-01-01 00:15:00
-    stop_time      : 2025-01-01 00:30:00
+    start_time     : 2025-01-31 00:15:00
+    stop_time      : 2025-01-31 00:30:00
 
 
 files:
@@ -17,7 +17,7 @@ gridforce:
     module: ladim_plugins.nk2d
 
     # Replace with string pattern for the thredds server
-    input_file: "https://thredds.met.no/thredds/dodsC/fou-hi/norkystv3_800m_m00_be"
+    input_file: forcing.nc
     depth: 5
 
 
