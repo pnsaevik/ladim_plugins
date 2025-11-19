@@ -49,12 +49,16 @@ class Grid:
                 crs_from=CRS.from_epsg(4326),
                 crs_to=self._cache['crs'],
             )
-            xi_diff = np.diff(dset['X'].to_numpy())
-            eta_diff = np.diff(dset['Y'].to_numpy())
+            xi = dset['X'].to_numpy()
+            eta = dset['Y'].to_numpy()
+            xi_diff = np.diff(xi)
+            eta_diff = np.diff(eta)
             resolution = xi_diff[0]
             assert np.all(xi_diff == resolution)
             assert np.all(eta_diff == resolution)
             self._cache['resolution'] = float(resolution)
+            self._cache['xi_0'] = xi[0]
+            self._cache['eta_0'] = eta[0]
             
     @property
     def crs(self) -> CRS:
@@ -81,8 +85,12 @@ class Grid:
         return c
 
     def xy2ij(self, x, y):
+        if 'xi_0' not in self._cache or 'eta_0' not in self._cache:
+            self._set_crs_cache()
+        xi0 = self._cache['xi_0']
+        eta0 = self._cache['eta_0']
         xi, eta = self.transformer.transform(y, x)
-        return eta / self.resolution, xi / self.resolution
+        return (eta - eta0) / self.resolution, (xi - xi0) / self.resolution
 
 
 class Forcing:
@@ -98,7 +106,7 @@ class Forcing:
         self.fields = {}
         self.fields['u_eastward'] = [np.zeros((0, 0), dtype='float32'), ] * 2
         self.fields['v_northward'] = [np.zeros((0, 0), dtype='float32'), ] * 2
-        self.fields_tidx = -1
+        self.fields_tidx = np.iinfo(np.int64).min
 
         self._cache = {}
 
@@ -154,7 +162,7 @@ class Forcing:
         
         t0 = self.forcing_times[self.fields_tidx]
         t1 = self.forcing_times[self.fields_tidx + 1]
-        td = (time - t0) / (t1 - t0)
+        td = np.clip((time - t0) / (t1 - t0), 0, 1)
 
         i, j = self._grid.xy2ij(x, y)
         u0 = map_coordinates(self.fields['u_eastward'][0], (i, j), order=1, prefilter=False)
