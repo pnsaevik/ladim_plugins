@@ -6,8 +6,10 @@ from scipy.ndimage import map_coordinates
 
 
 class Grid:
+    DEFAULT_URL = "https://thredds.met.no/thredds/dodsC/fou-hi/norkystv3_800m_m00_be"
+
     def __init__(self, config) -> None:
-        self.url = config['gridforce']['input_file']
+        self.url = config['gridforce'].get('input_file', self.DEFAULT_URL)
         self._cache = {}
         self.xmin = -180
         self.xmax = 180

@@ -16,7 +16,7 @@ default_pattern = (
 ``` 
 
 Other common changes applied to `ladim.yaml`:
-- Depth level to extract (`)
+- Depth level to extract (`gridforce.depth`)
 - Start date of simulation (`time_control.start_time`)
 - Stop date of simulation (`time_control.stop_time`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
