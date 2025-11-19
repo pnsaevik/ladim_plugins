@@ -5,6 +5,12 @@ All notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-08-13
+### Added
+- New module nk2d for streaming 2D forcing fields from thredds server
+### Removed
+- Module nk800met was outdated and not in use, and is removed
+
 ## [2.7.0] - 2025-08-13
 ### Added
 - New jitter option in sedimentation module
