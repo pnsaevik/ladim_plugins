@@ -1,7 +1,7 @@
-# NK800 model from met.no
+# Norkyst two-dimensional forecast model from met.no
 
-The module simplifies the use of NorKyst800 forcing data from the THREDDS
-server https://thredds.met.no/.
+The module simplifies the use of two-dimensional (single-depth) fields of
+forcing data from the THREDDS server https://thredds.met.no/.
 
 
 ## Usage
@@ -11,14 +11,12 @@ the forcing input keyword `gridforce.input_file` in `ladim.yaml` must be changed
 string pattern for the thredds server. Currently, the default string pattern is
 ```python
 default_pattern = (
-    "https://thredds.met.no/thredds/dodsC/fou-hi/norkyst800m-1h/"
-    "NorKyst-800m_ZDEPTHS_his.an.{year:04}{month:02}{day:02}00.nc"
+    "https://thredds.met.no/thredds/dodsC/fou-hi/norkystv3_800m_m00_be"
 )
 ``` 
 
-The format string follows standard python conventions. 
-
 Other common changes applied to `ladim.yaml`:
+- Depth level to extract (`gridforce.depth`)
 - Start date of simulation (`time_control.start_time`)
 - Stop date of simulation (`time_control.stop_time`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
@@ -44,8 +42,4 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
-June 2022: Minor bugfix
-
-July 2020: First version
-
-Created by Pål Næverlid Sævik (2020).
+Created by Pål Næverlid Sævik (2025).
