@@ -17,7 +17,7 @@ gridforce:
     module: ladim_plugins.nk2d
 
     # Replace with string pattern for the thredds server
-    input_file: forcing.nc
+    input_file: "dap2://thredds.met.no/thredds/dodsC/fou-hi/norkystv3_800m_m00_be"
     depth: 5
 
 
