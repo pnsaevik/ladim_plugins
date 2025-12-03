@@ -104,7 +104,7 @@ def get_config(module_name):
         module_dir, config_dict['files']['particle_release_file'])
 
     input_file = config_dict['gridforce']['input_file']
-    if not input_file.startswith('https://'):
+    if not '://' in input_file:  # URLs should be unchanged
         config_dict['gridforce']['input_file'] = os.path.join(module_dir, input_file)
 
     if 'ibm' in config_dict and 'fjord_index_file' in config_dict['ibm']:

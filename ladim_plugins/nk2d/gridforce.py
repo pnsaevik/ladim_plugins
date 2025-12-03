@@ -3,6 +3,7 @@ import typing
 from pyproj import CRS, Transformer
 import xarray as xr
 from scipy.ndimage import map_coordinates
+from abc import abstractmethod
 
 
 class Grid:
@@ -39,28 +40,30 @@ class Grid:
     @property
     def mask(self) -> np.ndarray:
         if 'mask' not in self._cache:
-            h = self._cache['mask'] = load_field(self.url, 'h')
+            dset = DatasetWrapper.from_url(self.url)
+            h = dset.get_data(field='h', idx=...)
             minimal_depth = np.min(h)
             self._cache['mask'] = h > minimal_depth
         return self._cache['mask']
 
     def _set_crs_cache(self):
-        with xr.open_dataset(self.url) as dset:
-            self._cache['crs'] = get_crs(dset)
-            self._cache['transformer'] = Transformer.from_crs(
-                crs_from=CRS.from_epsg(4326),
-                crs_to=self._cache['crs'],
-            )
-            xi = dset['X'].to_numpy()
-            eta = dset['Y'].to_numpy()
-            xi_diff = np.diff(xi)
-            eta_diff = np.diff(eta)
-            resolution = xi_diff[0]
-            assert np.all(xi_diff == resolution)
-            assert np.all(eta_diff == resolution)
-            self._cache['resolution'] = float(resolution)
-            self._cache['xi_0'] = xi[0]
-            self._cache['eta_0'] = eta[0]
+        dset = DatasetWrapper.from_url(self.url)
+
+        self._cache['crs'] = get_crs(dset)
+        self._cache['transformer'] = Transformer.from_crs(
+            crs_from=CRS.from_epsg(4326),
+            crs_to=self._cache['crs'],
+        )
+        xi = dset.get_data(field='X', idx=...)
+        eta = dset.get_data(field='Y', idx=...)
+        xi_diff = np.diff(xi)
+        eta_diff = np.diff(eta)
+        resolution = xi_diff[0]
+        assert np.all(xi_diff == resolution)
+        assert np.all(eta_diff == resolution)
+        self._cache['resolution'] = float(resolution)
+        self._cache['xi_0'] = xi[0]
+        self._cache['eta_0'] = eta[0]
             
     @property
     def crs(self) -> CRS:
@@ -123,29 +126,37 @@ class Forcing:
         
         elif tidx_current == self.fields_tidx + 1:
             idx1 = (tidx_current + 1, self.depth_index, ...)
-            with xr.open_dataset(self.url) as dset:
-                for f in self.fields:
-                    self.fields[f][0] = self.fields[f][1]
-                    self.fields[f][1] = np.nan_to_num(dset[f][idx1].values)
+
+            dset = DatasetWrapper.from_url(self.url)
+            for f in self.fields:
+                self.fields[f][0] = self.fields[f][1]
+                data = dset.get_data(field=f, idx=idx1)
+                self.fields[f][1] = np.nan_to_num(data)
 
             self.fields_tidx = tidx_current
         
         else:
             idx0 = (tidx_current, self.depth_index, ...)
             idx1 = (tidx_current + 1, self.depth_index, ...)
-            with xr.open_dataset(self.url) as dset:
-                for f in self.fields:
-                    self.fields[f][0] = np.nan_to_num(dset[f][idx0].values)
-                    self.fields[f][1] = np.nan_to_num(dset[f][idx1].values)
+
+            dset = DatasetWrapper.from_url(self.url)
+            for f in self.fields:
+                data_0 = dset.get_data(field=f, idx=idx0)
+                data_1 = dset.get_data(field=f, idx=idx1)
+                self.fields[f][0] = np.nan_to_num(data_0)
+                self.fields[f][1] = np.nan_to_num(data_1)
 
             self.fields_tidx = tidx_current
 
     def _load_small_fields(self):
-        with xr.open_dataset(self.url) as dset:
-            t = dset['time'].values.astype('datetime64[s]').astype('int64')
-            self._cache['forcing_times'] = t
-            self._cache['forcing_depths'] = dset['depth'].values
-            self._cache['depth_idx'] = self._cache['forcing_depths'].tolist().index(self.depth)
+        dset = DatasetWrapper.from_url(self.url)
+        t_data = dset.get_data(field='time', idx=...)
+        depth_data = dset.get_data(field='depth', idx=...)
+
+        t = t_data.astype('datetime64[s]').astype('int64')
+        self._cache['forcing_times'] = t
+        self._cache['forcing_depths'] = depth_data
+        self._cache['depth_idx'] = self._cache['forcing_depths'].tolist().index(self.depth)
 
     @property
     def depth_index(self):
@@ -183,13 +194,17 @@ class Forcing:
 
 
 def load_field(url, field, idx: typing.Any = ...) -> np.ndarray:
-    with xr.open_dataset(url) as dset:
-        return dset.variables[field][idx].values
+    dset = DatasetWrapper.from_url(url)
+    return dset.get_data(field=field, idx=idx)
 
 
-def get_crs(dset) -> CRS:
-    crs_var = next(v for v in dset.variables if 'grid_mapping_name' in dset[v].attrs)
-    return CRS.from_cf(dset[crs_var].attrs)
+def get_crs(dset: "DatasetWrapper") -> CRS:
+    for v in dset.varnames():
+        attrs = dset.get_attrs(v)
+        if 'grid_mapping_name' in attrs:
+            return CRS.from_cf(attrs)
+    
+    raise ValueError('CRS variable not found')
 
 
 def interp_nearest(field, i, j):
@@ -199,3 +214,59 @@ def interp_nearest(field, i, j):
     return field[i, j]
 
 
+class DatasetWrapper:
+    @staticmethod
+    def from_url(url):
+        url = str(url)
+        if (url.startswith('http') or url.startswith('dap')) and ('://' in url):
+            return DatasetWrapperOpendap(url)
+        else:
+            return DatasetWrapperXarrayFile(url)
+
+    @abstractmethod
+    def get_data(self, field, idx) -> np.ndarray:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_attrs(self, field) -> dict:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def varnames(self) -> list[str]:
+        raise NotImplementedError
+
+
+class DatasetWrapperXarrayFile(DatasetWrapper):
+    def __init__(self, fname):
+        super().__init__()
+        self._fname = fname
+
+    def get_data(self, field, idx) -> np.ndarray:
+        with xr.open_dataset(self._fname) as dset:
+            return dset[field][idx].to_numpy()
+    
+    def get_attrs(self, field) -> dict:
+        with xr.open_dataset(self._fname) as dset:
+            return dset[field].attrs
+    
+    def varnames(self) -> list[str]:
+        with xr.open_dataset(self._fname) as dset:
+            return [str(v) for v in dset.variables]
+
+
+class DatasetWrapperOpendap(DatasetWrapper):
+    def __init__(self, fname):
+        super().__init__()
+        self._fname = fname
+
+    def get_data(self, field, idx) -> np.ndarray:
+        with xr.open_dataset(self._fname, engine='pydap') as dset:
+            return dset[field][idx].to_numpy()
+    
+    def get_attrs(self, field) -> dict:
+        with xr.open_dataset(self._fname, engine='pydap') as dset:
+            return dset[field].attrs
+    
+    def varnames(self) -> list[str]:
+        with xr.open_dataset(self._fname, engine='pydap') as dset:
+            return [str(v) for v in dset.variables]
