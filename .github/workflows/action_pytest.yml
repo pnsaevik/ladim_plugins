@@ -15,7 +15,13 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.13"
-        
+    
+    - name: Update apt-get
+      run: apt-get update
+    
+    - name: Install netcdf4
+      run: apt-get install -y libhdf5-dev libnetcdf-dev netcdf-bin python3-netcdf4 python3-h5py
+
     - name: Install package
       run: pip install .
       
