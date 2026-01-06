@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any
 
 
 class IBM:
@@ -13,9 +14,9 @@ class IBM:
         self.mindepth_day = np.array(config['ibm']['mindepth_day'])  # [m]
         self.mindepth_ngh = np.array(config['ibm']['mindepth_night'])  # [m]
 
-        self.grid = None
-        self.state = None
-        self.forcing = None
+        self.grid = None  # type: Any
+        self.state = None  # type: Any
+        self.forcing = None  # type: Any
         self.dt = config['dt']
 
         # Check if active parameter is in state (raises error if not present)
@@ -91,8 +92,13 @@ class IBM:
         dw = np.random.normal(size=len(z))
         dz = np.sqrt(2 * vertmix * self.dt) * dw
         z += dz
-        z[z < 0] *= -1  # Reflective boundary at surface
-        self.state['Z'] = z
+
+        # Keep within vertical limits, reflexive condition
+        x = self.state['X']
+        y = self.state['Y']
+        h = self.grid.sample_depth(x, y)
+        z2 = np.abs(((z + h) % (2*h)) - h)  # Periodic reflection at 0 and h
+        self.state['Z'] = z2
 
     def diel_migration(self):
         # Extract state parameters
