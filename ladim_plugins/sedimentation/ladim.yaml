@@ -70,6 +70,26 @@ ibm:
     #   max_diff: 0.01
 
 
+    # Sinking velocities generated after particle creation
+    # only works if sink_vel is set to zero or not provided in the .rls file
+    #
+    # Option 1: built-in preset (short form), defaults to bannister2016
+    # sinkvel: default
+    #
+    # Option 2: built-in preset (explicit)
+    # sinkvel:
+    #   cdf: bannister2016
+    #
+    # Option 3: user-provided inverse CDF table
+    # sinkvel:
+    #   cdf: user_cdf_name | None
+    #   sinkvel_tab: [0.10, 0.05, 0.025, 0.015, 0.01, 0.005, 0.0]   # m/s
+    #   cumprob_tab: [0.00, 0.662, 0.851, 0.883, 0.909, 0.937, 1.0]
+    #
+    # Option 4: constant sinking velocity
+    # sinkvel: 0.0001  # m/s
+
+
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]
     release_time: time   # np.datetime64[s]
