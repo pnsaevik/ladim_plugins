@@ -1,6 +1,8 @@
 name: Unit tests on push
 
-on: push
+on: 
+  push:
+  workflow_dispatch:
 
 jobs:
   pytest_job:
