@@ -69,6 +69,16 @@ ibm:
     #   method: bounded_linear
     #   max_diff: 0.01
 
+    # Ruleset for generation sinking velocities, if sink_vel is set to zero
+    # or not provided in the .rls file
+    sinkvel: bannister2016  # Options: "bannister2016" (default), "broch2022a", "broch2022b" or single number (constant sinking velocity)
+
+    # Alternative `sinkvel` format: 
+    #
+    # sinkvel:
+    #   sinkvel_tab: [0.10, 0.05, 0.025, 0.015, 0.01, 0.005, 0.0]    # Sinking velocity [m/s]
+    #   cumprob_tab: [0.00, 0.662, 0.851, 0.883, 0.909, 0.937, 1.0]  # Cumulative probability density
+
 
 particle_release:
     variables: [active, release_time, X, Y, Z, sink_vel]

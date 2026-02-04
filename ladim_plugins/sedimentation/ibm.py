@@ -14,6 +14,9 @@ class IBM:
         # Store time step value to calculate age
         self.dt = config['dt']
 
+        # Sink velocity configuration (can be str, dict, or None)
+        self.sinkvel_cfg = config['ibm'].get('sinkvel', 'bannister2016')
+
         # Reference to other modules
         self.grid = None        # type: typing.Any
         self.forcing = None     # type: typing.Any
@@ -46,7 +49,10 @@ class IBM:
         num_new_particles = np.count_nonzero(idx_new_particles)
 
         if num_new_particles:
-            state['sink_vel'][idx_new_particles] = sinkvel(num_new_particles)
+            state['sink_vel'][idx_new_particles] = sinkvel(
+                num_new_particles,
+                cfg=self.sinkvel_cfg,
+            )
 
         if "jitter" in state:
             idx_new_jitter_particles = state['jitter'][:] >= 0
@@ -337,10 +343,51 @@ def get_vdiff_bounded_linear_fn(max_diff):
     return fn
 
 
-def sinkvel(n):
+SINKVEL_CDF_TABLES = {
+    "bannister2016": (
+        # Bannister et al. (2016) (https://doi.org/10.1093/icesjms/fsw027)
+        np.array([0.100, 0.050, 0.025, 0.015, 0.010, 0.005, 0.0], dtype=float),
+        np.array([0.000, 0.662, 0.851, 0.883, 0.909, 0.937, 1.000], dtype=float),
+    ),
+    "broch2022a": (
+        # Broch et al. (2022) scenario A (https://doi.org/10.3389/fmars.2022.840531)
+        np.array([0.020, 0.010, 0.001, 0.0001, 0.0], dtype=float),
+        np.array([0.000, 0.250, 0.500, 0.750, 1.000], dtype=float),
+    ),
+    "broch2022b": (
+        # Broch et al. (2022) scenario B (https://doi.org/10.3389/fmars.2022.840531)
+        np.array([0.020, 0.010, 0.001, 0.0001, 0.0], dtype=float),
+        np.array([0.000, 0.450, 0.900, 0.950, 1.000], dtype=float),
+    ),
+}
+
+
+def sinkvel_cdf_tables(cfg):
+    if isinstance(cfg, str):
+        if cfg in SINKVEL_CDF_TABLES:
+            return SINKVEL_CDF_TABLES[cfg]
+        else:
+            raise ValueError(
+                f"Unknown sinking velocity config '{cfg}'. "
+                f"Available: {sorted(SINKVEL_CDF_TABLES)}")
+    
+    elif isinstance(cfg, (int, float, np.integer, np.floating)):
+        sinkvel_tab = np.array([cfg, cfg])
+        cumprob_tab = np.array([0.0, 1.0])
+        return sinkvel_tab, cumprob_tab
+    
+    elif isinstance(cfg, dict):
+        return cfg['sinkvel_tab'], cfg['cumprob_tab']
+    
+    else:
+        raise TypeError("sinkvel_cfg must be None, number, str, or dict")
+
+
+def sinkvel(n, cfg = 'bannister2016'):
     from scipy.interpolate import InterpolatedUnivariateSpline
-    sinkvel_tab = np.array([.100, .050, .025, .015, .010, .005, 0])
-    cumprob_tab = np.array([.000, .662, .851, .883, .909, .937, 1])
+
+    sinkvel_tab, cumprob_tab = sinkvel_cdf_tables(cfg)
+
     fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
     return fn(np.random.rand(n))
 
