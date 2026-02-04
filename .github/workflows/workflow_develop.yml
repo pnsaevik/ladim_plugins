@@ -1,9 +1,0 @@
-name: Unit tests on push
-
-on: 
-  push:
-  workflow_dispatch:
-
-jobs:
-  pytest_job:
-    uses: ./.github/workflows/action_pytest.yml
