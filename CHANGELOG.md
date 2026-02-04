@@ -7,7 +7,7 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ## [2.9.3] - 2026-02-03
 ### Added
-- options added to sinking velocity function, sinkvel(), in the Sedimentation module
+- Options added to sinking velocity function, sinkvel(), in the sedimentation module
 
 ## [2.9.1] - 2026-01-19
 ### Fixed
