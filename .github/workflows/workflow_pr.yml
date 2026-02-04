@@ -12,7 +12,5 @@ jobs:
     uses: ./.github/workflows/action_changelog.yml
   build_pypi_job:
     uses: ./.github/workflows/action_pypi_build.yml
-
-  # The pytest check is already run elsewhere
-  # run_pytest:
-  #   uses: ./.github/workflows/action_pytest.yml
+  run_pytest:
+    uses: ./.github/workflows/action_pytest.yml
