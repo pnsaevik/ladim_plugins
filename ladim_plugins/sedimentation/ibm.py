@@ -14,8 +14,8 @@ class IBM:
         # Store time step value to calculate age
         self.dt = config['dt']
 
-        # NEW: sink velocity configuration (could be str, dict, or None)
-        self.sinkvel_cfg = config['ibm'].get('sinkvel', None)
+        # Sink velocity configuration (can be str, dict, or None)
+        self.sinkvel_cfg = config['ibm'].get('sinkvel', 'bannister2016')
 
         # Reference to other modules
         self.grid = None        # type: typing.Any
@@ -49,10 +49,9 @@ class IBM:
         num_new_particles = np.count_nonzero(idx_new_particles)
 
         if num_new_particles:
-            #state['sink_vel'][idx_new_particles] = sinkvel(num_new_particles)
             state['sink_vel'][idx_new_particles] = sinkvel(
                 num_new_particles,
-                sinkvel_cfg=self.sinkvel_cfg,
+                cfg=self.sinkvel_cfg,
             )
 
         if "jitter" in state:
@@ -343,6 +342,7 @@ def get_vdiff_bounded_linear_fn(max_diff):
 
     return fn
 
+
 SINKVEL_CDF_TABLES = {
     "bannister2016": (
         # Bannister et al. (2016) (https://doi.org/10.1093/icesjms/fsw027)
@@ -361,41 +361,32 @@ SINKVEL_CDF_TABLES = {
     ),
 }
 
-def sinkvel(n, sinkvel_cfg = None):
-    from scipy.interpolate import InterpolatedUnivariateSpline
 
-    # constant sink velocity
-    if isinstance(sinkvel_cfg, (int, float, np.integer, np.floating)):
-        return np.full(n, float(sinkvel_cfg), dtype=float)
+def sinkvel_cdf_tables(cfg):
+    if isinstance(cfg, str):
+        if cfg in SINKVEL_CDF_TABLES:
+            return SINKVEL_CDF_TABLES[cfg]
+        else:
+            raise ValueError(
+                f"Unknown sinking velocity config '{cfg}'. "
+                f"Available: {sorted(SINKVEL_CDF_TABLES)}")
     
-    # defaults
-    cdf = "bannister2016"
-    sinkvel_tab = None
-    cumprob_tab = None
-
-    # parse config
-    if isinstance(sinkvel_cfg, str):
-        cdf = sinkvel_cfg
-
-    elif isinstance(sinkvel_cfg, dict):
-        cdf = sinkvel_cfg.get("cdf", cdf)
-        sinkvel_tab = sinkvel_cfg.get("sinkvel_tab")
-        cumprob_tab = sinkvel_cfg.get("cumprob_tab")
-
-    elif sinkvel_cfg is not None:
+    elif isinstance(cfg, (int, float, np.integer, np.floating)):
+        sinkvel_tab = np.array([cfg, cfg])
+        cumprob_tab = np.array([0.0, 1.0])
+        return sinkvel_tab, cumprob_tab
+    
+    elif isinstance(cfg, dict):
+        return cfg['sinkvel_tab'], cfg['cumprob_tab']
+    
+    else:
         raise TypeError("sinkvel_cfg must be None, number, str, or dict")
 
-    # choose table
-    if sinkvel_tab is None or cumprob_tab is None:
-        key = str(cdf).lower()
-        if key not in SINKVEL_CDF_TABLES:
-            raise ValueError(
-                f"Unknown cdf preset '{cdf}'. Available: {sorted(SINKVEL_CDF_TABLES)}"
-            )
-        sinkvel_tab, cumprob_tab = SINKVEL_CDF_TABLES[key]
-    else:
-        sinkvel_tab = np.asarray(sinkvel_tab, dtype=float)
-        cumprob_tab = np.asarray(cumprob_tab, dtype=float)
+
+def sinkvel(n, cfg = 'bannister2016'):
+    from scipy.interpolate import InterpolatedUnivariateSpline
+
+    sinkvel_tab, cumprob_tab = sinkvel_cdf_tables(cfg)
 
     fn = InterpolatedUnivariateSpline(cumprob_tab, sinkvel_tab, k=2)
     return fn(np.random.rand(n))
