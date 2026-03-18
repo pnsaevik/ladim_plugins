@@ -16,6 +16,7 @@ class IBM:
         self.swim_vel = 5e-4  # m/s
         self.D = config["ibm"].get('vertical_mixing', 1e-3)  # Vertical mixing [m*2/s]
         self.vertical_diffusion = self.D > 0
+        self.lower_temperature_limit = 5
 
         self.dt = config["dt"]
         self.mortality_factor = np.exp(-mortality * self.dt / 86400)
@@ -25,12 +26,15 @@ class IBM:
         state['super'] *= self.mortality_factor
 
         # Update forcing
-        state['temp'] = forcing.field(state.X, state.Y, state.Z, "temp")
+        T = forcing.field(state.X, state.Y, state.Z, "temp")
+        T = np.maximum(T, self.lower_temperature_limit)
+        state['temp'] = T
         state['salt'] = forcing.field(state.X, state.Y, state.Z, "salt")
 
         # Age in degree-days
-        state['age'] += state.temp * state.dt / 86400
+        state['age'] += T * state.dt / 86400
         state['days'] += 1.0*(state.dt/86400)
+        state['infect'] = infectivity(state['age'], state['temp'], state['super'])
 
         # Light at depth
         lon, lat = grid.lonlat(state.X, state.Y)
