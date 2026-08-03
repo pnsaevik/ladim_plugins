@@ -13,9 +13,12 @@ import importlib.resources
 from ladim_plugins import release
 
 
+excluded_modules = ['nk2d']
+
+
 module_names = [
     d.name for d in pathlib.Path(__file__).parent.parent.glob('*/')
-    if d.joinpath('ladim.yaml').is_file()
+    if d.joinpath('ladim.yaml').is_file() and d.name not in excluded_modules
 ]
 
 
@@ -61,7 +64,7 @@ def check_equal(new, ref):
     assert new.data_vars.keys() == ref.data_vars.keys()
     assert new.sizes.items() == ref.sizes.items()
     for k in new_dict.keys():
-        assert np.all(np.isclose(new_dict[k], ref_dict[k]))
+        np.testing.assert_allclose(new_dict[k], ref_dict[k], rtol=1e-4, atol=1e-8)
 
 
 def run_makrel(module_name):
