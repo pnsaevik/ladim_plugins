@@ -47,7 +47,7 @@ class Test_viscosity:
 
 
 class Test_ladim_raster:
-    @pytest.fixture(scope='class')
+    @pytest.fixture
     def ladim_dset(self):
         return xr.Dataset(
             data_vars=dict(
@@ -60,7 +60,7 @@ class Test_ladim_raster:
             ),
         )
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture
     def wgs84_dset(self):
         return xr.Dataset(
             data_vars=dict(
@@ -81,7 +81,7 @@ class Test_ladim_raster:
             )
         )
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture
     def ortho_dset(self):
         return xr.Dataset(
             data_vars=dict(
@@ -172,7 +172,7 @@ class Test_ladim_raster:
 
 
 class Test_converter_sqlite:
-    @pytest.fixture(scope='class')
+    @pytest.fixture
     def ladim_dset(self):
         return xr.Dataset(
             data_vars=dict(
@@ -189,7 +189,7 @@ class Test_converter_sqlite:
             ),
         )
     
-    @pytest.fixture(scope='function')
+    @pytest.fixture
     def conn(self):
         conn = sqlite3.connect(':memory:')
         try:
