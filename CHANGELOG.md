@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.10.5] - 2026-09-28
+### Changed
+- Requires ladim >= 2.3.7, where scalar forcing fields below the lowest
+  s-level are taken from the lowest level
+- Reference output of the saithe example updated accordingly
+
+
 ## [2.10.4] - 2026-09-28
 ### Changed
 - Requires ladim >= 2.3.6, where scalar forcing fields (e.g. temp, salt) in
