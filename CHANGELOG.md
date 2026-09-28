@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.10.6] - 2026-09-28
+### Changed
+- Requires ladim >= 2.4.0, where Forcing.field() samples variables defined
+  on w levels (such as AKs and w) at the correct levels
+- Forcing.vert_mix() of the salmon lice module uses Forcing.field() instead
+  of the full AKs array and its own copies of z2s() and sample3D(), which
+  are removed
+
+
 ## [2.10.5] - 2026-09-28
 ### Changed
 - Requires ladim >= 2.3.7, where scalar forcing fields below the lowest
