@@ -1,7 +1,7 @@
 attrs:
   Conventions: CF-1.8
-  date: '2025-05-20'
-  history: Created by ladim 2.1.5
+  date: '2026-09-28'
+  history: Created by ladim 2.5.0
   institution: Institute of Marine Research
   source: Lagrangian Advection and Diffusion Model
 coords:
@@ -9,7 +9,7 @@ coords:
     attrs:
       long_name: time
       standard_name: time
-      units: seconds since 1970-01-01
+      units: seconds since 1970-01-01 00:00:00
     data:
     - 1441587600
     - 1441587660
@@ -30,15 +30,12 @@ data_vars:
       long_name: particle X-coordinate
     data:
     - 3.0
-    - 3.0541927814483643
+    - 2.9991204738616943
     - 4.0
-    - 4.041346549987793
+    - 4.029942989349365
     - 5.0
-    - 4.975327014923096
+    - 4.981433868408203
     - 3.0
-    - 3.0143284797668457
-    - 3.036571502685547
-    - 3.094083786010742
     dims:
     - particle_instance
   Y:
@@ -46,15 +43,12 @@ data_vars:
       long_name: particle Y-coordinate
     data:
     - 3.0
-    - 2.945977210998535
+    - 2.904228448867798
     - 4.0
-    - 3.9691367149353027
+    - 3.9677681922912598
     - 5.0
-    - 4.964430332183838
+    - 4.955813407897949
     - 3.0
-    - 2.9667141437530518
-    - 2.9708003997802734
-    - 2.9253413677215576
     dims:
     - particle_instance
   Z:
@@ -65,15 +59,12 @@ data_vars:
       units: m
     data:
     - 0.0
-    - 18.107215881347656
+    - 18.08123779296875
     - 1.0
-    - 18.988693237304688
+    - 19.204580307006836
     - 2.0
-    - 20.048622131347656
+    - 20.138696670532227
     - 31.850000381469727
-    - 31.630334854125977
-    - 31.609033584594727
-    - 31.67404556274414
     dims:
     - particle_instance
   active:
@@ -81,9 +72,6 @@ data_vars:
       flag_meanings: inactive active
       long_name: particle active mask
     data:
-    - 1
-    - 1
-    - 1
     - 1
     - 1
     - 1
@@ -109,9 +97,9 @@ data_vars:
     - 1
     - 0
     - 1
-    - 1
-    - 1
-    - 1
+    - 0
+    - 0
+    - 0
     - 0
     - 0
     dims:
@@ -126,9 +114,6 @@ data_vars:
     - 1
     - 2
     - 2
-    - 3
-    - 3
-    - 3
     - 3
     dims:
     - particle_instance
@@ -145,5 +130,5 @@ data_vars:
     - particle
 dims:
   particle: 4
-  particle_instance: 10
+  particle_instance: 7
   time: 11
