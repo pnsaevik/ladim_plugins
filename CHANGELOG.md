@@ -11,6 +11,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 - Requires ladim >= 2.3.7, where scalar forcing fields below the lowest
   s-level are taken from the lowest level
 - Reference output of the saithe example updated accordingly
+- The bottom temperature of the sandeel module is now sampled using
+  forcing.field() at the bottom depth, instead of indexing the full
+  temperature array of the forcing module
+- The copied ROMS code in the chemicals module stays frozen at ladim 2.3.5.
+  Comments describe the fixes of ladim 2.3.6 and 2.3.7 that are not applied
 
 
 ## [2.10.4] - 2026-09-28

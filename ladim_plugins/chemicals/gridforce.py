@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 # Copy of the Grid and Forcing classes (and helper functions) of
 # ladim.gridforce.ROMS from ladim 2.3.5. The chemicals module depends on
 # the dense-array implementation, which newer ladim versions do not use.
+#
+# The code is kept frozen until the chemicals module is rewritten to use
+# the new ladim API. Two later bug fixes in ladim are therefore not applied
+# here; see the comments marked "Not applied (ladim 2.3.6)" and
+# "Not applied (ladim 2.3.7)".
 # -------------------------------------------------------------------
 
 
@@ -382,6 +387,15 @@ class _RomsForcing:
             self[name] = self._read_field(name, t0)
             self[name + "new"] = self._read_field(name, t1)
             self["d" + name] = (self[name + "new"] - self[name]) / (t1 - t0)
+            # Not applied (ladim 2.3.6): In the first forcing interval, scalar
+            # fields should come from the latest forcing frame at or before
+            # the time step, as in the rest of the simulation. Here, they are
+            # interpolated to time step -1 or, if the simulation starts at a
+            # forcing time, taken from the next forcing frame. The fix is to
+            # replace the two lines below with
+            #     if t0 == 0 and t < 0:
+            #         # Synchronize with start time, as for velocity above
+            #         self[name + "new"] = self[name]
             if t < 0:  # Initialization: interpolate to time step -1
                 self[name] = self[name] - (t0 + 1) * self["d" + name]
         
@@ -848,6 +862,11 @@ def sample3D(F, X, Y, K, A, method="bilinear"):
     I = np.minimum(np.maximum(I, 0), F.shape[-1] - 1)
     J = np.minimum(np.maximum(J, 0), F.shape[-2] - 1)
 
+    # Not applied (ladim 2.3.7): For positions below the lowest s-level, z2s
+    # gives K = 1 and A = 1, so the second lowest level is returned. The
+    # lowest level should be used (constant extrapolation). The fix is to
+    # insert, before the return statement,
+    #     K = K - (A == 1)
     return F[K, J, I]
 
 
