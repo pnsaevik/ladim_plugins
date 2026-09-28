@@ -8,9 +8,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ## [2.10.3] - 2026-09-28
 ### Changed
-- The gridforce modules of salmon_lice and chemicals now include their own
-  copies of z2s() and sample3D(), instead of importing them from
-  ladim.gridforce.ROMS
+- The gridforce module of salmon_lice now includes its own copies of z2s()
+  and sample3D(), instead of importing them from ladim.gridforce.ROMS
+- The gridforce module of chemicals now includes a copy of the Grid and
+  Forcing classes of ladim.gridforce.ROMS (ladim 2.3.5), instead of
+  inheriting from them
 
 
 ## [2.10.2] - 2026-08-03
