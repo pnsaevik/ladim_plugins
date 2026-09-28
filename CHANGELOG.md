@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.10.4] - 2026-09-28
+### Changed
+- Requires ladim >= 2.3.6, where scalar forcing fields (e.g. temp, salt) in
+  the first forcing interval are taken from the latest forcing time at or
+  before the model time
+- Reference output of the shrimp, egg, larvae, saithe and salmon_lice
+  examples updated accordingly
+
+
 ## [2.10.3] - 2026-09-28
 ### Changed
 - The gridforce module of salmon_lice now includes its own copies of z2s()
