@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.10.7] - 2026-09-28
+### Changed
+- Requires ladim >= 2.5.0, where the horizontal random walk uses a new,
+  faster random number generator (uniform numbers with variance 1, from
+  a hash of the particle identifier and time step)
+- Reference outputs of the examples with horizontal diffusion
+  (sedimentation, vps, mine, salmon_lice) updated accordingly. Particle
+  positions and the fields sampled there change; in the mine example the
+  different random walk also changes which particles are removed.
+
+
 ## [2.10.6] - 2026-09-28
 ### Changed
 - Requires ladim >= 2.4.0, where Forcing.field() samples variables defined
