@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.10.3] - 2026-09-28
+### Changed
+- The gridforce modules of salmon_lice and chemicals now include their own
+  copies of z2s() and sample3D(), instead of importing them from
+  ladim.gridforce.ROMS
+
+
 ## [2.10.2] - 2026-08-03
 ### Changed
 - Build engine is now upgraded to GitHub Actions v7
