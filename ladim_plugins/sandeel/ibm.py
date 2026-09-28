@@ -36,9 +36,10 @@ class IBM:
             h[idx] = np.random.rand(np.count_nonzero(idx))
 
     def bottom_temp(self):
-        i = np.round(self.state['X'] - self.grid.grid.i0).astype('i4')
-        j = np.round(self.state['Y'] - self.grid.grid.j0).astype('i4')
-        return self.forcing.forcing.temp[0, j, i]
+        x = self.state['X']
+        y = self.state['Y']
+        depth = self.grid.sample_depth(x, y)
+        return self.forcing.field(x, y, depth, 'temp')
 
     def vertical_diffuse(self):
         state = self.state
