@@ -12,6 +12,10 @@ files:
 
 
 gridforce:
+    # Number of CPU's to use. If this line is removed, ladim reads the environment
+    # variable LADIM_NUM_THREADS to determine number of threads (defaults to 1).
+    num_threads: 2
+
     # Module name is mandatory.
     # The other items are module dependent
     module: ladim_plugins.chemicals
