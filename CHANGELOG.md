@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.11.0] - 2026-11-17
+### Changed
+- Requires ladim >= 2.8.0, which has the `num_threads` option
+- All examples set `num_threads: 2` in the gridforce section of ladim.yaml, to
+  use two CPUs.
+
+
 ## [2.10.7] - 2026-09-28
 ### Changed
 - Requires ladim >= 2.5.0, where the horizontal random walk uses a new,

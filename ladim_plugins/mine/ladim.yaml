@@ -12,6 +12,10 @@ files:
 
 
 gridforce:
+    # Number of CPU's to use. If this line is removed, ladim reads the environment
+    # variable LADIM_NUM_THREADS to determine number of threads (defaults to 1).
+    num_threads: 2
+
     # Module name must be ladim_plugins.mine if ibm.vertical_advection = True
     # Otherwise, it can be ladim_plugins.sedimentation (which is faster)
     module: ladim_plugins.mine
