@@ -18,6 +18,8 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
   more particles where the coverage was low. All reference outputs are updated.
 - salmon_lice: The module `ladim_plugins.salmon_lice.gridforce` is removed, the
   ladim ROMS gridforce is used instead.
+- salmon_lice: The forcing file has `ln_AKs` (as in the NorKyst files) instead of
+  `AKs`, and `ladim.yaml` shows how to use the diffusivity of the ocean model.
 
 
 ## [2.11.0] - 2026-11-17

@@ -129,3 +129,6 @@ numerics:
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 1.0  # [m*2/s]
     vert_mix: 0.001  # Vertical diffusion [m*2/s]
+    # Alternatively, use the vertical diffusion of the ocean model (ln_AKs or AKs in the
+    # forcing file), clipped to [min, max] and sampled at the midpoints of `resolution` m bins:
+    # vert_mix: {method: labolle, min: 1.0e-4, max: 1.0e-2, resolution: 5}
