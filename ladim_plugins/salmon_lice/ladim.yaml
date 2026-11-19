@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2022-06-01 01:00:00
-    stop_time      : 2022-06-01 01:05:00
+    start_time     : 2022-06-01 01:58:00
+    stop_time      : 2022-06-01 02:03:00
     reference_time : 1970-01-01 00:00:00
 
 
@@ -33,7 +33,7 @@ ibm:
 
 particle_release:
     release_type: continuous
-    release_frequency: [60, s]  # Normally: [1, h]
+    release_frequency: [180, s]  # Normally: [1, h]
     variables: 
     - mult           # Number of particles released
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss

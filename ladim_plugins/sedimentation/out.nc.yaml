@@ -1,0 +1,200 @@
+attrs:
+  Conventions: CF-1.8
+  date: '2026-11-19'
+  history: Created by ladim 2.10.0, ladim_plugins 1.5.9
+  institution: Institute of Marine Research
+  source: Lagrangian Advection and Diffusion Model
+coords:
+  time:
+    attrs:
+      long_name: time
+      standard_name: time
+      units: seconds since 1970-01-01 00:00:00
+    data:
+    - 1441591080
+    - 1441591140
+    - 1441591200
+    - 1441591260
+    - 1441591320
+    - 1441591380
+    dims:
+    - time
+data_vars:
+  X:
+    attrs:
+      long_name: particle X-coordinate
+    data:
+    - 3.0
+    - 4.0
+    - 2.938058614730835
+    - 3.875359296798706
+    - 5.0
+    - 2.85225510597229
+    - 3.955629348754883
+    - 5.005431652069092
+    - 3.0
+    - 2.853347063064575
+    - 3.9683234691619873
+    - 5.132359981536865
+    - 3.1226160526275635
+    - 3.0
+    - 2.8792953491210938
+    - 4.0485429763793945
+    - 5.035534381866455
+    - 3.0763323307037354
+    - 3.0107507705688477
+    - 5.119822978973389
+    - 3.0763323307037354
+    - 3.081637382507324
+    dims:
+    - particle_instance
+  Y:
+    attrs:
+      long_name: particle Y-coordinate
+    data:
+    - 3.0
+    - 4.0
+    - 2.81984806060791
+    - 3.9243483543395996
+    - 5.0
+    - 2.736384153366089
+    - 3.9159810543060303
+    - 4.960740089416504
+    - 3.0
+    - 2.623528480529785
+    - 3.8319880962371826
+    - 5.018215656280518
+    - 3.0835211277008057
+    - 3.0
+    - 2.5958797931671143
+    - 3.7227656841278076
+    - 5.052524089813232
+    - 3.1813480854034424
+    - 2.93936824798584
+    - 5.091207027435303
+    - 3.1813480854034424
+    - 2.9638097286224365
+    dims:
+    - particle_instance
+  Z:
+    attrs:
+      long_name: particle depth
+      positive: down
+      standard_name: depth_below_surface
+      units: m
+    data:
+    - 0.0
+    - 5.0
+    - 0.1412373036146164
+    - 5.470113277435303
+    - 10.0
+    - 0.40581804513931274
+    - 5.663057804107666
+    - 10.704076766967773
+    - 20.0
+    - 0.4492376744747162
+    - 6.101754188537598
+    - 11.248661041259766
+    - 26.278812408447266
+    - 31.850000381469727
+    - 0.6276347041130066
+    - 6.450376987457275
+    - 11.885212898254395
+    - 30.69512939453125
+    - 31.88752555847168
+    - 12.488876342773438
+    - 30.69512939453125
+    - 31.5461368560791
+    dims:
+    - particle_instance
+  active:
+    attrs:
+      flag_meanings: inactive active
+      long_name: particle active mask
+    data:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 0
+    - 1
+    - 1
+    - 0
+    - 1
+    dims:
+    - particle_instance
+  instance_offset:
+    attrs:
+      long_name: particle instance offset for file
+    data: 0
+    dims: []
+  particle_count:
+    attrs:
+      long_name: number of particles in a given timestep
+      ragged_row_count: particle count at nth timestep
+    data:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 5
+    - 3
+    dims:
+    - time
+  pid:
+    attrs:
+      long_name: particle identifier
+    data:
+    - 0
+    - 1
+    - 0
+    - 1
+    - 2
+    - 0
+    - 1
+    - 2
+    - 3
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 2
+    - 3
+    - 4
+    dims:
+    - particle_instance
+  release_time:
+    attrs:
+      long_name: particle release time
+      units: seconds since 1970-01-01
+    data:
+    - 1441591080.0
+    - 1441591080.0
+    - 1441591140.0
+    - 1441591200.0
+    - 1441591260.0
+    dims:
+    - particle
+dims:
+  particle: 5
+  particle_instance: 22
+  time: 6

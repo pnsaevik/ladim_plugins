@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:50:00
+    start_time     : 2015-09-07 01:30:00
+    stop_time      : 2015-09-07 02:20:00
     reference_time : 1970-01-01 00:00:00
 
 

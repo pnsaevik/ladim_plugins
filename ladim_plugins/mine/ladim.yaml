@@ -2,8 +2,8 @@
 
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:10:00
+    start_time     : 2015-09-07 01:58:00
+    stop_time      : 2015-09-07 02:03:00
 
 
 files:
@@ -35,7 +35,7 @@ ibm:
     #    sand = 0.12 kg / m s2)
     taucrit: 1000
 
-    lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
+    lifespan: 270  # Time (seconds) before a particle is taken out of the simulation
 
     # Vertical diffusion [m*2/s]
     vertical_mixing: 0.0001
