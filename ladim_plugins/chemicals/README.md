@@ -15,7 +15,7 @@ Common changes applied to `ladim.yaml`:
 - Stop date of simulation (`time_control.stop_time`)
 - Forcing input file (`gridforce.input_file`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
 - Land collision treatment (`ibm.land_collision`)

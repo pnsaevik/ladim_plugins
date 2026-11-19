@@ -37,7 +37,7 @@ class Test_update:
         return grid, state, forcing
 
     def test_does_not_resuspend_when_zero_velocity(self):
-        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        ibmconf = dict(lifespan=100, taucrit=0.12)
         grid, state, forcing = self.gsf(num=5)
         config = dict(dt=state.dt, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
@@ -45,20 +45,10 @@ class Test_update:
         my_ibm.update_ibm(grid, state, forcing)
 
         assert np.all(state.Z == 10)
-
-    def test_does_resuspend_when_high_velocity(self):
-        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
-        grid, state, forcing = self.gsf(num=5, hvel=1)
-        state['sink_vel'][:] = 1e-7
-        config = dict(dt=state.dt, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        my_ibm.update_ibm(grid, state, forcing)
-
-        assert np.all(state.Z < 10)
+        assert np.all(state.active == 0)
 
     def test_resuspended_particles_have_altered_active_flag(self):
-        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
+        ibmconf = dict(lifespan=100, taucrit=0.12)
         grid, state, forcing = self.gsf(num=5, hvel=1)
         state['sink_vel'][:] = 1e-7
         config = dict(dt=state.dt, ibm=ibmconf)
@@ -66,20 +56,13 @@ class Test_update:
 
         my_ibm.update_ibm(grid, state, forcing)
 
+        # Particles stay on the sea floor in the time step where they are resuspended
+        # (they are lifted by the vertical diffusion of ladim in the next time step)
         assert np.all(state.active == 2)
-
-    def test_does_not_resuspend_when_zero_diffusion(self):
-        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0)
-        grid, state, forcing = self.gsf(num=5, hvel=1)
-        config = dict(dt=state.dt, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        my_ibm.update_ibm(grid, state, forcing)
-
         assert np.all(state.Z == 10)
 
     def test_does_not_resuspend_taucrit_is_not_given(self):
-        ibmconf = dict(lifespan=100, vertical_mixing=0.01)
+        ibmconf = dict(lifespan=100)
         grid, state, forcing = self.gsf(num=5, hvel=1)
         state['sink_vel'][:] = 1e-7
         config = dict(dt=state.dt, ibm=ibmconf)
@@ -88,9 +71,10 @@ class Test_update:
         my_ibm.update_ibm(grid, state, forcing)
 
         assert np.all(state.Z == 10)
+        assert np.all(state.active == 0)
 
     def test_sinking_when_mix_of_pelagic_and_benthic_particles(self):
-        ibmconf = dict(lifespan=100, taucrit=1, vertical_mixing=0)
+        ibmconf = dict(lifespan=100, taucrit=1)
         grid, state, forcing = self.gsf(num=5, wvel=1)
         state.Z[:] = [0, 1, 5, 10, 10]
         state.active[:] = 1
@@ -101,19 +85,6 @@ class Test_update:
 
         assert np.int32(state.active).tolist() == [1, 1, 1, 0, 0]
         assert state.Z.tolist() == [1, 2, 6, 10, 10]
-
-    def test_does_not_resuspend_when_large_sinkvel(self):
-        # On rare occasions, vertical mixing can overcome the sinking velocity
-        np.random.seed(0)
-
-        ibmconf = dict(lifespan=100, taucrit=0.12, vertical_mixing=0.01)
-        grid, state, forcing = self.gsf(num=5, hvel=1, wvel=1)
-        config = dict(dt=state.dt, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        my_ibm.update_ibm(grid, state, forcing)
-
-        assert np.all(state.Z == 10)
 
 
 class Test_ladis:
@@ -242,7 +213,6 @@ class Test_taucrit_grain_size_bin:
                 source=grainsize_fname,
                 varname='grain_size',
             ),
-            vertical_mixing=0.01,
         )
         config = dict(dt=1, ibm=ibmconf)
         my_ibm = ibm.IBM(config)
@@ -263,84 +233,16 @@ class Test_taucrit_grain_size_bin:
         )
         forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + vel] * 2)
         state = Stub(
-            X=rng, Y=rng, Z=zr + 10, active=zr, alive=zr == 0, age=zr,
+            X=rng, Y=rng, Z=zr + 10, active=zr.copy(), alive=zr == 0, age=zr.copy(),
             sink_vel=zr + w, dt=config['dt'], timestep=1,
         )
 
-        my_ibm.update_ibm(grid, state, forcing)
+        my_ibm.grid, my_ibm.state, my_ibm.forcing = grid, state, forcing
+        my_ibm.resuspend()
 
-        assert np.any(state.Z < 10)
-        assert np.any(state.Z == 10)
-
-
-class Test_vertical_mixing:
-    @staticmethod
-    def gfs(num, hvel=0, wvel=0, dt=1):
-        zr = np.zeros(num)
-        zrl = np.zeros_like
-        grid = Stub(
-            sample_depth=lambda x, y: zrl(x) + 10,
-            lonlat=lambda x, y: (x, y),
-        )
-        forcing = Stub(velocity=lambda x, y, z, tstep=0: [zrl(x) + hvel] * 2)
-        state = Stub(
-            X=zrl(zr), Y=zrl(zr), Z=zr + 10, active=zrl(zr) + 1, alive=zr == 0,
-            age=zrl(zr), sink_vel=zr + wvel, dt=dt, timestep=0,
-        )
-        return grid, forcing, state
-
-    def test_no_diffusion_if_mixing_not_given(self):
-        ibmconf = dict(lifespan=100)
-
-        grid, forcing, state = self.gfs(num=5)
-        state['sink_vel'][:] = 1
-        state['Z'][:] = 0
-        config = dict(dt=state.dt, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        assert np.all(state.Z == 0)
-        my_ibm.update_ibm(grid, state, forcing)
-        assert np.all(state.Z == state.dt)
-
-    def test_vertical_movement_when_method_constant(self):
-        ibmconf = dict(
-            lifespan=100,
-            taucrit=0,
-            vertical_mixing=dict(
-                method='constant',
-                value=0.01,
-            ),
-        )
-
-        grid, forcing, state = self.gfs(num=5)
-        state['sink_vel'][:] = 1e-7
-        config = dict(dt=state.dt, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        assert np.all(state.Z == 10)
-        my_ibm.update_ibm(grid, state, forcing)
-        assert np.all(state.Z != 10)
-
-    def test_some_initial_lift_when_method_bounded_linear(self):
-        np.random.seed(0)
-
-        ibmconf = dict(
-            lifespan=100,
-            taucrit=0.12,
-            vertical_mixing=dict(
-                method='bounded_linear',
-                max_diff=0.01,
-            ),
-        )
-
-        grid, forcing, state = self.gfs(num=5, hvel=1)
-        config = dict(dt=state.dt, ibm=ibmconf)
-        my_ibm = ibm.IBM(config)
-
-        my_ibm.update_ibm(grid, state, forcing)
-
-        assert np.any(state.Z != 10)
-        assert np.any(state.Z == 10)
+        # Some particles are resuspended (made active), others are not
+        assert np.any(state.active != 0)
+        assert np.any(state.active == 0)
 
 
 class Test_get_settled_particles:

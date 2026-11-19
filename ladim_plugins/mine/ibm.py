@@ -1,4 +1,5 @@
 import numpy as np
+from ladim_plugins.utils.vertical_mixing import check_no_ibm_vertical_mixing
 
 
 class IBM:
@@ -6,8 +7,7 @@ class IBM:
         # Time before a particle is taken out of the simulation [seconds]
         self.lifespan = config['ibm']['lifespan']
 
-        # Vertical mixing [m*2/s]
-        self.vdiff = config['ibm'].get('vertical_mixing', 0)
+        check_no_ibm_vertical_mixing(config)
         self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', 1000))
 
         # Vertical advection on/off
@@ -51,10 +51,9 @@ class IBM:
             has_been_buried_before = None
 
         self.reposition()
-        self.resuspend()
-        self.diffuse()
-        self.sink()
-        self.bury()
+        just_resuspended = self.resuspend()
+        self.sink(just_resuspended)
+        self.bury(just_resuspended)
         self.kill_old()
         self.store()
 
@@ -102,19 +101,30 @@ class IBM:
             self.pid = state.pid
 
     def resuspend(self):
+        """Make settled particles mobile where the bottom shear stress is high enough
+
+        The vertical diffusion is done by ladim before the IBM. Particles which
+        are resuspended here stay on the sea floor during this time step (they
+        are not sunk or buried), and are lifted by the diffusion in the next one.
+
+        :return: Boolean array, True for the particles which were resuspended
+        """
+        just_resuspended = np.zeros(np.shape(self.state.X), dtype=bool)
         if self.taucrit_fn is None:
-            return
+            return just_resuspended
 
         ustar = self.shear_velocity_btm()
         tau = shear_stress_btm(ustar)
         lon, lat = self.grid.lonlat(self.state.X, self.state.Y)
         taucrit = self.taucrit_fn(lon, lat)
         resusp = tau >= taucrit
+        just_resuspended = resusp & (self.state.active == 0)
         self.state.active[resusp] = True
+        return just_resuspended
 
-    def bury(self):
+    def bury(self, hold):
         grid = self.grid
-        a = self.active() != 0
+        a = (self.active() != 0) & ~hold
         X, Y, Z = self.state.X[a], self.state.Y[a], self.state.Z[a]
 
         # Define which particles have settled to the bottom and which have not
@@ -131,30 +141,13 @@ class IBM:
         if not self.taucrit_fn:
             self.state['alive'][a] &= ~at_seabed
 
-    def diffuse(self):
+    def sink(self, hold):
         # Get parameters
-        a = self.active() != 0
-        x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
-        dt = self.dt
-
-        # Diffusion
-        b0 = np.sqrt(2 * self.vdiff)
-        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(dt)
-        z1 = z + b0 * dw
-
-        # Reflexive boundary condition at the top
-        z1[z1 < 0] *= -1  # Surface
-
-        # Update vertical position
-        self.state.Z[a] = z1
-
-    def sink(self):
-        # Get parameters
-        a = self.active() != 0
+        a = (self.active() != 0) & ~hold
         z = self.state.Z[a]
         w = self.state.sink_vel[a]  # Sink velocity
         if self.vadv:
-            w += self.forcing.forcing.wvel(self.state.X[a], self.state.Y[a], z)
+            w -= self.forcing.field(self.state.X[a], self.state.Y[a], z, 'w')  # w is upwards in ROMS
 
         # Euler scheme, no boundary conditions
         self.state.Z[a] = z + self.dt * w
@@ -208,24 +201,6 @@ def get_taucrit_fn(value):
         return None
     else:
         return lambda lon, lat: np.zeros_like(lon) + value
-
-
-def get_vdiff_constant_fn(value):
-    def fn(z, h, dt, _):
-        # Diffusion
-        b0 = np.sqrt(2 * value)
-        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(dt)
-        z1 = z + b0 * dw
-
-        # Reflexive boundary conditions
-        z1[z1 < 0] *= -1  # Surface
-        below_seabed = z1 > h
-        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
-
-        # Return new vertical position
-        return z1
-
-    return fn
 
 
 def create_outfile(fname, variables):

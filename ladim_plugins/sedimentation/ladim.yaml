@@ -58,21 +58,6 @@ ibm:
 
     lifespan: 270  # Time (seconds) before a particle is taken out of the simulation
 
-    # Vertical diffusion [m*2/s] on the sea floor under resuspension conditions
-    vertical_mixing:
-        method: constant
-        value: 0.0001
-
-    # Alternative `vertical_mixing` format: Linearly increasing from bottom,
-    # until a maximal limit. Diffusion increases from bottom according to
-    # the 'law of the wall' and the current velocity at the bottom.
-    #
-    # Example below:
-    #
-    # vertical_mixing:
-    #   method: bounded_linear
-    #   max_diff: 0.01
-
     # Ruleset for generation sinking velocities, if sink_vel is set to zero
     # or not provided in the .rls file
     sinkvel: bannister2016  # Options: "bannister2016" (default), "broch2022a", "broch2022b" or single number (constant sinking velocity)
@@ -147,3 +132,6 @@ numerics:
     # Advection method, EF, RK2, or RK4
     advection: EF
     diffusion: 1    # [m/s**2]
+    # Vertical diffusion [m/s**2]. It should be the typical diffusion of a particle on the sea
+    # floor under resuspension conditions.
+    vert_mix: 0.0001

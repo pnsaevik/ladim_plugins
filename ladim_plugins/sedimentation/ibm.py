@@ -1,5 +1,6 @@
 import numpy as np
 import typing
+from ladim_plugins.utils.vertical_mixing import check_no_ibm_vertical_mixing
 
 
 class IBM:
@@ -7,8 +8,7 @@ class IBM:
         # Time before a particle is taken out of the simulation [seconds]
         self.lifespan = config['ibm']['lifespan']
 
-        # Vertical mixing [m*2/s]
-        self.vdiff_fn = get_vdiff_fn(config['ibm'].get('vertical_mixing', None))
+        check_no_ibm_vertical_mixing(config)
         self.taucrit_fn = get_taucrit_fn(config['ibm'].get('taucrit', None))
 
         # Store time step value to calculate age
@@ -34,10 +34,9 @@ class IBM:
         has_been_buried_before = (self.state.active != 1)
 
         self.initialize()
-        self.resuspend()
-        self.diffuse()
-        self.sink()
-        self.bury()
+        just_resuspended = self.resuspend()
+        self.sink(just_resuspended)
+        self.bury(just_resuspended)
         self.kill_old()
 
         is_active = (self.state.active != 0)
@@ -71,19 +70,30 @@ class IBM:
                 state['jitter'][idx_new_jitter_particles] = -1
 
     def resuspend(self):
+        """Make settled particles mobile where the bottom shear stress is high enough
+
+        The vertical diffusion is done by ladim before the IBM. Particles which
+        are resuspended here stay on the sea floor during this time step (they
+        are not sunk or buried), and are lifted by the diffusion in the next one.
+
+        :return: Boolean array, True for the particles which were resuspended
+        """
+        just_resuspended = np.zeros(np.shape(self.state.X), dtype=bool)
         if self.taucrit_fn is None:
-            return
+            return just_resuspended
 
         ustar = self.shear_velocity_btm()
         tau = shear_stress_btm(ustar)
         lon, lat = self.grid.lonlat(self.state.X, self.state.Y)
         taucrit = self.taucrit_fn(lon, lat)
         resusp = tau >= taucrit
+        just_resuspended = resusp & (self.state.active == 0)
         self.state.active[resusp] = True
+        return just_resuspended
 
-    def bury(self):
+    def bury(self, hold):
         grid = self.grid
-        a = self.state.active != 0
+        a = (self.state.active != 0) & ~hold
         X, Y, Z = self.state.X[a], self.state.Y[a], self.state.Z[a]
 
         # Define which particles have settled to the bottom and which have not
@@ -95,21 +105,9 @@ class IBM:
         self.state.Z[a] = Z
         self.state.active[a] = ~at_seabed
 
-    def diffuse(self):
-        if self.vdiff_fn is None:
-            return
-
+    def sink(self, hold):
         # Get parameters
-        a = self.state.active != 0
-        x, y, z = self.state.X[a], self.state.Y[a], self.state.Z[a]
-        h = self.grid.sample_depth(x, y)
-        ustar = self.shear_velocity_btm()[a]
-
-        self.state.Z[a] = self.vdiff_fn(z, h, self.dt, ustar)
-
-    def sink(self):
-        # Get parameters
-        a = self.state.active != 0
+        a = (self.state.active != 0) & ~hold
         z = self.state.Z[a]
         w = self.state.sink_vel[a]  # Sink velocity
 
@@ -272,75 +270,6 @@ def get_taucrit_fn_grain_size(source, varname, method):
     )
 
     return taucrit_fn[method]
-
-
-def get_vdiff_fn(subconf):
-    if subconf is None:
-        return None
-
-    if not isinstance(subconf, dict):
-        subconf = dict(method='constant', value=subconf)
-
-    method = subconf['method']
-    if method == 'constant':
-        return get_vdiff_constant_fn(subconf['value'])
-
-    elif method == 'bounded_linear':
-        return get_vdiff_bounded_linear_fn(subconf['max_diff'])
-
-    else:
-        raise ValueError(f'Unknown method: {method}')
-
-
-def get_vdiff_constant_fn(value):
-    def fn(z, h, dt, _):
-        # Diffusion
-        b0 = np.sqrt(2 * value)
-        dw = np.random.randn(z.size).reshape(z.shape) * np.sqrt(dt)
-        z1 = z + b0 * dw
-
-        # Reflexive boundary conditions
-        z1[z1 < 0] *= -1  # Surface
-        below_seabed = z1 > h
-        z1[below_seabed] = 2*h[below_seabed] - z1[below_seabed]
-
-        # Return new vertical position
-        return z1
-
-    return fn
-
-
-def get_vdiff_bounded_linear_fn(max_diff):
-    def get_turbulence(ustar, meters_from_seafloor, max_mixing):
-        # Extracts vertical diffusion and vertical diffusion gradient following a linear
-        # function from the bottom to the base of the model where we asume BBL finishes
-        # and Az becomes constant and max
-        kappa = 0.41
-        dA_dz = kappa * ustar  # Alternative formulation: kappa * ustar * w * exp(-w/w0), where w = z - h
-        A = dA_dz * meters_from_seafloor
-        cutoff = (A > max_mixing)
-        A[cutoff] = max_mixing
-        dA_dz[cutoff] = 0
-        return A, dA_dz
-
-    def fn(z, h, dt, ustar):
-        A, dA_dZ = get_turbulence(ustar, np.maximum(h - z, 0), max_diff)
-
-        # Diffusion velocity, adding a pseudovelocity and evaluating the diffusion
-        # in an upstream point
-        rand = np.random.normal(size=len(A))
-        diff_upstream = A + 0.5 * dA_dZ ** 2 * dt
-        w = -dA_dZ + rand * np.sqrt(2 * diff_upstream / dt)
-
-        # Vertical position update
-        z_new = z + dt * w  # Euler forward timestepping
-        benthic = z_new >= h  # Newly settled particles
-        z_new[benthic] = h[benthic]  # Absorbant boundary at bottom
-        z_new[z_new < 0] *= -1  # Reflective boundary at surface
-
-        return z_new
-
-    return fn
 
 
 SINKVEL_CDF_TABLES = {

@@ -14,11 +14,11 @@ sequence. The processes are:
     than `ibm.taucrit` are resuspended, meaning that they are free to move.
 
 2.  *Vertical diffusion*. Active particles are diffused according to
-    `ibm.vertical_mixing`. Reflective boundary conditions are employed at the
-    bottom and top.
+    `numerics.vert_mix`. This is done by ladim, before the other processes.
+    Reflective boundary conditions are employed at the bottom and top.
     
-    At the moment, variable vertical diffusion is not implemented.
-    *Therefore, the `ibm.vertical_mixing` parameter should reflect the
+    Variable vertical diffusion is not implemented.
+    *Therefore, the `numerics.vert_mix` parameter should reflect the
     typical vertical diffusion observed by a particle on the bottom under
     resuspension conditions.*
     
@@ -42,7 +42,7 @@ Common changes applied to `ladim.yaml`:
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Particle life span (`ibm.lifespan`)
 - Critical shear stress for resuspension (`ibm.taucrit`)
 

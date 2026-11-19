@@ -14,7 +14,8 @@ sequence. The processes are:
     than `ibm.taucrit` are resuspended, meaning that they are free to move.
 
 2.  *Vertical diffusion*. Active particles are diffused according to
-    `ibm.vertical_mixing`. Reflective boundary conditions are employed at the top.
+    `numerics.vert_mix`. This is done by ladim, before the other processes.
+    Reflective boundary conditions are employed at the top and the bottom.
     
 3.  *Sinking*. Active particles sink according to their sinking velocity, as
     specified in `particles.rls`. Particles that sink to the sea floor are
@@ -36,7 +37,7 @@ Common changes applied to `ladim.yaml`:
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Particle life span (`ibm.lifespan`)
 - Critical shear stress for resuspension (`ibm.taucrit`)
 - Output file for settled particles (`ibm.output_file`)

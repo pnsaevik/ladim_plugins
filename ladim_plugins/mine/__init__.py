@@ -1,3 +1,3 @@
 from .ibm import IBM
-from ..chemicals import Forcing
+from ladim.gridforce.ROMS import Forcing
 from ..sedimentation import Grid
