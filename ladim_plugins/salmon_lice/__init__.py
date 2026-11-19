@@ -1,2 +1,2 @@
 from .ibm import IBM, infectivity
-from .gridforce import Forcing, Grid
+from ladim.gridforce.ROMS import Forcing, Grid

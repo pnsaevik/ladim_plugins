@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-01 01:00:00
-    stop_time      : 2015-09-01 01:05:00
+    start_time     : 2015-09-01 01:58:00
+    stop_time      : 2015-09-01 02:03:00
 
 
 files:
@@ -21,7 +21,6 @@ gridforce:
 
 ibm:
     ibm_module: ladim_plugins.sandeel
-    vertical_mixing: 0.00005  # [m*2/s]
     max_depth: 50  # [m]
     variables:
     - hatch_rate     # Hatch rate (0 = early hatcher, 1 = late hatcher)
@@ -107,3 +106,4 @@ numerics:
     dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 0    # [m*2/s] Usually 0.1 on 160m NorFjords, 1 on NorKyst800, 10 on SVIM4km
+    vert_mix: 0.00005  # Vertical diffusion [m*2/s]

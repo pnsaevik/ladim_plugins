@@ -2,8 +2,8 @@
 
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:05:00
+    start_time     : 2015-09-07 01:58:00
+    stop_time      : 2015-09-07 02:03:00
 
 
 files:
@@ -16,24 +16,13 @@ gridforce:
     # variable LADIM_NUM_THREADS to determine number of threads (defaults to 1).
     num_threads: 2
 
-    # Module name is mandatory.
-    # The other items are module dependent
-    module: ladim_plugins.chemicals
+    module: ladim.gridforce.ROMS
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
-    ibm_forcing:
-    - AKs
 
 
 ibm:
     module: ladim_plugins.chemicals
-    vertical_mixing: AKs  # Scalar [m2/s] or variable name
-    vertdiff_dt: 60  # [s] Fractional time step size for vertical diffusion (default = inf, which indicates that the regular time step size should be used)
-    vertdiff_dz: 2  # [m] Spacing of vertical diffusion sampling point (default = 0, which indicates that the diffusion is sampled at the particle position)
-    vertdiff_max: 0.01  # [m2/s] Maximal vertical diffusion value (default = inf)
-    horzdiff_type: smagorinsky
-    horzdiff_max: 1
-    horzdiff_min: 0
-    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze', 'costal_diffusion'
+    land_collision: reposition  # Alternatives: 'reposition' (default), 'freeze', 'coastal_diffusion'
 
 particle_release:
     variables: [release_time, X, Y, Z, group_id]
@@ -103,4 +92,8 @@ numerics:
     dt: [60, s]     # Format = [value, unit]
     # Advection method, EF, RK2, or RK4
     advection: RK4
-    diffusion: 0    # [m/s**2]
+    diffusion: 0.1  # [m/s**2]
+    # Vertical diffusion: Either a constant [m2/s], or the diffusivity of the ocean model
+    # (AKs or ln_AKs in the forcing file), clipped to [min, max] [m2/s] and sampled
+    # at the midpoints of `resolution` m bins
+    vert_mix: {method: labolle, min: 0.0, max: 1.0e-2, resolution: 2}

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.12.0] - 2026-11-19
+### Changed
+- Requires ladim >= 2.10.0. The vertical diffusion in salmon_lice, egg, larvae,
+  saithe, lunar_eel, sandeel, chemicals, mine and sedimentation is done by ladim,
+  configured by `numerics.vert_mix`. The option `ibm.vertical_mixing` is removed.
+  See the History section in the README of each module.
+- All reference outputs are stored as yaml (`out.nc.yaml`). The examples run
+  across a whole hour, and have more particles where the coverage was low.
+
+
 ## [2.11.0] - 2026-11-17
 ### Changed
 - Requires ladim >= 2.8.0, which has the `num_threads` option

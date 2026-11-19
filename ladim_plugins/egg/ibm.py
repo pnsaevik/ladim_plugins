@@ -1,11 +1,11 @@
 import numpy as np
 import typing
+from ladim_plugins.utils.vertical_mixing import check_no_ibm_vertical_mixing
 
 
 class IBM:
     def __init__(self, config):
-        self.D = config['ibm']['vertical_mixing']  # [m*2/s]
-        self.vertical_diffusion = (self.D > 0)
+        check_no_ibm_vertical_mixing(config)
         self.egg_diam = config['ibm']['egg_diam']
         self.dt = config['dt']
         self.model = dict(grid=None, state=None, forcing=None)  # type: typing.Any
@@ -43,11 +43,6 @@ class IBM:
             0.08825*(egg_diam-0.4*dmax)*(np.abs(dens_water - dens_egg))**(2/3)*my_w**(-1/3))
 
         W = -W*np.sign(dens_water-dens_egg)
-
-        # Random diffusion velocity
-        if self.vertical_diffusion:
-            rand = np.random.normal(size=len(W))
-            W += rand * (2 * self.D / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top
         state['Z'] += W * self.dt

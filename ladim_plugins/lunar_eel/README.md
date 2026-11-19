@@ -25,7 +25,7 @@ Common changes applied to `ladim.yaml`:
 - Start date of simulation (`time_control.start_time`)
 - Stop date of simulation (`time_control.stop_time`)
 - Forcing input file (`gridforce.input_file`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
@@ -49,6 +49,10 @@ entry in `ladim.yaml`. The output variables are specified by the
 `output_variables` entries. 
 
 ## History
+
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The vertical
+limits (`ibm.vertical_limits`) are still kept by the IBM.
 
 Created by Pål Næverlid Sævik (2019) from an early draft by Bjørn Ådlandsvik
 and Anne Dagrun Sandvik.

@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2022-06-01 01:00:00
-    stop_time      : 2022-06-01 01:05:00
+    start_time     : 2022-06-01 01:58:00
+    stop_time      : 2022-06-01 02:03:00
     reference_time : 1970-01-01 00:00:00
 
 
@@ -15,9 +15,9 @@ gridforce:
     # variable LADIM_NUM_THREADS to determine number of threads (defaults to 1).
     num_threads: 2
     
-    module: ladim_plugins.salmon_lice
+    module: ladim.gridforce.ROMS
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
-    ibm_forcing: [temp, salt, AKs]
+    ibm_forcing: [temp, salt]
 
 
 ibm:
@@ -30,12 +30,10 @@ ibm:
     - salt        # Particle ambient salinity [1]
     - infect      # Copepod infectivity [1]
 
-    vertical_mixing: 0.001  # [m^2/s]
-
 
 particle_release:
     release_type: continuous
-    release_frequency: [60, s]  # Normally: [1, h]
+    release_frequency: [180, s]  # Normally: [1, h]
     variables: 
     - mult           # Number of particles released
     - release_time   # Time of release, formatted as yyyy-mm-ddThh:mm:ss
@@ -130,3 +128,7 @@ numerics:
     dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 1.0  # [m*2/s]
+    vert_mix: 0.001  # Vertical diffusion [m*2/s]
+    # Alternatively, use the vertical diffusion of the ocean model (ln_AKs or AKs in the
+    # forcing file), clipped to [min, max] and sampled at the midpoints of `resolution` m bins:
+    # vert_mix: {method: labolle, min: 1.0e-4, max: 1.0e-2, resolution: 5}

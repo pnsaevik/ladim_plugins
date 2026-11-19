@@ -1,4 +1,5 @@
 import numpy as np
+from ladim_plugins.utils.vertical_mixing import check_no_ibm_vertical_mixing
 
 
 class IBM:
@@ -12,7 +13,7 @@ class IBM:
 
         self.speed = config['ibm']['speed']
         moon_lat, moon_lon = config['ibm']['lunar_latlon']
-        self.D = config['ibm']['vertical_mixing']
+        check_no_ibm_vertical_mixing(config)
         self.vertical_limits = config['ibm']['vertical_limits']
 
         self.dt = config['dt']
@@ -31,7 +32,7 @@ class IBM:
             self.init_grid()
 
         self.horizontal_advect()
-        self.vertical_diffuse()
+        self.limit_depth()
 
     def init_grid(self):
         defgrid = self.grid.grid
@@ -58,14 +59,9 @@ class IBM:
             state.X[idx] = x1[idx]
             state.Y[idx] = y1[idx]
 
-    def vertical_diffuse(self):
-        state = self.state
-
-        # Random diffusion velocity
-        rand = np.random.normal(size=len(state.Z))
-        state['Z'] += rand * np.sqrt(2 * self.D * self.dt)
-
+    def limit_depth(self):
         # Keep within vertical limits, reflexive condition
+        state = self.state
         state['Z'] = reflexive(state.Z, *self.vertical_limits)
 
 

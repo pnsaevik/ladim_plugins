@@ -7,8 +7,6 @@ class IBM:
 
     def __init__(self, config):
         self.k = 0.2  # Light extinction coefficient
-        self.vertical_diffusion = True
-        self.D = 1e-4  # Vertical mixing [m*2/s]
 
         self.dt = config['dt']
         self.extra_spreading = config['ibm'].get('extra_spreading', True)
@@ -62,10 +60,6 @@ class IBM:
         desired_light = 1
         length = 0.001 * weight_to_length(state.weight[~is_egg])
         W[~is_egg] = self.swim_speed * length * np.sign(Eb - desired_light)
-
-        # --- Vertical turbulent mixing ---
-        if self.D:
-            W += np.random.normal(size=len(W)) * np.sqrt(2 * self.D / self.dt)
 
         # --- Execute vertical movement ---
         Z = state.Z + W * self.dt

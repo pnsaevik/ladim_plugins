@@ -1,2 +1,2 @@
-from .gridforce import Grid, Forcing
+from ladim.gridforce.ROMS import Grid, Forcing
 from .ibm import IBM

@@ -2,8 +2,8 @@
 
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:10:00
+    start_time     : 2015-09-07 01:58:00
+    stop_time      : 2015-09-07 02:03:00
 
 
 files:
@@ -16,8 +16,6 @@ gridforce:
     # variable LADIM_NUM_THREADS to determine number of threads (defaults to 1).
     num_threads: 2
 
-    # Module name must be ladim_plugins.mine if ibm.vertical_advection = True
-    # Otherwise, it can be ladim_plugins.sedimentation (which is faster)
     module: ladim_plugins.mine
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
 
@@ -35,10 +33,7 @@ ibm:
     #    sand = 0.12 kg / m s2)
     taucrit: 1000
 
-    lifespan: 200  # Time (seconds) before a particle is taken out of the simulation
-
-    # Vertical diffusion [m*2/s]
-    vertical_mixing: 0.0001
+    lifespan: 270  # Time (seconds) before a particle is taken out of the simulation
 
     # Vertical advection due to ambient currents on/off. Vertical advection due to sinking
     # is always active.
@@ -111,3 +106,4 @@ numerics:
     # Advection method, EF, RK2, or RK4
     advection: EF
     diffusion: 0.1    # [m/s**2]
+    vert_mix: 0.0001  # Vertical diffusion [m/s**2]

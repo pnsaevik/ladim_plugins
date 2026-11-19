@@ -15,7 +15,7 @@ Common changes applied to `ladim.yaml`:
 - Start date of simulation (`time_control.start_time`)
 - Stop date of simulation (`time_control.stop_time`)
 - Forcing input file (`gridforce.input_file`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Egg diameter (`ibm.egg_diam`)
 - Time step length (`numerics.dt`)
@@ -43,5 +43,8 @@ provided by `svim_ladim.yaml` and `svim_particles.rls`. The code used to make
 the release file is provided by `svim_make_release.m`.  
 
 ## History
+
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error.
 
 Created by Mari Myksvoll (2011).

@@ -1,7 +1,7 @@
 time_control:
     # Start and stop of simulation
-    start_time     : 2015-09-07 01:00:00
-    stop_time      : 2015-09-07 01:05:00
+    start_time     : 2015-09-07 01:58:00
+    stop_time      : 2015-09-07 02:03:00
 
 
 files:
@@ -166,3 +166,7 @@ numerics:
     dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 0    # [m*2/s] usually 0.1 on 160m NorFjords, 1 on 800m NorKyst
+    # The vertical mixing of the ocean model (ln_AKs or AKs in the forcing file) can be added to
+    # the random vertical movement of the IBM (`ibm.vertical_mixing`), clipped to [min, max] and
+    # sampled at the midpoints of `resolution` m bins:
+    # vert_mix: {method: labolle, min: 1.0e-4, max: 1.0e-2, resolution: 5}

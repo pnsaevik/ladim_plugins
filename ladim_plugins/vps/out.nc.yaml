@@ -1,7 +1,7 @@
 attrs:
   Conventions: CF-1.8
-  date: '2026-09-28'
-  history: Created by ladim 2.5.0
+  date: '2026-11-19'
+  history: Created by ladim 2.10.0, ladim_plugins 1.5.9
   institution: Institute of Marine Research
   source: Lagrangian Advection and Diffusion Model
 coords:
@@ -11,12 +11,12 @@ coords:
       standard_name: time
       units: seconds since 1970-01-01 00:00:00
     data:
-    - 1441587600
-    - 1441588200
-    - 1441588800
     - 1441589400
     - 1441590000
     - 1441590600
+    - 1441591200
+    - 1441591800
+    - 1441592400
     dims:
     - time
 data_vars:
@@ -197,10 +197,10 @@ data_vars:
       long_name: particle release time
       units: seconds since 1970-01-01
     data:
-    - 1441587600
-    - 1441587600
-    - 1441587600
-    - 1441587600
+    - 1441589400
+    - 1441589400
+    - 1441589400
+    - 1441589400
     dims:
     - particle
   river_id:

@@ -14,11 +14,11 @@ sequence. The processes are:
     than `ibm.taucrit` are resuspended, meaning that they are free to move.
 
 2.  *Vertical diffusion*. Active particles are diffused according to
-    `ibm.vertical_mixing`. Reflective boundary conditions are employed at the
-    bottom and top.
+    `numerics.vert_mix`. This is done by ladim, before the other processes.
+    Reflective boundary conditions are employed at the bottom and top.
     
-    At the moment, variable vertical diffusion is not implemented.
-    *Therefore, the `ibm.vertical_mixing` parameter should reflect the
+    Variable vertical diffusion is not implemented.
+    *Therefore, the `numerics.vert_mix` parameter should reflect the
     typical vertical diffusion observed by a particle on the bottom under
     resuspension conditions.*
     
@@ -42,7 +42,7 @@ Common changes applied to `ladim.yaml`:
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Time step length (`numerics.dt`)
 - Output frequency (`output_variables.outper`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Particle life span (`ibm.lifespan`)
 - Critical shear stress for resuspension (`ibm.taucrit`)
 
@@ -80,6 +80,12 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 
 ## History
+
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The method
+`bounded_linear` is removed, so variable vertical diffusion is no longer available. A particle can
+no longer be buried by the diffusion, since ladim reflects it at the sea floor. A resuspended
+particle stays on the sea floor for one time step, and is lifted by the diffusion in the next.
 
 Update April 2024: Released particles gain sinking velocity automatically. Resuspension
 and vertical diffusion can be skipped.

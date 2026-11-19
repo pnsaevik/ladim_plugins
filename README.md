@@ -36,7 +36,7 @@ pytest -Wignore --pyargs ladim_plugins
 This command will run ladim on each of the plugins, using the sample `ladim.yaml`
 and `particle.rls` files found in the subpackage folders. The tests succeed if
 `ladim` is present on the system, `ladim_plugins` is installed correctly, and the
-output from the ladim runs matches exactly with the `out.nc` files found in the
+output from the ladim runs matches exactly with the `out.nc.yaml` files found in the
 subpackage folders. 
 
 
@@ -59,7 +59,8 @@ properly structured IBM subpackage has the following ingredients:
 3. A `README.md` file containing instructions for use
 4. A simple test example. This includes a `ladim.yaml` configuration file,
    a `particles.rls` release file, a `forcing.nc` forcing file (may be
-   copied from another subpackage), and a ladim output file named `out.nc`.
+   copied from another subpackage), and the ladim output stored as yaml, named
+   `out.nc.yaml` (it is created by the test if it does not exist).
 5. Optionally a test example for generating release files. This includes a
    `release.yaml` configuration file and an output release file named
    `out.rls`.
@@ -74,4 +75,4 @@ to demonstrate certain features.
 
 The test is run using the command `pytest -Wignore --pyargs ladim_plugins`. The
 test succeeds if ladim is able to run the examples, and the output matches the
-contents of `out.nc` / `out.rls`.
+contents of `out.nc.yaml` / `out.rls`.

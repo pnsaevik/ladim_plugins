@@ -25,4 +25,8 @@ run `ladim` here.
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The diffusivity
+1e-4 m2/s was fixed in the IBM, and must now be set by `numerics.vert_mix`.
+
 Created by Pål Næverlid Sævik (2024)
