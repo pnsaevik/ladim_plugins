@@ -56,6 +56,10 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The depth limit
+(`ibm.max_depth`) and the reflection at the sea floor are still kept by the IBM.
+
 Update September 2022: Add hatching and metamorphose behaviour
 
 Created by Pål Næverlid Sævik (2022)

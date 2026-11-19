@@ -61,6 +61,13 @@ is stored in the file specified by `ibm.output_file`, if present.
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. A particle can no
+longer be buried by the diffusion, since ladim reflects it at the sea floor. A resuspended particle
+stays on the sea floor for one time step, and is lifted by the diffusion in the next. Vertical
+advection uses the `w` of the forcing file, and the gridforce module (`ladim_plugins.mine`) uses the
+ladim `Forcing`.
+
 **Version 1.6.3** (June 2022):
 Fixed bug which caused `ladim` to crash when particles were close to the edge.
 

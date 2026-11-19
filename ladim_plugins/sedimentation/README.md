@@ -81,6 +81,12 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The method
+`bounded_linear` is removed, so variable vertical diffusion is no longer available. A particle can
+no longer be buried by the diffusion, since ladim reflects it at the sea floor. A resuspended
+particle stays on the sea floor for one time step, and is lifted by the diffusion in the next.
+
 Update April 2024: Released particles gain sinking velocity automatically. Resuspension
 and vertical diffusion can be skipped.
 

@@ -46,6 +46,13 @@ provided by `sandvik2019_ladim.yaml` and `sandvik2019_particles.rls`.
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The module
+`ladim_plugins.salmon_lice.gridforce` is removed, use `ladim.gridforce.ROMS`. The diffusivity of the
+ocean model (`ln_AKs` or `AKs`) can be used with `vert_mix: {method: labolle, ...}`, see the comment
+in `ladim.yaml`. The forcing file of the example has `ln_AKs` (as in the NorKyst files) instead of
+`AKs`.
+
 2024: Add different behaviour to different life stages 
 
 November 2022: Added function to compute salmon lice infectivity 

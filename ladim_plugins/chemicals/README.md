@@ -50,6 +50,16 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The options
+`vertical_mixing: AKs`, `vertdiff_dz` and `vertdiff_max` are replaced by `vert_mix: {method:
+labolle, min: 0, max: <vertdiff_max>, resolution: <vertdiff_dz>}`, and `vertdiff_dt` is removed (the
+time step of ladim is used). The diffusivity is now sampled at the midpoints of the depth bins (1,
+3, 5 m for 2 m bins), not at multiples of the bin size. The module gridforce is removed, use
+`ladim.gridforce.ROMS`. Vertical advection uses the `w` of the forcing file. The Smagorinsky
+horizontal diffusion (`ibm.horzdiff_*`) is removed, use `numerics.diffusion`. The function
+`smagorinsky` is kept, unused, in the ibm module.
+
 May 2025: Bugfix in gridforce module
 September 2024: Added lifespan option
 December 2021: Added coastal hyperdiffusion as a land collision avoidance method

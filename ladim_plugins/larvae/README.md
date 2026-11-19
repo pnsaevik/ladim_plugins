@@ -48,5 +48,8 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error.
+
 Created by Mari Myksvoll (2011) and Frode Vikebø (2007)
 Adapted to Python Ladim by Pål Næverlid Sævik (2021)

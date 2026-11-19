@@ -44,4 +44,7 @@ the release file is provided by `svim_make_release.m`.
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error.
+
 Created by Mari Myksvoll (2011).

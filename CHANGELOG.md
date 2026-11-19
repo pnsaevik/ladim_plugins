@@ -10,27 +10,10 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 ### Changed
 - Requires ladim >= 2.10.0. The vertical diffusion in salmon_lice, egg, larvae,
   saithe, lunar_eel, sandeel, chemicals, mine and sedimentation is done by ladim,
-  configured by `numerics.vert_mix` (default 0). The option `ibm.vertical_mixing`
-  is removed and gives an error. In saithe, the diffusivity 1e-4 was fixed, and
-  must now be set by `numerics.vert_mix`. In sedimentation, the vertical
-  diffusion method `bounded_linear` is removed. In mine and sedimentation, a
-  particle can no longer be buried by diffusion, since ladim reflects it at the
-  seabed, and a resuspended particle is lifted by the diffusion in the next time step.
-- chemicals: The vertical diffusion options `vertical_mixing: AKs`, `vertdiff_dz`
-  and `vertdiff_max` are replaced by
-  `vert_mix: {method: labolle, min: 0, max: <vertdiff_max>, resolution: <vertdiff_dz>}`,
-  and `vertdiff_dt` is removed.
-- chemicals and mine use the ladim ROMS gridforce, and the chemicals gridforce
-  is removed. Vertical advection uses the `w` of the forcing file. The Smagorinsky
-  horizontal diffusion (`ibm.horzdiff_*`) is removed, use `numerics.diffusion`.
-- shrimp keeps its stage dependent vertical mixing.
-- All reference outputs are stored as yaml (`out.nc.yaml`) instead of netcdf.
-- The examples run across a whole hour (where the forcing changes), and have
-  more particles where the coverage was low. All reference outputs are updated.
-- salmon_lice: The module `ladim_plugins.salmon_lice.gridforce` is removed, the
-  ladim ROMS gridforce is used instead.
-- salmon_lice: The forcing file has `ln_AKs` (as in the NorKyst files) instead of
-  `AKs`, and `ladim.yaml` shows how to use the diffusivity of the ocean model.
+  configured by `numerics.vert_mix`. The option `ibm.vertical_mixing` is removed.
+  See the History section in the README of each module.
+- All reference outputs are stored as yaml (`out.nc.yaml`). The examples run
+  across a whole hour, and have more particles where the coverage was low.
 
 
 ## [2.11.0] - 2026-11-17

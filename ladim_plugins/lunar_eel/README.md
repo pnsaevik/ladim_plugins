@@ -50,5 +50,9 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
+ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The vertical
+limits (`ibm.vertical_limits`) are still kept by the IBM.
+
 Created by Pål Næverlid Sævik (2019) from an early draft by Bjørn Ådlandsvik
 and Anne Dagrun Sandvik.

@@ -37,4 +37,8 @@ entry in `ladim.yaml`. The output variables are specified by the
 
 ## History
 
+November 2026: The vertical mixing of the ocean model can be added to the random vertical movement
+of the IBM (`ibm.vertical_mixing`, which depends on the life stage), see the comment in
+`ladim.yaml`.
+
 Created by Pål Næverlid Sævik (2022)
