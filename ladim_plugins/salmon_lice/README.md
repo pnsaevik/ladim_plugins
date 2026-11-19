@@ -46,12 +46,16 @@ provided by `sandvik2019_ladim.yaml` and `sandvik2019_particles.rls`.
 
 ## History
 
-November 2026: Vertical diffusion is done by ladim, configured by `numerics.vert_mix` (requires
-ladim >= 2.10.0). The option `ibm.vertical_mixing` is removed and gives an error. The module
-`ladim_plugins.salmon_lice.gridforce` is removed, use `ladim.gridforce.ROMS`. The diffusivity of the
-ocean model (`ln_AKs` or `AKs`) can be used with `vert_mix: {method: labolle, ...}`, see the comment
-in `ladim.yaml`. The forcing file of the example has `ln_AKs` (as in the NorKyst files) instead of
-`AKs`.
+November 2026: Vertical mixing is now done by ladim (`numerics.vert_mix`) instead of by the IBM. **The default is now no vertical mixing** (it was 1e-3 m²/s), so set `numerics.vert_mix` explicitly, for example `vert_mix: 0.001`. Other (minor) changes:
+
+- Mixing now happens before the IBM step, so temperature, salinity, light and swimming decisions use the mixed depth.
+- Particles are reflected at the seabed as well as at the surface.
+- The random numbers are different, so a fixed seed no longer reproduces old runs.
+- The diffusivity of the ocean model (`ln_AKs` or `AKs`) can be used with `vert_mix: {method: labolle, ...}`, see `ladim.yaml`.
+- The option `ibm.vertical_mixing` is removed and gives an error.
+- The module `ladim_plugins.salmon_lice.gridforce` is removed. Use `ladim.gridforce.ROMS`.
+- The example forcing file uses `ln_AKs`, as in the NorKyst files.
+- Requires ladim >= 2.10.0.
 
 2024: Add different behaviour to different life stages 
 
