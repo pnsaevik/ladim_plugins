@@ -23,7 +23,6 @@ ibm:
     ibm_module: ladim_plugins.larvae
 
     # Simulation parameters
-    vertical_mixing: 0           # Diffusivity in the vertical direction (default = 0) [m^2/s]
     extinction_coefficient: 0.2  # Light extinction coefficient (default = 0.2) [1/m]
     species: cod                 # Alternatives: cod, saithe
 
@@ -168,3 +167,4 @@ numerics:
     dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 0    # [m*2/s] usually 0.1 on 160m NorFjords, 1 on 800m NorKyst
+    vert_mix: 0     # Vertical diffusion [m*2/s]. 1e-2: Wave-induced mixing, 1e-5: Stratified water

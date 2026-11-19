@@ -1,5 +1,6 @@
 import numpy as np
 from ladim.ibms import light
+from ladim_plugins.utils.vertical_mixing import check_no_ibm_vertical_mixing
 
 
 class IBM:
@@ -14,8 +15,7 @@ class IBM:
 
         self.k = 0.2  # Light extinction coefficient
         self.swim_vel = 5e-4  # m/s
-        self.D = config["ibm"].get('vertical_mixing', 1e-3)  # Vertical mixing [m*2/s]
-        self.vertical_diffusion = self.D > 0
+        check_no_ibm_vertical_mixing(config)
         self.lower_temperature_limit = 5
 
         self.dt = config["dt"]
@@ -54,11 +54,6 @@ class IBM:
 
         not_enough_salt_naup = state.salt < 32 - state_rand*2
         W[nauplie & not_enough_salt_naup] = self.swim_vel
-
-        # Random diffusion velocity
-        if self.vertical_diffusion:
-            rand = np.random.normal(size=len(W))
-            W += rand * (2 * self.D / self.dt) ** 0.5
 
         # Update vertical position, using reflexive boundary condition at the top
         Z = state['Z']

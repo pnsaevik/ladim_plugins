@@ -32,14 +32,20 @@ modules_with_makrel = [
 def test_output_matches_snapshot(module_name):
     out = run_ladim(module_name)
 
-    # Create reference outfile if it does not exist
-    outname = get_module_dir(module_name).joinpath('out.nc')
-    if not outname.exists():
-        out.to_netcdf(outname)
-        with open(str(outname) + '.yaml', 'w', encoding='utf-8') as fp:
+    # The reference is stored as netcdf (out.nc) or as yaml (out.nc.yaml). New
+    # references are created as yaml.
+    module_dir = get_module_dir(module_name)
+    nc_name = module_dir.joinpath('out.nc')
+    yaml_name = module_dir.joinpath('out.nc.yaml')
+    if not nc_name.exists() and not yaml_name.exists():
+        with open(yaml_name, 'w', encoding='utf-8') as fp:
             yaml.safe_dump(out.to_dict(), fp)
 
-    ref = xr.load_dataset(outname, decode_cf=False)
+    if nc_name.exists():
+        ref = xr.load_dataset(nc_name, decode_cf=False)
+    else:
+        with open(yaml_name, encoding='utf-8') as fp:
+            ref = xr.Dataset.from_dict(yaml.safe_load(fp))
     check_equal(out, ref)
 
 

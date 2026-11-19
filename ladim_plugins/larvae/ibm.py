@@ -1,5 +1,6 @@
 import numpy as np
 from ..utils import light, density, viscosity
+from ..utils.vertical_mixing import check_no_ibm_vertical_mixing
 
 
 class IBM:
@@ -12,11 +13,7 @@ class IBM:
         # coeff = k  ==>  Daylight reduced by a factor exp(-k) after 1 meter
         self.k = config['ibm'].get('extinction_coeff', 0.2)
 
-        # Vertical mixing [m^2/s]
-        # diff = 0  ==>  No vertical diffusion
-        # diff = 1e-2  ==> Wave-induced mixing
-        # diff = 1e-5  ==> Stratified water
-        self.D = config['ibm'].get('vertical_mixing', 0)
+        check_no_ibm_vertical_mixing(config)
 
         # --- Species-specific parameters ---
         #
@@ -101,10 +98,6 @@ class IBM:
         Eb = light(state.timestamp, lon, lat, depth=Z_larvae, extinction_coef=self.k)
         length = 0.001 * self.length(state.weight[~is_egg])
         W[~is_egg] = self.swim_speed * length * np.sign(Eb - self.desired_light)
-
-        # --- Vertical turbulent mixing ---
-        if self.D:
-            W += np.random.normal(size=len(W)) * np.sqrt(2 * self.D / self.dt)
 
         # --- Execute vertical movement ---
         Z = state.Z + W * self.dt

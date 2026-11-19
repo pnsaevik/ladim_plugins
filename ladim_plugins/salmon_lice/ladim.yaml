@@ -15,9 +15,9 @@ gridforce:
     # variable LADIM_NUM_THREADS to determine number of threads (defaults to 1).
     num_threads: 2
     
-    module: ladim_plugins.salmon_lice
+    module: ladim.gridforce.ROMS
     input_file: forcing.nc  # Use wildcards (*) to select a range of files
-    ibm_forcing: [temp, salt, AKs]
+    ibm_forcing: [temp, salt]
 
 
 ibm:
@@ -29,8 +29,6 @@ ibm:
     - temp        # Particle ambient temperature [Celcius]
     - salt        # Particle ambient salinity [1]
     - infect      # Copepod infectivity [1]
-
-    vertical_mixing: 0.001  # [m^2/s]
 
 
 particle_release:
@@ -130,3 +128,4 @@ numerics:
     dt: [60, s]     # usually 120 on 160m NorFjords, 600 NorKyst, 1800 SVIM
     advection: RK4  # either EF, RK2 or RK4 (recommended)
     diffusion: 1.0  # [m*2/s]
+    vert_mix: 0.001  # Vertical diffusion [m*2/s]

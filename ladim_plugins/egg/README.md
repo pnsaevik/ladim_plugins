@@ -15,7 +15,7 @@ Common changes applied to `ladim.yaml`:
 - Start date of simulation (`time_control.start_time`)
 - Stop date of simulation (`time_control.stop_time`)
 - Forcing input file (`gridforce.input_file`)
-- Vertical diffusion parameter (`ibm.vertical_mixing`)
+- Vertical diffusion parameter (`numerics.vert_mix`)
 - Horizontal diffusion parameter (`numerics.diffusion`)
 - Egg diameter (`ibm.egg_diam`)
 - Time step length (`numerics.dt`)

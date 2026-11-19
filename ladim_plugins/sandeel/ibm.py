@@ -1,4 +1,5 @@
 import numpy as np
+from ladim_plugins.utils.vertical_mixing import check_no_ibm_vertical_mixing
 from scipy.interpolate import RectBivariateSpline
 
 
@@ -6,7 +7,7 @@ class IBM:
     """Adding a constant horizontal velocity to the particle tracking"""
 
     def __init__(self, config):
-        self.D = config['ibm']['vertical_mixing']
+        check_no_ibm_vertical_mixing(config)
         self.dt = config['dt']
         self.maxdepth = config['ibm']['max_depth']
 
@@ -27,7 +28,7 @@ class IBM:
         temp = forcing.field(state['X'], state['Y'], state['Z'], 'temp')
         larval_development(temp, state['stage'], state['active'], self.dt)
 
-        self.vertical_diffuse()
+        self.limit_depth()
 
     def initialize_hatch_rate(self):
         h = self.state['hatch_rate']
@@ -41,16 +42,12 @@ class IBM:
         depth = self.grid.sample_depth(x, y)
         return self.forcing.field(x, y, depth, 'temp')
 
-    def vertical_diffuse(self):
+    def limit_depth(self):
         state = self.state
         idx = (state['active'] != 0)
         x = state['X'][idx]
         y = state['Y'][idx]
         z = state['Z'][idx]
-
-        # Random diffusion velocity
-        rand = np.random.normal(size=len(z))
-        z += rand * np.sqrt(2 * self.D * self.dt)
 
         # Keep within vertical limits, reflexive condition
         rmin = 0

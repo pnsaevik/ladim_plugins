@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Changed
+- Requires ladim >= 2.10.0. The vertical diffusion in salmon_lice, egg, larvae,
+  saithe, lunar_eel and sandeel is done by ladim, configured by
+  `numerics.vert_mix` (default 0). The option `ibm.vertical_mixing` is removed
+  and gives an error. In saithe, the diffusivity 1e-4 was fixed, and must now
+  be set by `numerics.vert_mix`.
+- Reference outputs are updated, since the vertical random walk is different.
+  The new reference outputs are stored as yaml (`out.nc.yaml`).
+- salmon_lice: The module `ladim_plugins.salmon_lice.gridforce` is removed, the
+  ladim ROMS gridforce is used instead.
+
+
 ## [2.11.0] - 2026-11-17
 ### Changed
 - Requires ladim >= 2.8.0, which has the `num_threads` option
